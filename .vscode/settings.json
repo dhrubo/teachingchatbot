@@ -49,5 +49,7 @@
   },
   "[mdx]": {
     "editor.defaultFormatter": "biomejs.biome"
-  }
+  },
+  "snyk.advanced.organization": "44aa827e-0af6-4e0e-a3c2-eee302825e78",
+  "snyk.advanced.autoSelectOrganization": true
 }
