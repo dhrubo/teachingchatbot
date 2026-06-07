@@ -206,15 +206,20 @@ export async function POST(request: Request) {
           chatId: id,
         });
         const assistantId = generateId();
+        const textId = generateId();
         const chunkStream = createUIMessageStream<ChatMessage>({
           execute: ({ writer }) => {
-            writer.write({ type: "text-start", id: assistantId });
+            // Frame a complete assistant message so the client can assemble
+            // and persist it: start → text-* → finish.
+            writer.write({ type: "start", messageId: assistantId });
+            writer.write({ type: "text-start", id: textId });
             writer.write({
               type: "text-delta",
-              id: assistantId,
+              id: textId,
               delta: CHUNKING_MESSAGE,
             });
-            writer.write({ type: "text-end", id: assistantId });
+            writer.write({ type: "text-end", id: textId });
+            writer.write({ type: "finish" });
           },
           onFinish: async ({ messages: finished }) => {
             if (finished.length > 0) {
@@ -231,11 +236,16 @@ export async function POST(request: Request) {
             }
           },
         });
+        // Update the title in the background — never let it block or break
+        // the chunking reply (it makes its own LLM call).
         if (titlePromise) {
-          const title = await titlePromise;
-          if (title) {
-            await updateChatTitleById({ chatId: id, title });
-          }
+          titlePromise
+            .then((title) =>
+              title ? updateChatTitleById({ chatId: id, title }) : null
+            )
+            .catch(() => {
+              /* non-critical */
+            });
         }
         return createUIMessageStreamResponse({ stream: chunkStream });
       }
