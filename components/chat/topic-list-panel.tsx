@@ -40,23 +40,23 @@ export function TopicListPanel() {
   };
 
   return (
-    <div className="sticky top-0 z-20 mx-auto w-full max-w-3xl px-3 pt-2">
-      <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card/95 shadow-[var(--shadow-card)] backdrop-blur-sm">
+    <div className="sticky top-0 z-20 mx-auto w-full max-w-5xl px-3 pt-3">
+      <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card/95 shadow-[var(--shadow-float)] backdrop-blur-sm">
         <button
           aria-expanded={open}
-          className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left"
+          className="flex w-full items-center justify-between gap-2 px-5 py-3.5 text-left"
           onClick={() => setOpen((o) => !o)}
           type="button"
         >
-          <span className="flex items-center gap-2 font-semibold text-[13px] text-foreground">
+          <span className="flex items-center gap-2.5 font-semibold text-[15px] text-foreground">
             📋 Your topics
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[12px] font-medium text-primary">
               {doneCount}/{topicList.length} done
             </span>
           </span>
           <ChevronDownIcon
             className={cn(
-              "size-4 text-muted-foreground transition-transform",
+              "size-5 text-muted-foreground transition-transform",
               open && "rotate-180"
             )}
           />
@@ -70,17 +70,17 @@ export function TopicListPanel() {
               initial={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              <ul className="grid max-h-48 grid-cols-1 gap-1 overflow-y-auto px-3 pb-3 sm:grid-cols-2">
+              <ul className="grid max-h-[60vh] grid-cols-1 gap-1.5 overflow-y-auto px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
                 {topicList.map((topic) => {
                   const done = isDone(topic, completedTopics);
                   return (
                     <li key={topic}>
                       <button
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors",
+                          "flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left text-[14px] transition-all",
                           done
-                            ? "text-muted-foreground line-through"
-                            : "text-foreground hover:bg-primary/10 hover:text-primary"
+                            ? "border-transparent text-muted-foreground line-through"
+                            : "border-border/50 text-foreground hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:shadow-[var(--shadow-card)]"
                         )}
                         disabled={isBusy}
                         onClick={() => startTopic(topic)}
@@ -88,13 +88,13 @@ export function TopicListPanel() {
                       >
                         <span
                           className={cn(
-                            "flex size-4 shrink-0 items-center justify-center rounded-full border",
+                            "flex size-5 shrink-0 items-center justify-center rounded-full border",
                             done
                               ? "border-green-500 bg-green-500 text-white"
                               : "border-border"
                           )}
                         >
-                          {done && <CheckIcon className="size-3" />}
+                          {done && <CheckIcon className="size-3.5" />}
                         </span>
                         {topic}
                       </button>
