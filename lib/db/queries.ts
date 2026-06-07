@@ -24,6 +24,8 @@ import {
   type DBMessage,
   document,
   message,
+  type StudentGoal,
+  studentGoal,
   type StudentProfile,
   studentProfile,
   type Suggestion,
@@ -744,6 +746,7 @@ export async function upsertTopicProgress({
   data: Partial<
     Pick<
       TopicProgress,
+      | "gcseDomain"
       | "status"
       | "confidence"
       | "score"
@@ -768,5 +771,90 @@ export async function upsertTopicProgress({
       "bad_request:database",
       "Failed to update topic progress"
     );
+  }
+}
+
+// --- Short-term goals ---
+
+export async function getGoalsByStudentId({
+  studentId,
+}: {
+  studentId: string;
+}): Promise<StudentGoal[]> {
+  try {
+    return await db
+      .select()
+      .from(studentGoal)
+      .where(eq(studentGoal.studentId, studentId))
+      .orderBy(desc(studentGoal.startedAt));
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to get goals");
+  }
+}
+
+export async function createGoal({
+  studentId,
+  description,
+  topic,
+  targetDate,
+  confidence,
+  notes,
+}: {
+  studentId: string;
+  description: string;
+  topic?: string | null;
+  targetDate?: Date | null;
+  confidence?: "low" | "medium" | "high" | null;
+  notes?: string | null;
+}): Promise<StudentGoal> {
+  try {
+    const [row] = await db
+      .insert(studentGoal)
+      .values({
+        studentId,
+        description,
+        topic: topic ?? null,
+        targetDate: targetDate ?? null,
+        confidence: confidence ?? null,
+        notes: notes ?? null,
+        status: "in_progress",
+      })
+      .returning();
+    return row;
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to create goal");
+  }
+}
+
+export async function updateGoal({
+  goalId,
+  studentId,
+  data,
+}: {
+  goalId: string;
+  studentId: string;
+  data: Partial<
+    Pick<
+      StudentGoal,
+      | "description"
+      | "topic"
+      | "status"
+      | "confidence"
+      | "targetDate"
+      | "notes"
+    >
+  >;
+}): Promise<StudentGoal | undefined> {
+  try {
+    const [row] = await db
+      .update(studentGoal)
+      .set({ ...data, updatedAt: new Date() })
+      .where(
+        and(eq(studentGoal.id, goalId), eq(studentGoal.studentId, studentId))
+      )
+      .returning();
+    return row;
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to update goal");
   }
 }

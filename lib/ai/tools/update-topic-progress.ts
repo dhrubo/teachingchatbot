@@ -20,6 +20,17 @@ export const updateTopicProgress = ({ session }: Props) =>
       topic: z
         .string()
         .describe("Curriculum topic name, e.g. 'Percentages' or 'Basic algebra'."),
+      gcseDomain: z
+        .enum([
+          "number",
+          "algebra",
+          "ratio_proportion_rates",
+          "geometry_measures",
+          "probability",
+          "statistics",
+        ])
+        .optional()
+        .describe("The AQA GCSE Maths domain this topic rolls up to."),
       score: z
         .number()
         .int()
@@ -67,6 +78,7 @@ export const updateTopicProgress = ({ session }: Props) =>
         data: {
           score: input.score,
           status,
+          ...(input.gcseDomain && { gcseDomain: input.gcseDomain }),
           ...(input.confidence && { confidence: input.confidence }),
           successfulAttempts,
           supportNeededAttempts,

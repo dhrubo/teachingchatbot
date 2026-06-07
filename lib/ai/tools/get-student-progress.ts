@@ -2,6 +2,7 @@ import { tool } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
 import {
+  getGoalsByStudentId,
   getStudentsByUserId,
   getTopicProgressByStudentId,
 } from "@/lib/db/queries";
@@ -14,7 +15,7 @@ type Props = { session: Session };
 export const getStudentProgress = ({ session }: Props) =>
   tool({
     description:
-      "Get the saved progress for the account's student(s): profile (name, school year, exam date, XP, streak, badges) and per-topic progress (status, confidence, score, attempts, last practised). Call this at the start of a session to recall prior progress, and whenever asked what a student has done, what they need to work on, for a summary, a parent report, or whether they are on track. If multiple students are returned, ask which one the session is about before continuing.",
+      "Get the saved progress for the account's student(s): profile (name, school year, exam date, XP, streak, badges), per-topic progress (GCSE domain, status, confidence, score, attempts, last practised) and current short-term goals. Call this at the start of a session to recall prior progress and active goals, and whenever asked what a student has done, what they need to work on, for a summary, a parent report, or whether they are on track. If multiple students are returned, ask which one the session is about before continuing.",
     inputSchema: z.object({}),
     execute: async () => {
       const userId = session.user?.id;
@@ -43,6 +44,7 @@ export const getStudentProgress = ({ session }: Props) =>
           parentReportNotes: s.parentReportNotes,
           lastSessionAt: s.lastSessionAt,
           topics: await getTopicProgressByStudentId({ studentId: s.id }),
+          goals: await getGoalsByStudentId({ studentId: s.id }),
         }))
       );
 

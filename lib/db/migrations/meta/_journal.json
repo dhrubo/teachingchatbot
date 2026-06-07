@@ -15,6 +15,13 @@
       "when": 1780837052076,
       "tag": "0001_complex_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780840206714,
+      "tag": "0002_slow_bug",
+      "breakpoints": true
     }
   ]
 }

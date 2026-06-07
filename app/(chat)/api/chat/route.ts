@@ -23,6 +23,7 @@ import { TUTOR_SYSTEM_PROMPT } from "@/lib/ai/prompts-tutor";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { getCurriculumTopics } from "@/lib/ai/tools/get-curriculum-topics";
 import { getStudentProgress } from "@/lib/ai/tools/get-student-progress";
+import { manageGoals } from "@/lib/ai/tools/manage-goals";
 import { updateStudentProfile } from "@/lib/ai/tools/update-student-profile";
 import { updateTopicProgress } from "@/lib/ai/tools/update-topic-progress";
 
@@ -205,6 +206,7 @@ export async function POST(request: Request) {
                   "getStudentProgress",
                   "updateStudentProfile",
                   "updateTopicProgress",
+                  "manageGoals",
                 ],
           providerOptions: {
             ...(modelConfig?.gatewayOrder && {
@@ -219,6 +221,7 @@ export async function POST(request: Request) {
             getStudentProgress: getStudentProgress({ session }),
             updateStudentProfile: updateStudentProfile({ session }),
             updateTopicProgress: updateTopicProgress({ session }),
+            manageGoals: manageGoals({ session }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

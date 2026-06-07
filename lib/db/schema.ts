@@ -166,6 +166,17 @@ export const topicProgress = pgTable(
       .notNull()
       .references(() => studentProfile.id, { onDelete: "cascade" }),
     topic: text("topic").notNull(),
+    // Which AQA GCSE Maths content domain this topic rolls up to.
+    gcseDomain: varchar("gcseDomain", {
+      enum: [
+        "number",
+        "algebra",
+        "ratio_proportion_rates",
+        "geometry_measures",
+        "probability",
+        "statistics",
+      ],
+    }),
     status: varchar("status", {
       enum: [
         "not_started",
@@ -194,3 +205,26 @@ export const topicProgress = pgTable(
 );
 
 export type TopicProgress = InferSelectModel<typeof topicProgress>;
+
+// Short-term, agreed learning goals for a student (e.g. "Practise
+// percentages by 20 June"). Separate from the long-term GCSE pathway.
+export const studentGoal = pgTable("StudentGoal", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  studentId: uuid("studentId")
+    .notNull()
+    .references(() => studentProfile.id, { onDelete: "cascade" }),
+  topic: text("topic"),
+  description: text("description").notNull(),
+  status: varchar("status", {
+    enum: ["not_started", "in_progress", "achieved", "needs_more_work"],
+  })
+    .notNull()
+    .default("not_started"),
+  confidence: varchar("confidence", { enum: ["low", "medium", "high"] }),
+  targetDate: timestamp("targetDate"),
+  notes: text("notes"),
+  startedAt: timestamp("startedAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export type StudentGoal = InferSelectModel<typeof studentGoal>;
