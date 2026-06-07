@@ -80,13 +80,22 @@ export function AnswerPanel() {
             <motion.span
               animate={{ opacity: 1, scale: 1 }}
               className={cn(
-                "font-semibold text-sm",
+                "flex items-center gap-1.5 font-bold text-base",
                 feedback === "correct" ? "text-green-600" : "text-destructive"
               )}
               exit={{ opacity: 0 }}
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, scale: 0.6 }}
+              transition={{ type: "spring", bounce: 0.5 }}
             >
-              {feedback === "correct" ? "✅ Correct!" : "❌ Not quite"}
+              {feedback === "correct" ? (
+                <>
+                  <span className="text-xl">🎉✅</span> Correct!
+                </>
+              ) : (
+                <>
+                  <span className="text-xl">❌</span> Not quite — try again!
+                </>
+              )}
             </motion.span>
           )}
         </AnimatePresence>

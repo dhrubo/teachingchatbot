@@ -54,6 +54,8 @@ export type CustomUIDataTypes = {
   "xp-streak": { xp: number; streak: number; badges: string[] };
   // A freshly earned badge or level-up, for the achievement toast.
   achievement: { label: string; kind: "badge" | "level" | "streak" };
+  // The list of topics parsed from a big pasted list, for the pinned panel.
+  "topic-list": { topics: string[] };
 };
 
 export type ChatMessage = UIMessage<

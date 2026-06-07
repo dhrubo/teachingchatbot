@@ -15,6 +15,7 @@ import { askQuestion } from "@/lib/ai/tools/ask-question";
 import {
   CHUNKING_MESSAGE,
   detectLargeInput,
+  extractTopics,
 } from "@/lib/ai/detect-large-input";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import {
@@ -207,8 +208,16 @@ export async function POST(request: Request) {
         });
         const assistantId = generateId();
         const textId = generateId();
+        const topics = extractTopics(userText);
         const chunkStream = createUIMessageStream<ChatMessage>({
           execute: ({ writer }) => {
+            // Pin the parsed topics so the user can work through them.
+            if (topics.length > 0) {
+              writer.write({
+                type: "data-topic-list",
+                data: { topics },
+              });
+            }
             // Frame a complete assistant message so the client can assemble
             // and persist it: start → text-* → finish.
             writer.write({ type: "start", messageId: assistantId });

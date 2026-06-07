@@ -86,6 +86,21 @@ export function detectLargeInput(input: string): LargeInputResult {
   return { triggered: false, reason: null, topicsCount, inputLength };
 }
 
+// Parse a pasted list into individual topic labels for the pinned panel.
+// Splits on newlines and commas, trims bullets/numbering, drops empties.
+export function extractTopics(input: string): string[] {
+  return input
+    .split(/[\n,]+/)
+    .map((t) =>
+      t
+        .replace(/^\s*(?:[-*•]|\d+[).]|[a-zA-Z][).])\s+/, "")
+        .replace(/^[-–\s]+|[-–\s]+$/g, "")
+        .trim()
+    )
+    .filter((t) => t.length > 1 && t.length <= 60)
+    .slice(0, 40);
+}
+
 // The short chunking reply the server returns instead of calling the LLM.
 export const CHUNKING_MESSAGE = `That's quite a lot to take in 👍
 

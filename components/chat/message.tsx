@@ -116,10 +116,13 @@ const PurePreviewMessage = ({
     if (type === "text") {
       return (
         <MessageContent
-          className={cn("text-[13px] leading-[1.65]", {
-            "w-fit max-w-[min(80%,56ch)] overflow-hidden break-words rounded-2xl rounded-br-lg border border-border/30 bg-gradient-to-br from-secondary to-muted px-3.5 py-2 shadow-[var(--shadow-card)]":
-              message.role === "user",
-          })}
+          className={cn(
+            // Tutor text is larger and more spaced for easy reading; user
+            // messages stay compact in their bubble.
+            message.role === "user"
+              ? "w-fit max-w-[min(80%,56ch)] overflow-hidden break-words rounded-2xl rounded-br-lg border border-border/30 bg-gradient-to-br from-secondary to-muted px-3.5 py-2 text-[14px] leading-[1.6] shadow-[var(--shadow-card)]"
+              : "text-[16px] leading-[1.75]"
+          )}
           data-testid="message-content"
           key={key}
         >

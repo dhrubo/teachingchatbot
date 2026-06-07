@@ -67,6 +67,8 @@ type ActiveChatContextValue = {
     at: number;
   } | null;
   clearAchievement: () => void;
+  topicList: string[];
+  completedTopics: string[];
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
@@ -103,6 +105,11 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     kind: "badge" | "level" | "streak";
     at: number;
   } | null>(null);
+
+  // Pinned list of topics the user pasted (from chunking), and which have
+  // been worked on, so the panel can tick them off.
+  const [topicList, setTopicList] = useState<string[]>([]);
+  const [completedTopics, setCompletedTopics] = useState<string[]>([]);
 
   const chatIdFromUrl = extractChatId(pathname);
   const isNewChat = !chatIdFromUrl;
@@ -206,6 +213,17 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         const d = dataPart.data as { topic?: string; score?: number };
         if (d?.topic && typeof d.score === "number") {
           setTopicProgress({ topic: d.topic, score: d.score });
+          // Tick a pinned topic off once it's been worked on.
+          const t = d.topic;
+          setCompletedTopics((prev) =>
+            prev.includes(t) ? prev : [...prev, t]
+          );
+        }
+      }
+      if (dataPart.type === "data-topic-list") {
+        const d = dataPart.data as { topics?: string[] };
+        if (d?.topics?.length) {
+          setTopicList(d.topics);
         }
       }
       if (dataPart.type === "data-xp-streak") {
@@ -408,6 +426,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       xpStreak,
       achievement,
       clearAchievement,
+      topicList,
+      completedTopics,
     }),
     [
       chatId,
@@ -433,6 +453,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       xpStreak,
       achievement,
       clearAchievement,
+      topicList,
+      completedTopics,
     ]
   );
 
