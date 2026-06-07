@@ -6,10 +6,12 @@ See the [status legend](README.md#-status-legend) for what ✅ / 📝 / 🚧 mea
 
 ## User modes
 
-### Guest (not signed in)
-- 📝 On first visit, the tutor introduces the app: guided maths chat, topics can be created and tracked, progress and goals are saved after registration.
-- 🚧 **Guest question limit: 5 free questions.** After 5, further questions should be blocked with a prompt to register, preserving session state where possible.
-  - ✅ *Enforced today instead:* a rate limit of **10 user messages per hour** per user (guests included). This is NOT the same as the 5-lifetime-question rule — that rule is not yet implemented.
+### Guest (not signed in) — conversational onboarding
+- 📝 **Start learning immediately.** The tutor does *not* ask for a full profile upfront and does *not* open with limits or a feature tour — it answers the maths question first.
+- 📝 **Gradual, benefit-framed data collection:** level (Year 8/9) is asked only after some engagement (to pitch difficulty); name is asked only when introducing progress-tracking benefits.
+- 🚧 **Guest question limit: 5 free questions, counted silently.** The tutor introduces the *soft value* of an account around question 4 and politely stops at question 5, leading with benefits (save progress, track %, continue topics, set goals).
+  - ✅ *Enforced today instead:* a rate limit of **10 user messages per hour** per user (guests included). The silent 5-question count and hard stop are NOT yet implemented in code — currently the Q4/Q5 behaviour is tutor-prompted only.
+- 📝 **Session continuity:** registering or logging in mid-conversation preserves the current chat and resumes topic/progress without a reset.
 - ✅ Registered and guest conversations are both persisted as chats; logging in restores prior conversation state.
 
 ### Registered / logged-in
