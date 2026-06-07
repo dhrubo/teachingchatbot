@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  integer,
   json,
   pgTable,
   primaryKey,
@@ -134,3 +135,62 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+// A student (child) belonging to a user account. One account (parent) may
+// own several students.
+export const studentProfile = pgTable("StudentProfile", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  name: text("name").notNull(),
+  schoolYear: varchar("schoolYear", { enum: ["8", "9"] }),
+  examDate: timestamp("examDate"),
+  xp: integer("xp").notNull().default(0),
+  streak: integer("streak").notNull().default(0),
+  badges: json("badges").$type<string[]>().notNull().default([]),
+  confidenceNotes: text("confidenceNotes"),
+  parentReportNotes: text("parentReportNotes"),
+  lastSessionAt: timestamp("lastSessionAt"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export type StudentProfile = InferSelectModel<typeof studentProfile>;
+
+// Per-topic progress for a single student.
+export const topicProgress = pgTable(
+  "TopicProgress",
+  {
+    studentId: uuid("studentId")
+      .notNull()
+      .references(() => studentProfile.id, { onDelete: "cascade" }),
+    topic: text("topic").notNull(),
+    status: varchar("status", {
+      enum: [
+        "not_started",
+        "introduced",
+        "practising",
+        "secure",
+        "mastered",
+      ],
+    })
+      .notNull()
+      .default("not_started"),
+    confidence: varchar("confidence", { enum: ["low", "medium", "high"] })
+      .notNull()
+      .default("low"),
+    score: integer("score").notNull().default(0),
+    successfulAttempts: integer("successfulAttempts").notNull().default(0),
+    supportNeededAttempts: integer("supportNeededAttempts")
+      .notNull()
+      .default(0),
+    lastPractisedAt: timestamp("lastPractisedAt"),
+    updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.studentId, table.topic] }),
+  })
+);
+
+export type TopicProgress = InferSelectModel<typeof topicProgress>;

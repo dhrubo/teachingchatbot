@@ -22,6 +22,9 @@ import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { TUTOR_SYSTEM_PROMPT } from "@/lib/ai/prompts-tutor";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { getCurriculumTopics } from "@/lib/ai/tools/get-curriculum-topics";
+import { getStudentProgress } from "@/lib/ai/tools/get-student-progress";
+import { updateStudentProfile } from "@/lib/ai/tools/update-student-profile";
+import { updateTopicProgress } from "@/lib/ai/tools/update-topic-progress";
 
 import { isProductionEnvironment } from "@/lib/constants";
 import {
@@ -193,9 +196,16 @@ export async function POST(request: Request) {
           model: getLanguageModel(chatModel),
           system: TUTOR_SYSTEM_PROMPT,
           messages: modelMessages,
-          stopWhen: stepCountIs(5),
+          stopWhen: stepCountIs(8),
           experimental_activeTools:
-            isReasoningModel && !supportsTools ? [] : ["getCurriculumTopics"],
+            isReasoningModel && !supportsTools
+              ? []
+              : [
+                  "getCurriculumTopics",
+                  "getStudentProgress",
+                  "updateStudentProfile",
+                  "updateTopicProgress",
+                ],
           providerOptions: {
             ...(modelConfig?.gatewayOrder && {
               gateway: { order: modelConfig.gatewayOrder },
@@ -206,6 +216,9 @@ export async function POST(request: Request) {
           },
           tools: {
             getCurriculumTopics,
+            getStudentProgress: getStudentProgress({ session }),
+            updateStudentProfile: updateStudentProfile({ session }),
+            updateTopicProgress: updateTopicProgress({ session }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

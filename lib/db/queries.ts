@@ -24,9 +24,13 @@ import {
   type DBMessage,
   document,
   message,
+  type StudentProfile,
+  studentProfile,
   type Suggestion,
   stream,
   suggestion,
+  type TopicProgress,
+  topicProgress,
   type User,
   user,
   vote,
@@ -627,6 +631,142 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     throw new ChatbotError(
       "bad_request:database",
       "Failed to get stream ids by chat id"
+    );
+  }
+}
+
+// --- Student progress (tutor coaching) ---
+
+export async function getStudentsByUserId({
+  userId,
+}: {
+  userId: string;
+}): Promise<StudentProfile[]> {
+  try {
+    return await db
+      .select()
+      .from(studentProfile)
+      .where(eq(studentProfile.userId, userId))
+      .orderBy(asc(studentProfile.createdAt));
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to get students");
+  }
+}
+
+export async function createStudent({
+  userId,
+  name,
+  schoolYear,
+}: {
+  userId: string;
+  name: string;
+  schoolYear?: "8" | "9";
+}): Promise<StudentProfile> {
+  try {
+    const [created] = await db
+      .insert(studentProfile)
+      .values({ userId, name, schoolYear })
+      .returning();
+    return created;
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to create student");
+  }
+}
+
+export async function updateStudentProfile({
+  studentId,
+  userId,
+  data,
+}: {
+  studentId: string;
+  userId: string;
+  data: Partial<
+    Pick<
+      StudentProfile,
+      | "name"
+      | "schoolYear"
+      | "examDate"
+      | "xp"
+      | "streak"
+      | "badges"
+      | "confidenceNotes"
+      | "parentReportNotes"
+      | "lastSessionAt"
+    >
+  >;
+}): Promise<StudentProfile | undefined> {
+  try {
+    const [updated] = await db
+      .update(studentProfile)
+      .set({ ...data, updatedAt: new Date() })
+      .where(
+        and(
+          eq(studentProfile.id, studentId),
+          eq(studentProfile.userId, userId)
+        )
+      )
+      .returning();
+    return updated;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to update student profile"
+    );
+  }
+}
+
+export async function getTopicProgressByStudentId({
+  studentId,
+}: {
+  studentId: string;
+}): Promise<TopicProgress[]> {
+  try {
+    return await db
+      .select()
+      .from(topicProgress)
+      .where(eq(topicProgress.studentId, studentId))
+      .orderBy(asc(topicProgress.topic));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to get topic progress"
+    );
+  }
+}
+
+export async function upsertTopicProgress({
+  studentId,
+  topic,
+  data,
+}: {
+  studentId: string;
+  topic: string;
+  data: Partial<
+    Pick<
+      TopicProgress,
+      | "status"
+      | "confidence"
+      | "score"
+      | "successfulAttempts"
+      | "supportNeededAttempts"
+      | "lastPractisedAt"
+    >
+  >;
+}): Promise<TopicProgress> {
+  try {
+    const [row] = await db
+      .insert(topicProgress)
+      .values({ studentId, topic, ...data, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: [topicProgress.studentId, topicProgress.topic],
+        set: { ...data, updatedAt: new Date() },
+      })
+      .returning();
+    return row;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to update topic progress"
     );
   }
 }
