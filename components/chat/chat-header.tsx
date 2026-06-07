@@ -1,12 +1,44 @@
 "use client";
 
 import { PanelLeftIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
-import { VercelIcon } from "./icons";
+import { guestRegex } from "@/lib/constants";
+import { SoundToggle } from "./sound-toggle";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
+
+function AuthButtons() {
+  const { data, status } = useSession();
+  const isGuest = guestRegex.test(data?.user?.email ?? "");
+
+  // Only nudge guests (or signed-out) to sign in / sign up.
+  if (status === "loading" || (data?.user && !isGuest)) {
+    return null;
+  }
+
+  return (
+    <>
+      <Button
+        asChild
+        className="rounded-full px-4 text-muted-foreground hover:text-foreground"
+        size="sm"
+        variant="ghost"
+      >
+        <Link href="/login">Sign in</Link>
+      </Button>
+      <Button
+        asChild
+        className="rounded-full bg-[image:var(--gradient-sunset)] px-4 font-semibold text-white shadow-[var(--shadow-card)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
+        size="sm"
+      >
+        <Link href="/register">Sign up free ✨</Link>
+      </Button>
+    </>
+  );
+}
 
 function PureChatHeader({
   chatId,
@@ -24,7 +56,7 @@ function PureChatHeader({
   }
 
   return (
-    <header className="sticky top-0 flex h-14 items-center gap-2 bg-sidebar px-3">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-sidebar/80 px-3 backdrop-blur-sm">
       <Button
         className="md:hidden"
         onClick={toggleSidebar}
@@ -34,15 +66,6 @@ function PureChatHeader({
         <PanelLeftIcon className="size-4" />
       </Button>
 
-      <Link
-        className="flex size-8 items-center justify-center rounded-lg md:hidden"
-        href="https://vercel.com/templates/next.js/chatbot"
-        rel="noopener noreferrer"
-        target="_blank"
-      >
-        <VercelIcon size={14} />
-      </Link>
-
       {!isReadonly && (
         <VisibilitySelector
           chatId={chatId}
@@ -50,19 +73,10 @@ function PureChatHeader({
         />
       )}
 
-      <Button
-        asChild
-        className="hidden rounded-lg bg-foreground px-4 text-background hover:bg-foreground/90 md:ml-auto md:flex"
-      >
-        <Link
-          href="https://vercel.com/templates/next.js/chatbot"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <VercelIcon size={16} />
-          Deploy with Vercel
-        </Link>
-      </Button>
+      <div className="ml-auto flex items-center gap-2">
+        <AuthButtons />
+        <SoundToggle />
+      </div>
     </header>
   );
 }

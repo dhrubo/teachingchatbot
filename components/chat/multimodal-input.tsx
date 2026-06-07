@@ -42,6 +42,7 @@ import {
   DEFAULT_CHAT_MODEL,
   type ModelCapabilities,
 } from "@/lib/ai/models";
+import { playSound } from "@/lib/sounds";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
@@ -216,6 +217,7 @@ function PureMultimodalInput({
   const [slashIndex, setSlashIndex] = useState(0);
 
   const submitForm = useCallback(() => {
+    playSound("send");
     window.history.pushState(
       {},
       "",

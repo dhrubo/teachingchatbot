@@ -4,6 +4,7 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import { motion } from "framer-motion";
 import { memo, useState } from "react";
 import { type TopicSuggestion, topicSuggestions } from "@/lib/constants";
+import { playSound } from "@/lib/sounds";
 import type { ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Suggestion } from "../ai-elements/suggestion";
@@ -23,6 +24,7 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
   const topics = topicSuggestions[year];
 
   const send = (topic: TopicSuggestion) => {
+    playSound("pop");
     window.history.pushState(
       {},
       "",
@@ -54,7 +56,10 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
                   : "text-muted-foreground hover:text-foreground"
               )}
               key={y}
-              onClick={() => setYear(y)}
+              onClick={() => {
+                setYear(y);
+                playSound("pop");
+              }}
               type="button"
             >
               {active && (
@@ -85,16 +90,23 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
               duration: 0.35,
               ease: [0.22, 1, 0.36, 1],
             }}
+            whileHover={{ y: -3 }}
+            whileTap={{ scale: 0.96 }}
           >
             <Suggestion
-              className="flex h-auto w-full flex-col items-start justify-start gap-1.5 whitespace-normal rounded-2xl border border-border/50 bg-card/30 px-3.5 py-3 text-left text-[13px] text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-card/60 hover:shadow-[var(--shadow-card)]"
+              className="group/chip flex h-auto w-full flex-col items-start justify-start gap-1.5 whitespace-normal rounded-2xl border border-border/60 bg-card/40 px-3.5 py-3 text-left text-[13px] text-foreground transition-all duration-200 hover:border-primary/50 hover:bg-accent/60 hover:shadow-[var(--shadow-card)]"
               onClick={() => send(topic)}
               suggestion={topic.prompt}
             >
-              <span aria-hidden className="text-lg leading-none">
+              <span
+                aria-hidden
+                className="text-lg leading-none transition-transform duration-200 group-hover/chip:scale-125"
+              >
                 {topic.emoji}
               </span>
-              <span className="font-medium leading-tight">{topic.label}</span>
+              <span className="font-medium leading-tight group-hover/chip:text-primary">
+                {topic.label}
+              </span>
             </Suggestion>
           </motion.div>
         ))}
