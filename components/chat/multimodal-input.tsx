@@ -282,7 +282,7 @@ function PureMultimodalInput({
       const { error } = await response.json();
       toast.error(error);
     } catch (_error) {
-      toast.error("Failed to upload file, please try again!");
+      toast.error("That file didn't upload 😅 — give it another go?");
     }
   }, []);
 
@@ -304,7 +304,7 @@ function PureMultimodalInput({
           ...successfullyUploadedAttachments,
         ]);
       } catch (_error) {
-        toast.error("Failed to upload files");
+        toast.error("Those files didn't upload 😅 — try again?");
       } finally {
         setUploadQueue([]);
       }
@@ -350,7 +350,7 @@ function PureMultimodalInput({
           ...(successfullyUploadedAttachments as Attachment[]),
         ]);
       } catch (_error) {
-        toast.error("Failed to upload pasted image(s)");
+        toast.error("Couldn't paste that image 😅 — try again?");
       } finally {
         setUploadQueue([]);
       }
@@ -435,7 +435,7 @@ function PureMultimodalInput({
           if (status === "ready" || status === "error") {
             submitForm();
           } else {
-            toast.error("Please wait for the model to finish its response!");
+            toast.error("Hang on — let me finish this bit first! 😄");
           }
         }}
       >
@@ -510,7 +510,9 @@ function PureMultimodalInput({
             }
           }}
           placeholder={
-            editingMessage ? "Edit your message..." : "Ask anything..."
+            editingMessage
+              ? "Edit your message..."
+              : "Ask me anything maths… 🧮"
           }
           ref={textareaRef}
           value={input}
