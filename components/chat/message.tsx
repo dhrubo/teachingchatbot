@@ -137,27 +137,21 @@ const PurePreviewMessage = ({
       }
       return (
         <div
-          className="w-full rounded-2xl border border-primary/30 bg-[image:var(--gradient-sunset)]/5 bg-accent/40 p-4 shadow-[var(--shadow-card)] ring-1 ring-primary/10"
+          className="w-full overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-[var(--shadow-card)]"
           key={key}
         >
-          <div className="mb-1 flex items-center gap-1.5 font-semibold text-primary text-xs uppercase tracking-wide">
-            Your turn 👇
+          {/* Challenge header strip */}
+          <div className="flex items-center gap-1.5 bg-[image:var(--gradient-sunset)] px-4 py-2 font-semibold text-[12px] text-white uppercase tracking-wide">
+            🎯 Challenge
           </div>
-          <p className="text-[14px] font-medium leading-snug text-foreground">
-            {output.prompt}
-          </p>
-          {output.options && output.options.length > 0 && (
-            <ul className="mt-2 space-y-1 text-[13px] text-muted-foreground">
-              {output.options.map((opt, i) => (
-                <li key={opt}>
-                  {String.fromCharCode(65 + i)}) {opt}
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-2 text-[12px] text-muted-foreground/70">
-            Answer below the chat box 👇
-          </p>
+          <div className="p-4">
+            <p className="text-[14px] font-medium leading-snug text-foreground">
+              {output.prompt}
+            </p>
+            <p className="mt-3 flex items-center gap-1 text-[12px] font-medium text-primary">
+              👉 Your move — answer below 👇
+            </p>
+          </div>
         </div>
       );
     }

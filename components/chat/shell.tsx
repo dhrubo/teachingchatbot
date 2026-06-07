@@ -19,6 +19,7 @@ import {
 } from "@/hooks/use-artifact";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { AchievementToast } from "./achievement-toast";
 import { Artifact } from "./artifact";
 import { ChatHeader } from "./chat-header";
 import { DataStreamHandler } from "./data-stream-handler";
@@ -78,6 +79,7 @@ export function ChatShell() {
             isArtifactVisible ? "w-[40%]" : "w-full"
           )}
         >
+          <AchievementToast />
           <ChatHeader
             chatId={chatId}
             isReadonly={isReadonly}

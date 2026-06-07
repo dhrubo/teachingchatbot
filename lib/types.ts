@@ -50,6 +50,10 @@ export type CustomUIDataTypes = {
   // Latest saved progress for the current topic (0–5 mastery score),
   // surfaced so the UI can show topic name + % complete.
   "topic-progress": { topic: string; score: number };
+  // Live XP / streak / badges for the header badges.
+  "xp-streak": { xp: number; streak: number; badges: string[] };
+  // A freshly earned badge or level-up, for the achievement toast.
+  achievement: { label: string; kind: "badge" | "level" | "streak" };
 };
 
 export type ChatMessage = UIMessage<

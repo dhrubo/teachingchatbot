@@ -1,4 +1,4 @@
-import { tool } from "ai";
+import { tool, type UIMessageStreamWriter } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
 import {
@@ -6,13 +6,17 @@ import {
   getStudentsByUserId,
   updateStudentProfile as updateStudentProfileQuery,
 } from "@/lib/db/queries";
+import type { ChatMessage } from "@/lib/types";
 
-type Props = { session: Session };
+type Props = {
+  session: Session;
+  dataStream: UIMessageStreamWriter<ChatMessage>;
+};
 
 // Creates a student profile or updates an existing one. Use to set the
 // student's name, school year, exam date, and to award XP / streak / badges
 // or save confidence and parent-report notes.
-export const updateStudentProfile = ({ session }: Props) =>
+export const updateStudentProfile = ({ session, dataStream }: Props) =>
   tool({
     description:
       "Create or update a student profile. Omit studentId to create a new student (name required). Provide studentId to update an existing one. Use this to set school year (8 or 9), an exam date, to award XP, update the streak, add a badge, or save confidence / parent-report notes.",
@@ -91,6 +95,25 @@ export const updateStudentProfile = ({ session }: Props) =>
           lastSessionAt: new Date(),
         },
       });
+
+      // Surface live XP / streak / badges to the UI.
+      if (updated) {
+        dataStream.write({
+          type: "data-xp-streak",
+          data: {
+            xp: updated.xp,
+            streak: updated.streak,
+            badges: updated.badges,
+          },
+        });
+        // If a brand-new badge was just earned, fire an achievement toast.
+        if (input.addBadge && !existing.badges.includes(input.addBadge)) {
+          dataStream.write({
+            type: "data-achievement",
+            data: { label: input.addBadge, kind: "badge" },
+          });
+        }
+      }
 
       return { updated: true, student: updated };
     },

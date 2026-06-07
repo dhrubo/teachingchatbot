@@ -9,21 +9,42 @@ function scoreToPercent(score: number): number {
   return Math.round((Math.min(Math.max(score, 0), 5) / 5) * 100);
 }
 
-// Compact pill for the header.
+// Compact pill for the header: streak · XP · latest badge · tally · %.
 export function ProgressPill() {
-  const { answeredCount, topicProgress } = useActiveChat();
+  const { answeredCount, topicProgress, xpStreak } = useActiveChat();
 
-  if (answeredCount === 0 && !topicProgress) {
+  const hasAnything =
+    answeredCount > 0 || topicProgress || (xpStreak && xpStreak.xp > 0);
+  if (!hasAnything) {
     return null;
   }
 
   const percent = topicProgress ? scoreToPercent(topicProgress.score) : 0;
+  const latestBadge = xpStreak?.badges.at(-1);
 
   return (
     <div className="hidden items-center gap-2 rounded-full border border-border/50 bg-card/50 px-3 py-1 text-[12px] sm:flex">
-      <span className="font-medium text-foreground">
-        {answeredCount} answered
-      </span>
+      {xpStreak && xpStreak.streak > 0 && (
+        <span className="font-semibold text-foreground">
+          🔥 {xpStreak.streak}
+        </span>
+      )}
+      {xpStreak && xpStreak.xp > 0 && (
+        <span className="font-medium text-primary">{xpStreak.xp} XP</span>
+      )}
+      {latestBadge && (
+        <span className="max-w-[120px] truncate text-muted-foreground">
+          🏅 {latestBadge}
+        </span>
+      )}
+      {answeredCount > 0 && (
+        <>
+          <span className="text-muted-foreground/40">·</span>
+          <span className="text-muted-foreground">
+            {answeredCount} answered
+          </span>
+        </>
+      )}
       {topicProgress && (
         <>
           <span className="text-muted-foreground/40">·</span>

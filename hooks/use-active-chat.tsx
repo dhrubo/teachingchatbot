@@ -59,6 +59,13 @@ type ActiveChatContextValue = {
   submitAnswer: (answer: string) => void;
   answeredCount: number;
   topicProgress: { topic: string; score: number } | null;
+  xpStreak: { xp: number; streak: number; badges: string[] } | null;
+  achievement: {
+    label: string;
+    kind: "badge" | "level" | "streak";
+    at: number;
+  } | null;
+  clearAchievement: () => void;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
@@ -82,6 +89,18 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const [topicProgress, setTopicProgress] = useState<{
     topic: string;
     score: number;
+  } | null>(null);
+
+  // Live XP / streak / badges, and the latest earned achievement (for a toast).
+  const [xpStreak, setXpStreak] = useState<{
+    xp: number;
+    streak: number;
+    badges: string[];
+  } | null>(null);
+  const [achievement, setAchievement] = useState<{
+    label: string;
+    kind: "badge" | "level" | "streak";
+    at: number;
   } | null>(null);
 
   const chatIdFromUrl = extractChatId(pathname);
@@ -186,6 +205,31 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         const d = dataPart.data as { topic?: string; score?: number };
         if (d?.topic && typeof d.score === "number") {
           setTopicProgress({ topic: d.topic, score: d.score });
+        }
+      }
+      if (dataPart.type === "data-xp-streak") {
+        const d = dataPart.data as {
+          xp?: number;
+          streak?: number;
+          badges?: string[];
+        };
+        setXpStreak({
+          xp: d.xp ?? 0,
+          streak: d.streak ?? 0,
+          badges: d.badges ?? [],
+        });
+      }
+      if (dataPart.type === "data-achievement") {
+        const d = dataPart.data as {
+          label?: string;
+          kind?: "badge" | "level" | "streak";
+        };
+        if (d?.label) {
+          setAchievement({
+            label: d.label,
+            kind: d.kind ?? "badge",
+            at: Date.now(),
+          });
         }
       }
     },
@@ -323,6 +367,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     [activeQuestion, sendMessage]
   );
 
+  const clearAchievement = useCallback(() => setAchievement(null), []);
+
   const isReadonly = isNewChat ? false : (chatData?.isReadonly ?? false);
 
   const { data: votes } = useSWR<Vote[]>(
@@ -357,6 +403,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       submitAnswer,
       answeredCount,
       topicProgress,
+      xpStreak,
+      achievement,
+      clearAchievement,
     }),
     [
       chatId,
@@ -379,6 +428,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       submitAnswer,
       answeredCount,
       topicProgress,
+      xpStreak,
+      achievement,
+      clearAchievement,
     ]
   );
 
