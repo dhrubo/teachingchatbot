@@ -11,6 +11,10 @@ import { checkBotId } from "botid/server";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
 import { auth, type UserType } from "@/app/(auth)/auth";
+import {
+  CHUNKING_MESSAGE,
+  detectLargeInput,
+} from "@/lib/ai/detect-large-input";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import {
   allowedModelIds,
@@ -180,6 +184,59 @@ export async function POST(request: Request) {
           },
         ],
       });
+    }
+
+    // Pre-processor: on the first message of a new chat, short-circuit a
+    // pasted list / syllabus before involving the LLM, returning a short
+    // chunking reply. Conservative detector — won't trip on normal questions.
+    if (!chat && !isToolApprovalFlow && message?.role === "user") {
+      const userText = message.parts
+        .filter((p): p is { type: "text"; text: string } => p.type === "text")
+        .map((p) => p.text)
+        .join("\n");
+      const detection = detectLargeInput(userText);
+      if (detection.triggered) {
+        console.info("chat pre-processor", {
+          mode: "chunking",
+          reason: detection.reason,
+          topicsCount: detection.topicsCount,
+          inputLength: detection.inputLength,
+          chatId: id,
+        });
+        const assistantId = generateId();
+        const chunkStream = createUIMessageStream<ChatMessage>({
+          execute: ({ writer }) => {
+            writer.write({ type: "text-start", id: assistantId });
+            writer.write({
+              type: "text-delta",
+              id: assistantId,
+              delta: CHUNKING_MESSAGE,
+            });
+            writer.write({ type: "text-end", id: assistantId });
+          },
+          onFinish: async ({ messages: finished }) => {
+            if (finished.length > 0) {
+              await saveMessages({
+                messages: finished.map((m) => ({
+                  id: m.id,
+                  role: m.role,
+                  parts: m.parts,
+                  createdAt: new Date(),
+                  attachments: [],
+                  chatId: id,
+                })),
+              });
+            }
+          },
+        });
+        if (titlePromise) {
+          const title = await titlePromise;
+          if (title) {
+            await updateChatTitleById({ chatId: id, title });
+          }
+        }
+        return createUIMessageStreamResponse({ stream: chunkStream });
+      }
     }
 
     const modelConfig = chatModels.find((m) => m.id === chatModel);

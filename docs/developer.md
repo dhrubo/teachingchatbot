@@ -37,7 +37,14 @@ One row per child; a user account (`userId`) may own several.
 | Max 5 active topics | yes | 🚧 not implemented (no topic state) | — |
 | Topic progress 0–100% | yes | 🚧 stored as 0–5 mastery instead | `updateTopicProgress` tool |
 | Goals + target date + exam prep | yes | ✅ stored; "Exam Prep:" naming is 📝 | `manageGoals` tool, `StudentGoal` |
+| Goal plan steps + progress % | yes | ✅ stored | `StudentGoal.planSteps` / `progressPercent` |
 | GCSE domain rollup | — | ✅ stored | `TopicProgress.gcseDomain` |
+| Large-input chunking pre-processor | yes | ✅ enforced (server, conservative) | [`lib/ai/detect-large-input.ts`](../lib/ai/detect-large-input.ts) + `route.ts` |
+
+### Large-input pre-processor (✅)
+Before calling the LLM, on the **first message of a new chat only**, `route.ts` runs `detectLargeInput(userText)`. If it detects a pasted list / syllabus / 5+ topics, it short-circuits: saves the user message, streams back a fixed short chunking menu (`CHUNKING_MESSAGE`), logs `{ mode: "chunking", reason, topicsCount, inputLength, chatId }`, and returns **without** invoking the model.
+
+The detector is intentionally conservative (structure-based: bulleted/numbered/short newline lines, syllabus markers, or short comma lists) rather than the naive "split on `[,\n]` > 5 OR length > 500" — that naive rule would block normal long word problems and comma-rich questions. Mid-conversation lists are handled by the prompt-level CHUNKING MODE instead. Tune thresholds in `detect-large-input.ts`.
 
 ### To implement the guest 5-question block (🚧)
 Reuse the existing pattern in `route.ts`: add a `maxLifetimeQuestions` (or similar) to `entitlementsByUserType.guest` in [`lib/ai/entitlements.ts`](../lib/ai/entitlements.ts), and add a query that counts a guest user's total `user`-role messages (like `getMessageCountByUserId` but without the `differenceInHours` window). Block with `ChatbotError("rate_limit:chat")` or a dedicated error type, and surface a register CTA in the UI.
