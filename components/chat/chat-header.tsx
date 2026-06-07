@@ -7,6 +7,7 @@ import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { guestRegex } from "@/lib/constants";
+import { ProgressPill } from "./progress-indicator";
 import { SoundToggle } from "./sound-toggle";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
 
@@ -74,6 +75,7 @@ function PureChatHeader({
       )}
 
       <div className="ml-auto flex items-center gap-2">
+        <ProgressPill />
         <AuthButtons />
         <SoundToggle />
       </div>

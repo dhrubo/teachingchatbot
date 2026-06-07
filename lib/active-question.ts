@@ -68,3 +68,21 @@ export function isAnswerCorrect(
     answer.trim().toLowerCase() === question.correctAnswer.trim().toLowerCase()
   );
 }
+
+// How many askQuestion prompts have been answered, i.e. a question followed
+// by at least one user message. Used for the "questions answered" tally.
+export function countAnsweredQuestions(messages: ChatMessage[]): number {
+  let answered = 0;
+  messages.forEach((message, index) => {
+    const hasQuestion = (message.parts ?? []).some(
+      (p) => p.type === "tool-askQuestion" && "output" in p && p.output
+    );
+    if (
+      hasQuestion &&
+      messages.slice(index + 1).some((m) => m.role === "user")
+    ) {
+      answered += 1;
+    }
+  });
+  return answered;
+}

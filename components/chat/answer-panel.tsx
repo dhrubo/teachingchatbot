@@ -7,6 +7,7 @@ import { useActiveChat } from "@/hooks/use-active-chat";
 import { playSound } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ProgressBar } from "./progress-indicator";
 
 export function AnswerPanel() {
   const { activeQuestion, submitAnswer, status } = useActiveChat();
@@ -33,8 +34,9 @@ export function AnswerPanel() {
     const correct = isAnswerCorrect(activeQuestion, value);
     setFeedback(correct ? "correct" : "wrong");
     playSound(correct ? "success" : "wrong");
-    // Let the animation play briefly, then send the result to the tutor.
-    setTimeout(() => submitAnswer(value), 900);
+    // Fire the tutor's continuation immediately (in parallel with the
+    // feedback animation) so the next reply starts streaming sooner.
+    submitAnswer(value);
   };
 
   const { type, options } = activeQuestion;
@@ -59,6 +61,8 @@ export function AnswerPanel() {
       initial={{ opacity: 0, y: 12 }}
       transition={{ duration: 0.4 }}
     >
+      <ProgressBar className="mb-3" />
+
       <div className="mb-2 flex items-center justify-between">
         <span className="font-semibold text-primary text-xs uppercase tracking-wide">
           Your answer

@@ -47,6 +47,9 @@ export type CustomUIDataTypes = {
   // Signals the client to open a fresh chat session for a new topic,
   // carrying the topic across so the new session starts teaching it.
   "new-topic-session": { topic: string };
+  // Latest saved progress for the current topic (0–5 mastery score),
+  // surfaced so the UI can show topic name + % complete.
+  "topic-progress": { topic: string; score: number };
 };
 
 export type ChatMessage = UIMessage<

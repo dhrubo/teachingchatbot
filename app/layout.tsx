@@ -9,7 +9,7 @@ import { SessionProvider } from "next-auth/react";
 export const metadata: Metadata = {
   metadataBase: new URL("https://chat.vercel.ai"),
   title: "AI Maths Tutor Chatbot",
-  description: "v0 demo tutor using v0 AI SDK.",
+  description: "v0 demo tutor using v01 AI SDK.",
 };
 
 export const viewport = {

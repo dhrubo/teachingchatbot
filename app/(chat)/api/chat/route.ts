@@ -281,7 +281,7 @@ export async function POST(request: Request) {
             getCurriculumTopics,
             getStudentProgress: getStudentProgress({ session }),
             updateStudentProfile: updateStudentProfile({ session }),
-            updateTopicProgress: updateTopicProgress({ session }),
+            updateTopicProgress: updateTopicProgress({ session, dataStream }),
             manageGoals: manageGoals({ session }),
             startNewTopicSession: startNewTopicSession({ dataStream }),
             askQuestion,

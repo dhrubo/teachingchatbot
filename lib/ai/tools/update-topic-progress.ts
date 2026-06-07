@@ -1,4 +1,4 @@
-import { tool } from "ai";
+import { tool, type UIMessageStreamWriter } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
 import {
@@ -6,12 +6,16 @@ import {
   getTopicProgressByStudentId,
   upsertTopicProgress,
 } from "@/lib/db/queries";
+import type { ChatMessage } from "@/lib/types";
 
-type Props = { session: Session };
+type Props = {
+  session: Session;
+  dataStream: UIMessageStreamWriter<ChatMessage>;
+};
 
 // Records progress for one topic after a student practises it. Maps the
 // 0–5 score onto a status when one is not given.
-export const updateTopicProgress = ({ session }: Props) =>
+export const updateTopicProgress = ({ session, dataStream }: Props) =>
   tool({
     description:
       "Record a student's progress on one curriculum topic after they practise it. Call this whenever a topic has been worked on so progress persists between sessions. Provide the student's id (from getStudentProgress), the topic name, and the latest score out of 5.",
@@ -84,6 +88,12 @@ export const updateTopicProgress = ({ session }: Props) =>
           supportNeededAttempts,
           lastPractisedAt: new Date(),
         },
+      });
+
+      // Surface the latest score so the UI can show topic + % complete.
+      dataStream.write({
+        type: "data-topic-progress",
+        data: { topic: input.topic, score: input.score },
       });
 
       return { updated: true, progress: row };

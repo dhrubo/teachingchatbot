@@ -29,6 +29,7 @@ import { ChatbotError } from "@/lib/errors";
 import { playSound } from "@/lib/sounds";
 import {
   type ActiveQuestion,
+  countAnsweredQuestions,
   getActiveQuestion,
   isAnswerCorrect,
 } from "@/lib/active-question";
@@ -56,6 +57,8 @@ type ActiveChatContextValue = {
   setShowCreditCardAlert: Dispatch<SetStateAction<boolean>>;
   activeQuestion: ActiveQuestion | null;
   submitAnswer: (answer: string) => void;
+  answeredCount: number;
+  topicProgress: { topic: string; score: number } | null;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
@@ -74,6 +77,12 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   // When the tutor signals a topic switch, we stash the new topic here and
   // act on it once the current reply finishes streaming.
   const pendingTopicRef = useRef<string | null>(null);
+
+  // Latest saved topic progress (0–5), surfaced for the progress UI.
+  const [topicProgress, setTopicProgress] = useState<{
+    topic: string;
+    score: number;
+  } | null>(null);
 
   const chatIdFromUrl = extractChatId(pathname);
   const isNewChat = !chatIdFromUrl;
@@ -171,6 +180,12 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         const topic = (dataPart.data as { topic?: string })?.topic;
         if (topic) {
           pendingTopicRef.current = topic;
+        }
+      }
+      if (dataPart.type === "data-topic-progress") {
+        const d = dataPart.data as { topic?: string; score?: number };
+        if (d?.topic && typeof d.score === "number") {
+          setTopicProgress({ topic: d.topic, score: d.score });
         }
       }
     },
@@ -284,6 +299,10 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   });
 
   const activeQuestion = useMemo(() => getActiveQuestion(messages), [messages]);
+  const answeredCount = useMemo(
+    () => countAnsweredQuestions(messages),
+    [messages]
+  );
 
   const submitAnswer = useCallback(
     (answer: string) => {
@@ -336,6 +355,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       setShowCreditCardAlert,
       activeQuestion,
       submitAnswer,
+      answeredCount,
+      topicProgress,
     }),
     [
       chatId,
@@ -356,6 +377,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       showCreditCardAlert,
       activeQuestion,
       submitAnswer,
+      answeredCount,
+      topicProgress,
     ]
   );
 
