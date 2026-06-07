@@ -40,6 +40,9 @@ export type CustomUIDataTypes = {
   clear: null;
   finish: null;
   "chat-title": string;
+  // Signals the client to open a fresh chat session for a new topic,
+  // carrying the topic across so the new session starts teaching it.
+  "new-topic-session": { topic: string };
 };
 
 export type ChatMessage = UIMessage<

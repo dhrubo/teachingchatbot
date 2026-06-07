@@ -28,6 +28,7 @@ import { getLanguageModel } from "@/lib/ai/providers";
 import { getCurriculumTopics } from "@/lib/ai/tools/get-curriculum-topics";
 import { getStudentProgress } from "@/lib/ai/tools/get-student-progress";
 import { manageGoals } from "@/lib/ai/tools/manage-goals";
+import { startNewTopicSession } from "@/lib/ai/tools/start-new-topic-session";
 import { updateStudentProfile } from "@/lib/ai/tools/update-student-profile";
 import { updateTopicProgress } from "@/lib/ai/tools/update-topic-progress";
 
@@ -264,6 +265,7 @@ export async function POST(request: Request) {
                   "updateStudentProfile",
                   "updateTopicProgress",
                   "manageGoals",
+                  "startNewTopicSession",
                 ],
           providerOptions: {
             ...(modelConfig?.gatewayOrder && {
@@ -279,6 +281,7 @@ export async function POST(request: Request) {
             updateStudentProfile: updateStudentProfile({ session }),
             updateTopicProgress: updateTopicProgress({ session }),
             manageGoals: manageGoals({ session }),
+            startNewTopicSession: startNewTopicSession({ dataStream }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

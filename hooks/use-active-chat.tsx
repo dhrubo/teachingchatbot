@@ -3,7 +3,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   type Dispatch,
@@ -59,8 +59,13 @@ function extractChatId(pathname: string): string | null {
 
 export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { setDataStream } = useDataStream();
   const { mutate } = useSWRConfig();
+
+  // When the tutor signals a topic switch, we stash the new topic here and
+  // act on it once the current reply finishes streaming.
+  const pendingTopicRef = useRef<string | null>(null);
 
   const chatIdFromUrl = extractChatId(pathname);
   const isNewChat = !chatIdFromUrl;
@@ -154,10 +159,28 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     }),
     onData: (dataPart) => {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
+      if (dataPart.type === "data-new-topic-session") {
+        const topic = (dataPart.data as { topic?: string })?.topic;
+        if (topic) {
+          pendingTopicRef.current = topic;
+        }
+      }
     },
     onFinish: () => {
       playSound("receive");
       mutate(unstable_serialize(getChatHistoryPaginationKey));
+
+      // Tutor switched topic → open a fresh chat session for it, preserving
+      // the current one in history.
+      const topic = pendingTopicRef.current;
+      if (topic) {
+        pendingTopicRef.current = null;
+        const newId = generateUUID();
+        const text = `Let's start ${topic}.`;
+        router.push(
+          `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/chat/${newId}?topic=${encodeURIComponent(text)}`
+        );
+      }
     },
     onError: (error) => {
       if (error.message?.includes("AI Gateway requires a valid credit card")) {
@@ -198,6 +221,22 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [chatId, isNewChat, setMessages]);
+
+  // Auto-start a topic carried over from a topic-switch (?topic=...).
+  // Fires once: it strips the param immediately so a refresh won't resend.
+  const autoSentRef = useRef(false);
+  useEffect(() => {
+    if (autoSentRef.current) {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const topicText = params.get("topic");
+    if (topicText) {
+      autoSentRef.current = true;
+      window.history.replaceState({}, "", window.location.pathname);
+      sendMessage({ role: "user", parts: [{ type: "text", text: topicText }] });
+    }
+  }, [sendMessage]);
 
   useEffect(() => {
     if (chatData && !isNewChat) {
