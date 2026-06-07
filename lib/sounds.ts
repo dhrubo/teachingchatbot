@@ -1,7 +1,7 @@
 // Tiny Web Audio sound effects — no files, no dependencies.
 // Tones are generated on the fly and kept short and soft.
 
-export type SoundName = "send" | "receive" | "success" | "pop";
+export type SoundName = "send" | "receive" | "success" | "pop" | "wrong";
 
 let ctx: AudioContext | null = null;
 const STORAGE_KEY = "tutor-sound-muted";
@@ -78,6 +78,11 @@ const RECIPES: Record<SoundName, { freq: number; start: number; dur: number }[]>
       { freq: 523, start: 0, dur: 0.1 },
       { freq: 659, start: 0.08, dur: 0.1 },
       { freq: 784, start: 0.16, dur: 0.16 },
+    ],
+    // Gentle "not quite" — soft descending two-note, never harsh.
+    wrong: [
+      { freq: 392, start: 0, dur: 0.12 },
+      { freq: 311, start: 0.1, dur: 0.18 },
     ],
   };
 

@@ -9,6 +9,7 @@ import {
   type Dispatch,
   type ReactNode,
   type SetStateAction,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -26,6 +27,11 @@ import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import type { Vote } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
 import { playSound } from "@/lib/sounds";
+import {
+  type ActiveQuestion,
+  getActiveQuestion,
+  isAnswerCorrect,
+} from "@/lib/active-question";
 import type { ChatMessage } from "@/lib/types";
 import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 
@@ -48,6 +54,8 @@ type ActiveChatContextValue = {
   setCurrentModelId: (id: string) => void;
   showCreditCardAlert: boolean;
   setShowCreditCardAlert: Dispatch<SetStateAction<boolean>>;
+  activeQuestion: ActiveQuestion | null;
+  submitAnswer: (answer: string) => void;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
@@ -275,6 +283,27 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     setMessages,
   });
 
+  const activeQuestion = useMemo(() => getActiveQuestion(messages), [messages]);
+
+  const submitAnswer = useCallback(
+    (answer: string) => {
+      if (!activeQuestion) {
+        return;
+      }
+      const correct = isAnswerCorrect(activeQuestion, answer);
+      sendMessage({
+        role: "user",
+        parts: [
+          {
+            type: "text",
+            text: `My answer: ${answer}\n\n[${correct ? "CORRECT" : "INCORRECT"} — the right answer is ${activeQuestion.correctAnswer}. Confirm briefly and continue with the next tiny step.]`,
+          },
+        ],
+      });
+    },
+    [activeQuestion, sendMessage]
+  );
+
   const isReadonly = isNewChat ? false : (chatData?.isReadonly ?? false);
 
   const { data: votes } = useSWR<Vote[]>(
@@ -305,6 +334,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       setCurrentModelId,
       showCreditCardAlert,
       setShowCreditCardAlert,
+      activeQuestion,
+      submitAnswer,
     }),
     [
       chatId,
@@ -323,6 +354,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       votes,
       currentModelId,
       showCreditCardAlert,
+      activeQuestion,
+      submitAnswer,
     ]
   );
 

@@ -60,6 +60,7 @@ import {
   SlashCommandMenu,
   slashCommands,
 } from "./slash-commands";
+import { AnswerPanel } from "./answer-panel";
 import { SuggestedActions } from "./suggested-actions";
 import type { VisibilityType } from "./visibility-selector";
 
@@ -419,6 +420,8 @@ function PureMultimodalInput({
           />
         )}
       </div>
+
+      {!editingMessage && <AnswerPanel />}
 
       <PromptInput
         className="[&>div]:rounded-2xl [&>div]:border [&>div]:border-border/30 [&>div]:bg-card/70 [&>div]:shadow-[var(--shadow-composer)] [&>div]:transition-shadow [&>div]:duration-300 [&>div]:focus-within:shadow-[var(--shadow-composer-focus)]"

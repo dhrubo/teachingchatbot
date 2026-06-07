@@ -11,6 +11,7 @@ import { checkBotId } from "botid/server";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
 import { auth, type UserType } from "@/app/(auth)/auth";
+import { askQuestion } from "@/lib/ai/tools/ask-question";
 import {
   CHUNKING_MESSAGE,
   detectLargeInput,
@@ -266,6 +267,7 @@ export async function POST(request: Request) {
                   "updateTopicProgress",
                   "manageGoals",
                   "startNewTopicSession",
+                  "askQuestion",
                 ],
           providerOptions: {
             ...(modelConfig?.gatewayOrder && {
@@ -282,6 +284,7 @@ export async function POST(request: Request) {
             updateTopicProgress: updateTopicProgress({ session }),
             manageGoals: manageGoals({ session }),
             startNewTopicSession: startNewTopicSession({ dataStream }),
+            askQuestion,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
