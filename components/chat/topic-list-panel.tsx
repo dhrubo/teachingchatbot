@@ -17,14 +17,27 @@ function isDone(topic: string, completed: string[]): boolean {
 }
 
 export function TopicListPanel() {
-  const { topicList, completedTopics } = useActiveChat();
-  const [open, setOpen] = useState(true);
+  const { topicList, completedTopics, sendMessage, status } = useActiveChat();
+  // Collapsed by default so it's a thin bar, not a big overlay over the
+  // reading area — the user expands it to pick/track topics.
+  const [open, setOpen] = useState(false);
 
   if (topicList.length === 0) {
     return null;
   }
 
+  const isBusy = status === "submitted" || status === "streaming";
   const doneCount = topicList.filter((t) => isDone(t, completedTopics)).length;
+
+  const startTopic = (topic: string) => {
+    if (isBusy) {
+      return;
+    }
+    sendMessage({
+      role: "user",
+      parts: [{ type: "text", text: `Let's start: ${topic}` }],
+    });
+  };
 
   return (
     <div className="sticky top-0 z-20 mx-auto w-full max-w-3xl px-3 pt-2">
@@ -61,26 +74,30 @@ export function TopicListPanel() {
                 {topicList.map((topic) => {
                   const done = isDone(topic, completedTopics);
                   return (
-                    <li
-                      className={cn(
-                        "flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12.5px]",
-                        done
-                          ? "text-muted-foreground line-through"
-                          : "text-foreground"
-                      )}
-                      key={topic}
-                    >
-                      <span
+                    <li key={topic}>
+                      <button
                         className={cn(
-                          "flex size-4 shrink-0 items-center justify-center rounded-full border",
+                          "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors",
                           done
-                            ? "border-green-500 bg-green-500 text-white"
-                            : "border-border"
+                            ? "text-muted-foreground line-through"
+                            : "text-foreground hover:bg-primary/10 hover:text-primary"
                         )}
+                        disabled={isBusy}
+                        onClick={() => startTopic(topic)}
+                        type="button"
                       >
-                        {done && <CheckIcon className="size-3" />}
-                      </span>
-                      {topic}
+                        <span
+                          className={cn(
+                            "flex size-4 shrink-0 items-center justify-center rounded-full border",
+                            done
+                              ? "border-green-500 bg-green-500 text-white"
+                              : "border-border"
+                          )}
+                        >
+                          {done && <CheckIcon className="size-3" />}
+                        </span>
+                        {topic}
+                      </button>
                     </li>
                   );
                 })}

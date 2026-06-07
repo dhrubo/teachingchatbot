@@ -144,11 +144,11 @@ const PurePreviewMessage = ({
           key={key}
         >
           {/* Challenge header strip */}
-          <div className="flex items-center gap-1.5 bg-[image:var(--gradient-sunset)] px-4 py-2 font-semibold text-[12px] text-white uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 bg-[image:var(--gradient-sunset)] px-5 py-2.5 font-semibold text-[13px] text-white uppercase tracking-wide">
             🎯 Challenge
           </div>
-          <div className="p-4">
-            <p className="text-[14px] font-medium leading-snug text-foreground">
+          <div className="p-5">
+            <p className="text-[17px] font-medium leading-relaxed text-foreground">
               {output.prompt}
             </p>
             <p className="mt-3 flex items-center gap-1 text-[12px] font-medium text-primary">

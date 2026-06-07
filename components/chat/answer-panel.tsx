@@ -61,7 +61,7 @@ export function AnswerPanel() {
     <motion.div
       animate={animate}
       className={cn(
-        "mb-2 w-full rounded-2xl border bg-card/70 p-3 shadow-[var(--shadow-card)] backdrop-blur-sm transition-colors",
+        "mb-2 w-full rounded-2xl border bg-card/70 p-4 shadow-[var(--shadow-card)] backdrop-blur-sm transition-colors",
         feedback === "correct" && "border-green-500/60 bg-green-500/10",
         feedback === "wrong" && "border-destructive/50 bg-destructive/10",
         !feedback && "border-primary/30"
@@ -103,16 +103,16 @@ export function AnswerPanel() {
 
       {/* Show the prompt text in the panel (esp. for non-quiz prompts that
           have no challenge card in the thread). */}
-      <p className="mb-2 text-[13px] font-medium leading-snug text-foreground">
+      <p className="mb-3 text-[15px] font-medium leading-relaxed text-foreground">
         {activeQuestion.prompt}
       </p>
 
       {type === "multiple_choice" && (
-        <div className="grid gap-1.5 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           {options.map((opt, i) => (
             <button
               className={cn(
-                "flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-[13px] transition-all",
+                "flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left text-[14px] transition-all",
                 value === opt
                   ? "border-primary bg-primary/10 text-foreground"
                   : "border-border/60 hover:border-primary/50 hover:bg-accent/50"

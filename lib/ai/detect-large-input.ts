@@ -102,14 +102,10 @@ export function extractTopics(input: string): string[] {
 }
 
 // The short chunking reply the server returns instead of calling the LLM.
+// The actual topic choices are shown as clickable buttons in the pinned
+// "Your topics" panel, so this message stays text-light (no A/B/C list).
 export const CHUNKING_MESSAGE = `That's quite a lot to take in 👍
 
-Let's keep it simple so we don't overload things.
+Let's take it one step at a time so nothing feels overwhelming.
 
-Pick one topic to start 👇
-
-A) Fractions
-B) Algebra
-C) Probability
-D) Ratios
-E) Other`;
+👉 Open the **"Your topics"** bar at the top and tap any one to dive in.`;
