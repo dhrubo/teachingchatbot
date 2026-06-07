@@ -14,7 +14,7 @@ type Props = { session: Session };
 export const manageGoals = ({ session }: Props) =>
   tool({
     description:
-      "Create or update a student's short-term agreed goal (e.g. 'Practise percentages by 20 June'). Omit goalId to create a new goal; provide goalId to update an existing one (e.g. mark it achieved or needs_more_work). Agree 1–3 goals at the start of a session and update their status as the student progresses. Use getStudentProgress to read current goals.",
+      "Create or update a student's goal or learning plan (e.g. 'Exam Prep: Decimals' by 17 June). Omit goalId to create; provide goalId to update (e.g. advance a plan step, set progress %, mark achieved). For an exam-prep plan, set planSteps (Basics → Practice → Mixed → Exam-style) and update progressPercent as steps are completed. Agree goals at the start of a session and keep them current. Use getStudentProgress to read current goals.",
     inputSchema: z.object({
       studentId: z
         .string()
@@ -39,6 +39,24 @@ export const manageGoals = ({ session }: Props) =>
         .enum(["not_started", "in_progress", "achieved", "needs_more_work"])
         .optional(),
       confidence: z.enum(["low", "medium", "high"]).optional(),
+      progressPercent: z
+        .number()
+        .int()
+        .min(0)
+        .max(100)
+        .optional()
+        .describe("Overall completion of the plan, 0–100."),
+      planSteps: z
+        .array(
+          z.object({
+            label: z.string(),
+            status: z.enum(["todo", "in_progress", "done"]),
+          })
+        )
+        .optional()
+        .describe(
+          "Ordered plan steps, e.g. [{label:'Basics',status:'done'},{label:'Practice',status:'in_progress'}]."
+        ),
       notes: z.string().optional(),
     }),
     execute: async (input) => {
@@ -69,6 +87,8 @@ export const manageGoals = ({ session }: Props) =>
           targetDate,
           confidence: input.confidence,
           notes: input.notes,
+          planSteps: input.planSteps,
+          progressPercent: input.progressPercent,
         });
         return { created: true, goal: created };
       }
@@ -88,6 +108,10 @@ export const manageGoals = ({ session }: Props) =>
           }),
           ...(targetDate !== undefined && { targetDate }),
           ...(input.notes !== undefined && { notes: input.notes }),
+          ...(input.planSteps !== undefined && { planSteps: input.planSteps }),
+          ...(input.progressPercent !== undefined && {
+            progressPercent: input.progressPercent,
+          }),
         },
       });
 

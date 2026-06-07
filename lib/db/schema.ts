@@ -222,6 +222,14 @@ export const studentGoal = pgTable("StudentGoal", {
     .default("not_started"),
   confidence: varchar("confidence", { enum: ["low", "medium", "high"] }),
   targetDate: timestamp("targetDate"),
+  // Overall completion of the goal/plan, 0–100.
+  progressPercent: integer("progressPercent").notNull().default(0),
+  // Ordered learning-plan steps, e.g.
+  // [{ label: "Basics", status: "done" }, { label: "Practice", status: "in_progress" }].
+  planSteps: json("planSteps")
+    .$type<{ label: string; status: "todo" | "in_progress" | "done" }[]>()
+    .notNull()
+    .default([]),
   notes: text("notes"),
   startedAt: timestamp("startedAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),

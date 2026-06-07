@@ -799,6 +799,8 @@ export async function createGoal({
   targetDate,
   confidence,
   notes,
+  planSteps,
+  progressPercent,
 }: {
   studentId: string;
   description: string;
@@ -806,6 +808,8 @@ export async function createGoal({
   targetDate?: Date | null;
   confidence?: "low" | "medium" | "high" | null;
   notes?: string | null;
+  planSteps?: StudentGoal["planSteps"] | null;
+  progressPercent?: number | null;
 }): Promise<StudentGoal> {
   try {
     const [row] = await db
@@ -817,6 +821,8 @@ export async function createGoal({
         targetDate: targetDate ?? null,
         confidence: confidence ?? null,
         notes: notes ?? null,
+        ...(planSteps != null && { planSteps }),
+        ...(progressPercent != null && { progressPercent }),
         status: "in_progress",
       })
       .returning();
@@ -842,6 +848,8 @@ export async function updateGoal({
       | "confidence"
       | "targetDate"
       | "notes"
+      | "planSteps"
+      | "progressPercent"
     >
   >;
 }): Promise<StudentGoal | undefined> {
