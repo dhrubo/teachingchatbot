@@ -66,6 +66,22 @@ function getStreamContext() {
 
 export { getStreamContext };
 
+// True if a message carries something worth showing: non-empty text, or any
+// tool call with output. Step markers / empty text alone don't count, so a
+// failed (content-less) assistant turn isn't persisted as a blank bubble.
+function hasRenderableContent(message: { parts?: unknown[] }): boolean {
+  return (message.parts ?? []).some((part) => {
+    const p = part as { type?: string; text?: string; output?: unknown };
+    if (p.type === "text") {
+      return (p.text ?? "").trim().length > 0;
+    }
+    if (typeof p.type === "string" && p.type.startsWith("tool-")) {
+      return p.output !== undefined;
+    }
+    return false;
+  });
+}
+
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
 
@@ -206,7 +222,8 @@ export async function POST(request: Request) {
           inputLength: detection.inputLength,
           chatId: id,
         });
-        const assistantId = generateId();
+        // Must be a UUID — it's persisted into the uuid `id` column.
+        const assistantId = generateUUID();
         const textId = generateId();
         const topics = extractTopics(userText);
         const chunkStream = createUIMessageStream<ChatMessage>({
@@ -268,6 +285,28 @@ export async function POST(request: Request) {
 
     const modelMessages = await convertToModelMessages(uiMessages);
 
+    const activeTools = (
+      isReasoningModel && !supportsTools
+        ? []
+        : [
+            "getCurriculumTopics",
+            "getStudentProgress",
+            "updateStudentProfile",
+            "updateTopicProgress",
+            "manageGoals",
+            "startNewTopicSession",
+            "askQuestion",
+          ]
+    ) as (
+      | "getCurriculumTopics"
+      | "getStudentProgress"
+      | "updateStudentProfile"
+      | "updateTopicProgress"
+      | "manageGoals"
+      | "startNewTopicSession"
+      | "askQuestion"
+    )[];
+
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
@@ -276,18 +315,7 @@ export async function POST(request: Request) {
           system: TUTOR_SYSTEM_PROMPT,
           messages: modelMessages,
           stopWhen: stepCountIs(8),
-          experimental_activeTools:
-            isReasoningModel && !supportsTools
-              ? []
-              : [
-                  "getCurriculumTopics",
-                  "getStudentProgress",
-                  "updateStudentProfile",
-                  "updateTopicProgress",
-                  "manageGoals",
-                  "startNewTopicSession",
-                  "askQuestion",
-                ],
+          experimental_activeTools: activeTools,
           providerOptions: {
             ...(modelConfig?.gatewayOrder && {
               gateway: { order: modelConfig.gatewayOrder },
@@ -351,16 +379,24 @@ export async function POST(request: Request) {
             }
           }
         } else if (finishedMessages.length > 0) {
-          await saveMessages({
-            messages: finishedMessages.map((currentMessage) => ({
-              id: currentMessage.id,
-              role: currentMessage.role,
-              parts: currentMessage.parts,
-              createdAt: new Date(),
-              attachments: [],
-              chatId: id,
-            })),
-          });
+          // Don't persist content-less assistant turns (e.g. a model that
+          // streamed only step markers and then stopped). Saving them leaves a
+          // permanent blank bubble the student can't get past on reload.
+          const nonEmpty = finishedMessages.filter((m) =>
+            m.role === "assistant" ? hasRenderableContent(m) : true
+          );
+          if (nonEmpty.length > 0) {
+            await saveMessages({
+              messages: nonEmpty.map((currentMessage) => ({
+                id: currentMessage.id,
+                role: currentMessage.role,
+                parts: currentMessage.parts,
+                createdAt: new Date(),
+                attachments: [],
+                chatId: id,
+              })),
+            });
+          }
         }
       },
       onError: (error) => {

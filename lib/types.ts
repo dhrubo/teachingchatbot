@@ -5,6 +5,7 @@ import type { askQuestion } from "./ai/tools/ask-question";
 import type { createDocument } from "./ai/tools/create-document";
 import type { getWeather } from "./ai/tools/get-weather";
 import type { requestSuggestions } from "./ai/tools/request-suggestions";
+import type { startNewTopicSession } from "./ai/tools/start-new-topic-session";
 import type { updateDocument } from "./ai/tools/update-document";
 import type { Suggestion } from "./db/schema";
 
@@ -22,6 +23,9 @@ type requestSuggestionsTool = InferUITool<
 >;
 
 type askQuestionTool = InferUITool<typeof askQuestion>;
+type startNewTopicSessionTool = InferUITool<
+  ReturnType<typeof startNewTopicSession>
+>;
 
 export type ChatTools = {
   getWeather: weatherTool;
@@ -29,6 +33,7 @@ export type ChatTools = {
   updateDocument: updateDocumentTool;
   requestSuggestions: requestSuggestionsTool;
   askQuestion: askQuestionTool;
+  startNewTopicSession: startNewTopicSessionTool;
 };
 
 export type CustomUIDataTypes = {
@@ -44,9 +49,9 @@ export type CustomUIDataTypes = {
   clear: null;
   finish: null;
   "chat-title": string;
-  // Signals the client to open a fresh chat session for a new topic,
-  // carrying the topic across so the new session starts teaching it.
-  "new-topic-session": { topic: string };
+  // Signals the client to select + open the start gate for a new topic
+  // thread within the current chat (topicId is the stable thread id).
+  "new-topic-session": { topic: string; topicId: string };
   // Latest saved progress for the current topic (0–5 mastery score),
   // surfaced so the UI can show topic name + % complete.
   "topic-progress": { topic: string; score: number };

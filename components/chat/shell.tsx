@@ -26,6 +26,7 @@ import { DataStreamHandler } from "./data-stream-handler";
 import { submitEditedMessage } from "./message-editor";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
+import { TopicEntryOverlay } from "./topic-entry-overlay";
 
 export function ChatShell() {
   const {
@@ -47,6 +48,9 @@ export function ChatShell() {
     setCurrentModelId,
     showCreditCardAlert,
     setShowCreditCardAlert,
+    leaveTopicTarget,
+    confirmLeave,
+    cancelLeave,
   } = useActiveChat();
 
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(
@@ -172,6 +176,35 @@ export function ChatShell() {
       </div>
 
       <DataStreamHandler />
+
+      <TopicEntryOverlay />
+
+      <AlertDialog
+        onOpenChange={(o) => {
+          if (!o) {
+            cancelLeave();
+          }
+        }}
+        open={leaveTopicTarget !== null}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this topic?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You still have challenges left — leave anyway? Your progress is
+              saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelLeave}>
+              Keep going
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeave}>
+              Leave anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         onOpenChange={setShowCreditCardAlert}

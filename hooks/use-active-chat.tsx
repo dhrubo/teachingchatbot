@@ -3,7 +3,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   type Dispatch,
@@ -23,10 +23,6 @@ import { getChatHistoryPaginationKey } from "@/components/chat/sidebar-history";
 import { toast } from "@/components/chat/toast";
 import type { VisibilityType } from "@/components/chat/visibility-selector";
 import { useAutoResume } from "@/hooks/use-auto-resume";
-import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
-import type { Vote } from "@/lib/db/schema";
-import { ChatbotError } from "@/lib/errors";
-import { playSound } from "@/lib/sounds";
 import {
   type ActiveQuestion,
   countAnsweredQuestions,
@@ -34,6 +30,19 @@ import {
   isAnswerCorrect,
   isGraded,
 } from "@/lib/active-question";
+import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+import type { Vote } from "@/lib/db/schema";
+import { ChatbotError } from "@/lib/errors";
+import { playSound } from "@/lib/sounds";
+import {
+  deriveTopicState,
+  deriveTopicThreads,
+  isGateOptions,
+  summariseTopics,
+  type TopicPhase,
+  type TopicSummary,
+  topicSlug,
+} from "@/lib/topic-threads";
 import type { ChatMessage } from "@/lib/types";
 import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 
@@ -69,9 +78,49 @@ type ActiveChatContextValue = {
   clearAchievement: () => void;
   topicList: string[];
   completedTopics: string[];
+  // ---- Topic threads ----
+  topics: TopicSummary[];
+  selectedTopicId: string | null;
+  selectTopic: (topicId: string | null) => void;
+  topicEntry: { topicId: string; title: string } | null;
+  startTopic: (topicId: string) => void;
+  dismissTopicEntry: (openMenu?: boolean) => void;
+  topicsMenuOpen: boolean;
+  setTopicsMenuOpen: Dispatch<SetStateAction<boolean>>;
+  topicPhase: TopicPhase;
+  visibleMessages: ChatMessage[];
+  acceptChallenge: () => void;
+  readNextTopic: () => void;
+  explainDifferently: () => void;
+  recoverWith: (option: string) => void;
+  resumeTopic: (topicId: string) => void;
+  pickTopic: (title: string) => void;
+  activeChallenge: ActiveQuestion | null;
+  challengeIndex: number;
+  challengeCount: number;
+  hasIncompleteChallenges: (topicId: string | null) => boolean;
+  bankedTopicIds: string[];
+  requestLeave: (targetId: string | null) => void;
+  leaveTopicTarget: string | null;
+  confirmLeave: () => void;
+  cancelLeave: () => void;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
+
+// True if a message has something to show: non-empty text or a tool call with
+// output. Used to detect failed (content-less) assistant turns.
+function hasRenderableContent(message: ChatMessage): boolean {
+  return (message.parts ?? []).some((part) => {
+    if (part.type === "text") {
+      return (part.text ?? "").trim().length > 0;
+    }
+    if (part.type.startsWith("tool-")) {
+      return (part as { output?: unknown }).output !== undefined;
+    }
+    return false;
+  });
+}
 
 function extractChatId(pathname: string): string | null {
   const match = pathname.match(/\/chat\/([^/]+)/);
@@ -80,13 +129,8 @@ function extractChatId(pathname: string): string | null {
 
 export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { setDataStream } = useDataStream();
   const { mutate } = useSWRConfig();
-
-  // When the tutor signals a topic switch, we stash the new topic here and
-  // act on it once the current reply finishes streaming.
-  const pendingTopicRef = useRef<string | null>(null);
 
   // Latest saved topic progress (0–5), surfaced for the progress UI.
   const [topicProgress, setTopicProgress] = useState<{
@@ -111,6 +155,23 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const [topicList, setTopicList] = useState<string[]>([]);
   const [completedTopics, setCompletedTopics] = useState<string[]>([]);
 
+  // ---- Topic threads (per-topic sub-conversations within one chat) ----
+  // The currently open topic thread (null = show the whole chat / intro).
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  // When a topic is freshly started, the full-screen start gate payload.
+  const [topicEntry, setTopicEntry] = useState<{
+    topicId: string;
+    title: string;
+  } | null>(null);
+  // Whether the "Your topics" sheet is open. Lifted here so the start-gate
+  // overlay can offer "choose a different topic" by opening it directly.
+  const [topicsMenuOpen, setTopicsMenuOpen] = useState(false);
+  // Topics whose challenge was deferred via "Read next topic" — a sequential
+  // queue worked through one at a time when the student enters challenge mode.
+  const [bankedTopicIds, setBankedTopicIds] = useState<string[]>([]);
+  // Soft close-lock: the topic the student is trying to leave, pending confirm.
+  const [leaveTopicTarget, setLeaveTopicTarget] = useState<string | null>(null);
+
   const chatIdFromUrl = extractChatId(pathname);
   const isNewChat = !chatIdFromUrl;
   const newChatIdRef = useRef(generateUUID());
@@ -131,6 +192,11 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   const [input, setInput] = useState("");
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
+
+  // Auto-retry bookkeeping for content-less assistant turns. regenerateRef is
+  // filled in after useChat returns (regenerate isn't available inside config).
+  const retriedEmptyRef = useRef<Set<string>>(new Set());
+  const regenerateRef = useRef<(() => void) | null>(null);
 
   const { data: chatData, isLoading } = useSWR(
     isNewChat
@@ -204,9 +270,12 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     onData: (dataPart) => {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
       if (dataPart.type === "data-new-topic-session") {
-        const topic = (dataPart.data as { topic?: string })?.topic;
-        if (topic) {
-          pendingTopicRef.current = topic;
+        const d = dataPart.data as { topic?: string; topicId?: string };
+        if (d?.topic && d?.topicId) {
+          // Select the new topic thread and open its full-screen start gate.
+          // No navigation — the thread lives inside the current chat.
+          setSelectedTopicId(d.topicId);
+          setTopicEntry({ topicId: d.topicId, title: d.topic });
         }
       }
       if (dataPart.type === "data-topic-progress") {
@@ -252,20 +321,24 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    onFinish: () => {
+    onFinish: ({ message }) => {
       playSound("receive");
       mutate(unstable_serialize(getChatHistoryPaginationKey));
-
-      // Tutor switched topic → open a fresh chat session for it, preserving
-      // the current one in history.
-      const topic = pendingTopicRef.current;
-      if (topic) {
-        pendingTopicRef.current = null;
-        const newId = generateUUID();
-        const text = `Let's start ${topic}.`;
-        router.push(
-          `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/chat/${newId}?topic=${encodeURIComponent(text)}`
-        );
+      // A content-less assistant turn (model streamed only step markers and
+      // stopped) leaves the student stuck. Auto-retry once; if it's still
+      // empty, surface a friendly nudge instead of a silent blank bubble.
+      if (message.role === "assistant" && !hasRenderableContent(message)) {
+        if (retriedEmptyRef.current.has(message.id)) {
+          toast({
+            type: "error",
+            description: "Hmm, that didn't come through — tap the topic again?",
+          });
+        } else {
+          retriedEmptyRef.current.add(message.id);
+          // Defer so we're not regenerating inside the finishing stream's
+          // callback.
+          setTimeout(() => regenerateRef.current?.(), 50);
+        }
       }
     },
     onError: (error) => {
@@ -281,6 +354,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       }
     },
   });
+
+  // Expose regenerate to the onFinish empty-turn auto-retry above.
+  regenerateRef.current = () => regenerate();
 
   const loadedChatIds = useRef(new Set<string>());
 
@@ -307,22 +383,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [chatId, isNewChat, setMessages]);
-
-  // Auto-start a topic carried over from a topic-switch (?topic=...).
-  // Fires once: it strips the param immediately so a refresh won't resend.
-  const autoSentRef = useRef(false);
-  useEffect(() => {
-    if (autoSentRef.current) {
-      return;
-    }
-    const params = new URLSearchParams(window.location.search);
-    const topicText = params.get("topic");
-    if (topicText) {
-      autoSentRef.current = true;
-      window.history.replaceState({}, "", window.location.pathname);
-      sendMessage({ role: "user", parts: [{ type: "text", text: topicText }] });
-    }
-  }, [sendMessage]);
 
   useEffect(() => {
     if (chatData && !isNewChat) {
@@ -389,6 +449,199 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   const clearAchievement = useCallback(() => setAchievement(null), []);
 
+  // ---- Derived topic-thread state ----
+  const { threads, introEndIndex } = useMemo(
+    () => deriveTopicThreads(messages),
+    [messages]
+  );
+
+  const topics = useMemo<TopicSummary[]>(
+    () => summariseTopics(messages),
+    [messages]
+  );
+
+  // Auto-select the most recent topic if nothing is chosen yet and the chat
+  // has topics (e.g. after reload). Never overrides an explicit selection.
+  const selectedThread = useMemo(
+    () => threads.find((t) => t.id === selectedTopicId) ?? null,
+    [threads, selectedTopicId]
+  );
+
+  const topicState = useMemo(
+    () => (selectedThread ? deriveTopicState(selectedThread) : null),
+    [selectedThread]
+  );
+  const topicPhase: TopicPhase = topicState?.phase ?? "content";
+
+  // Messages shown in the thread view: the selected topic's slice, or — when
+  // no topic is selected — the intro messages plus everything (back-compat for
+  // old chats with no markers).
+  const visibleMessages = useMemo(() => {
+    if (!selectedThread) {
+      return messages;
+    }
+    return messages.slice(0, introEndIndex).concat(selectedThread.messages);
+  }, [messages, selectedThread, introEndIndex]);
+
+  // The open question in the selected thread that the student should answer in
+  // the form — any open askQuestion that ISN'T a control gate (Accept / recovery
+  // are rendered as buttons instead). Covers both graded challenges and the
+  // tutor's non-graded mid-lesson questions.
+  const activeChallenge = useMemo(() => {
+    if (!selectedThread) {
+      return null;
+    }
+    const q = getActiveQuestion(selectedThread.messages);
+    if (!q || isGateOptions(q.options)) {
+      return null;
+    }
+    return q;
+  }, [selectedThread]);
+
+  const challengeCount = topicState?.challengeTotal ?? 0;
+  const challengeIndex = topicState?.challengeDone ?? 0;
+
+  const hasIncompleteChallenges = useCallback(
+    (topicId: string | null): boolean => {
+      if (!topicId) {
+        return false;
+      }
+      const thread = threads.find((t) => t.id === topicId);
+      if (!thread) {
+        return false;
+      }
+      const { challengeTotal, challengeDone, phase } = deriveTopicState(thread);
+      // Outstanding if there's an open challenge or banked-but-unfinished work.
+      return phase === "challenge" || challengeDone < challengeTotal;
+    },
+    [threads]
+  );
+
+  // ---- Topic-thread actions ----
+  const selectTopic = useCallback((topicId: string | null) => {
+    setSelectedTopicId(topicId);
+  }, []);
+
+  const startTopic = useCallback((topicId: string) => {
+    // Dismiss the full-screen start gate; the thread is already selected.
+    setTopicEntry((cur) => (cur?.topicId === topicId ? null : cur));
+    setSelectedTopicId(topicId);
+  }, []);
+
+  // Close the start gate without committing to the topic, leaving the just-
+  // taught topic still selectable from "Your topics". Optionally open the
+  // topics sheet so the student can pick a different one straight away.
+  const dismissTopicEntry = useCallback((openMenu = false) => {
+    setTopicEntry(null);
+    if (openMenu) {
+      setTopicsMenuOpen(true);
+    }
+  }, []);
+
+  const acceptChallenge = useCallback(() => {
+    sendMessage({
+      role: "user",
+      parts: [{ type: "text", text: "Accept the challenge" }],
+    });
+  }, [sendMessage]);
+
+  const readNextTopic = useCallback(() => {
+    // Bank the current topic's challenge to run later in the queue.
+    if (selectedTopicId) {
+      setBankedTopicIds((prev) =>
+        prev.includes(selectedTopicId) ? prev : [...prev, selectedTopicId]
+      );
+    }
+    sendMessage({
+      role: "user",
+      parts: [{ type: "text", text: "Read next topic" }],
+    });
+  }, [sendMessage, selectedTopicId]);
+
+  const explainDifferently = useCallback(() => {
+    sendMessage({
+      role: "user",
+      parts: [{ type: "text", text: "Explain differently" }],
+    });
+  }, [sendMessage]);
+
+  // Student's choice from the wrong-answer recovery gate. The option text
+  // matches the exact labels the tutor prompt keys its reaction off. For the
+  // help options we append a hidden directive so the model EXPLAINS only and
+  // re-shows the recovery gate, rather than throwing a new graded question —
+  // belt-and-braces alongside the system prompt, since the model tends to
+  // re-test otherwise.
+  const recoverWith = useCallback(
+    (option: string) => {
+      const isHelp = option !== "Try the question again";
+      const text = isHelp
+        ? `${option}\n\n[Explain ONLY — do NOT ask a new graded question now. After explaining, call askQuestion (no correctAnswer) with the four recovery options: "See the explanation", "Break it down further", "Explain another way", "Try the question again".]`
+        : `${option}\n\n[I'm ready — now pose a graded challenge again (askQuestion WITH correctAnswer) at the same or slightly easier level.]`;
+      sendMessage({
+        role: "user",
+        parts: [{ type: "text", text }],
+      });
+    },
+    [sendMessage]
+  );
+
+  // Reopen a completed topic and reattach follow-ups to it by re-emitting a
+  // marker via the tutor (explicit resume signal).
+  const resumeTopic = useCallback(
+    (topicId: string) => {
+      const thread = threads.find((t) => t.id === topicId);
+      setSelectedTopicId(topicId);
+      if (thread) {
+        sendMessage({
+          role: "user",
+          parts: [{ type: "text", text: `Let's go back to ${thread.title}.` }],
+        });
+      }
+    },
+    [sendMessage, threads]
+  );
+
+  // Start a topic from the pasted list that hasn't become a session yet. The
+  // tutor responds by calling startNewTopicSession, which emits the marker
+  // that turns it into a real thread. If a thread for it already exists, just
+  // select that instead of asking the tutor to start it again.
+  const pickTopic = useCallback(
+    (title: string) => {
+      const existing = threads.find((t) => t.id === topicSlug(title));
+      if (existing) {
+        setSelectedTopicId(existing.id);
+        return;
+      }
+      sendMessage({
+        role: "user",
+        parts: [{ type: "text", text: `Let's start with ${title}.` }],
+      });
+    },
+    [sendMessage, threads]
+  );
+
+  // Soft close-lock entry point: leaving/switching with outstanding
+  // challenges asks for confirmation first.
+  const requestLeave = useCallback(
+    (targetId: string | null) => {
+      if (hasIncompleteChallenges(selectedTopicId)) {
+        setLeaveTopicTarget(targetId ?? "__none__");
+      } else {
+        setSelectedTopicId(targetId);
+      }
+    },
+    [hasIncompleteChallenges, selectedTopicId]
+  );
+
+  const confirmLeave = useCallback(() => {
+    setLeaveTopicTarget((target) => {
+      setSelectedTopicId(target === "__none__" ? null : target);
+      return null;
+    });
+  }, []);
+
+  const cancelLeave = useCallback(() => setLeaveTopicTarget(null), []);
+
   const isReadonly = isNewChat ? false : (chatData?.isReadonly ?? false);
 
   const { data: votes } = useSWR<Vote[]>(
@@ -428,6 +681,31 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       clearAchievement,
       topicList,
       completedTopics,
+      topics,
+      selectedTopicId,
+      selectTopic,
+      topicEntry,
+      startTopic,
+      dismissTopicEntry,
+      topicsMenuOpen,
+      setTopicsMenuOpen,
+      topicPhase,
+      visibleMessages,
+      acceptChallenge,
+      readNextTopic,
+      explainDifferently,
+      recoverWith,
+      resumeTopic,
+      pickTopic,
+      activeChallenge,
+      challengeIndex,
+      challengeCount,
+      hasIncompleteChallenges,
+      bankedTopicIds,
+      requestLeave,
+      leaveTopicTarget,
+      confirmLeave,
+      cancelLeave,
     }),
     [
       chatId,
@@ -455,6 +733,30 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       clearAchievement,
       topicList,
       completedTopics,
+      topics,
+      selectedTopicId,
+      selectTopic,
+      topicEntry,
+      startTopic,
+      dismissTopicEntry,
+      topicsMenuOpen,
+      topicPhase,
+      visibleMessages,
+      acceptChallenge,
+      readNextTopic,
+      explainDifferently,
+      recoverWith,
+      resumeTopic,
+      pickTopic,
+      activeChallenge,
+      challengeIndex,
+      challengeCount,
+      hasIncompleteChallenges,
+      bankedTopicIds,
+      requestLeave,
+      leaveTopicTarget,
+      confirmLeave,
+      cancelLeave,
     ]
   );
 

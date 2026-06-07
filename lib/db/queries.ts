@@ -9,6 +9,7 @@ import {
   gt,
   gte,
   inArray,
+  like,
   lt,
   type SQL,
 } from "drizzle-orm";
@@ -25,11 +26,11 @@ import {
   document,
   message,
   type StudentGoal,
-  studentGoal,
   type StudentProfile,
-  studentProfile,
   type Suggestion,
   stream,
+  studentGoal,
+  studentProfile,
   suggestion,
   type TopicProgress,
   topicProgress,
@@ -68,10 +69,21 @@ export async function createGuestUser() {
   const password = generateHashedPassword(generateUUID());
 
   try {
-    return await db.insert(user).values({ email, password }).returning({
-      id: user.id,
-      email: user.email,
+    const created = await db
+      .insert(user)
+      .values({ email, password })
+      .returning({
+        id: user.id,
+        email: user.email,
+      });
+
+    // Opportunistic cleanup: every new guest is a chance to purge stale guest
+    // history. Fire-and-forget so it never blocks or fails guest creation.
+    deleteExpiredGuestChats().catch(() => {
+      /* best-effort; the cron job is the backstop */
     });
+
+    return created;
   } catch (_error) {
     throw new ChatbotError(
       "bad_request:database",
@@ -150,6 +162,47 @@ export async function deleteAllChatsByUserId({ userId }: { userId: string }) {
     throw new ChatbotError(
       "bad_request:database",
       "Failed to delete all chats by user id"
+    );
+  }
+}
+
+// Guests (email like "guest-<timestamp>") keep at most ~1 day of history.
+// This purges guest chats older than `olderThanHours` along with all their
+// chat-scoped rows (votes, messages, streams). Logged-in users are untouched.
+export async function deleteExpiredGuestChats({
+  olderThanHours = 24,
+}: {
+  olderThanHours?: number;
+} = {}) {
+  try {
+    const cutoff = new Date(Date.now() - olderThanHours * 60 * 60 * 1000);
+
+    const expiredChats = await db
+      .select({ id: chat.id })
+      .from(chat)
+      .innerJoin(user, eq(chat.userId, user.id))
+      .where(and(like(user.email, "guest-%"), lt(chat.createdAt, cutoff)));
+
+    if (expiredChats.length === 0) {
+      return { deletedCount: 0 };
+    }
+
+    const chatIds = expiredChats.map((c) => c.id);
+
+    await db.delete(vote).where(inArray(vote.chatId, chatIds));
+    await db.delete(message).where(inArray(message.chatId, chatIds));
+    await db.delete(stream).where(inArray(stream.chatId, chatIds));
+
+    const deletedChats = await db
+      .delete(chat)
+      .where(inArray(chat.id, chatIds))
+      .returning();
+
+    return { deletedCount: deletedChats.length };
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to delete expired guest chats"
     );
   }
 }
@@ -702,10 +755,7 @@ export async function updateStudentProfile({
       .update(studentProfile)
       .set({ ...data, updatedAt: new Date() })
       .where(
-        and(
-          eq(studentProfile.id, studentId),
-          eq(studentProfile.userId, userId)
-        )
+        and(eq(studentProfile.id, studentId), eq(studentProfile.userId, userId))
       )
       .returning();
     return updated;

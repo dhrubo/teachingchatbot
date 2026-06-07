@@ -1,4 +1,10 @@
 {
   "framework": "nextjs",
-  "regions": ["lhr1"]
+  "regions": ["lhr1"],
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-guests",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }

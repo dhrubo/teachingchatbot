@@ -1,6 +1,7 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import type { Vote } from "@/lib/db/schema";
+import { isGateOptions } from "@/lib/topic-threads";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
 import { MessageContent, MessageResponse } from "../ai-elements/message";
@@ -16,6 +17,7 @@ import { useDataStream } from "./data-stream-provider";
 import { DocumentToolResult } from "./document";
 import { DocumentPreview } from "./document-preview";
 import { SparklesIcon } from "./icons";
+import { MathText } from "./math-text";
 import { MessageActions } from "./message-actions";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
@@ -95,6 +97,47 @@ const PurePreviewMessage = ({
     { text: "", isStreaming: false, rendered: false }
   ) ?? { text: "", isStreaming: false, rendered: false };
 
+  // The askQuestion prompts/options in THIS message. The tutor often repeats
+  // the question (and "A) … B) …" options) as a trailing text part after the
+  // tool call; that prose is redundant with the answer card/form, so we hide
+  // any text part that merely echoes a question we're already rendering.
+  const questionOutputs = (message.parts ?? [])
+    .filter((p) => p.type === "tool-askQuestion" && "output" in p && p.output)
+    .map(
+      (p) => (p as { output: { prompt?: string; options?: string[] } }).output
+    );
+
+  const normalize = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+
+  const isRedundantQuestionText = (text: string): boolean => {
+    const t = normalize(text);
+    if (!t) {
+      return false;
+    }
+    return questionOutputs.some((q) => {
+      const prompt = normalize(q.prompt ?? "");
+      if (
+        prompt &&
+        (t === prompt || t.includes(prompt) || prompt.includes(t))
+      ) {
+        return true;
+      }
+      // Also drop a line that's just the options rattled off as prose.
+      const opts = q.options ?? [];
+      if (opts.length > 0) {
+        const optMatches = opts.filter((o) => t.includes(normalize(o))).length;
+        if (optMatches >= Math.ceil(opts.length / 2)) {
+          return true;
+        }
+      }
+      return false;
+    });
+  };
+
   const parts = message.parts?.map((part, index) => {
     const { type } = part;
     const key = `message-${message.id}-part-${index}`;
@@ -114,6 +157,21 @@ const PurePreviewMessage = ({
     }
 
     if (type === "text") {
+      // Hide assistant prose that just repeats a question we already render as
+      // a card + answer form.
+      if (message.role === "assistant" && isRedundantQuestionText(part.text)) {
+        return null;
+      }
+      // Strip hidden tutor directives we append to user messages (e.g. the
+      // grading verdict or recovery instructions in [square brackets]) so the
+      // student only sees their own words.
+      const display =
+        message.role === "user"
+          ? part.text.replace(/\s*\[[^\]]*\]\s*$/g, "").trim()
+          : part.text;
+      if (message.role === "user" && !display) {
+        return null;
+      }
       return (
         <MessageContent
           className={cn(
@@ -126,16 +184,24 @@ const PurePreviewMessage = ({
           data-testid="message-content"
           key={key}
         >
-          <MessageResponse>{sanitizeText(part.text)}</MessageResponse>
+          <MessageResponse>{sanitizeText(display)}</MessageResponse>
         </MessageContent>
       );
     }
 
     if (type === "tool-askQuestion") {
-      const output = "output" in part ? (part.output as
-        | { prompt?: string; type?: string; options?: string[] }
-        | undefined) : undefined;
+      const output =
+        "output" in part
+          ? (part.output as
+              | { prompt?: string; type?: string; options?: string[] }
+              | undefined)
+          : undefined;
       if (!output?.prompt) {
+        return null;
+      }
+      // Control gates (Accept-the-challenge, wrong-answer recovery) render as
+      // buttons in TopicContentCard — don't also show a Challenge card here.
+      if (isGateOptions(output.options ?? [])) {
         return null;
       }
       return (
@@ -149,7 +215,7 @@ const PurePreviewMessage = ({
           </div>
           <div className="p-5">
             <p className="text-[17px] font-medium leading-relaxed text-foreground">
-              {output.prompt}
+              <MathText>{output.prompt}</MathText>
             </p>
             <p className="mt-3 flex items-center gap-1 text-[12px] font-medium text-primary">
               👉 Your move — answer below 👇

@@ -145,13 +145,41 @@ The application now compiles cleanly and runs as a curriculum-scoped Socratic tu
 
 ---
 
+## Phase 16 Log: Gemini Fallback & Topic-Gated Teaching Flow
+
+- **Status:** Completed
+- **Gemini fallback:** added `@ai-sdk/google`; `lib/ai/providers.ts` wraps the gateway model in `withGeminiFallback()` — on a thrown gateway error (e.g. the "requires a valid credit card" 403 / rate limits) it transparently retries the same call against Gemini (`GEMINI_FALLBACK_MODEL = "gemini-2.5-flash"`). `USE_GEMINI_ONLY=1` bypasses the gateway entirely for local dev. Gated on `GOOGLE_GENERATIVE_AI_API_KEY`; no-op when unset.
+- **Topic-switch loop fix (root cause):** the old flow navigated to a new `/chat/{id}?topic=…` and auto-sent a "Let's start X." kickoff, which the tutor saw as a topic-start and re-triggered `startNewTopicSession` → infinite loop. Removed the navigation, `pendingTopicRef`, the `onFinish` `router.push`, and the `?topic=` auto-send effect.
+- **Topics within one chat:** `startNewTopicSession` now begins an **in-chat topic thread** instead of a new chat. Its tool output carries a persisted marker (`{ topicId, title }`); since tool outputs are saved in `message.parts`, topic boundaries survive reload with **no DB schema change**. New `lib/topic-threads.ts` (`deriveTopicThreads`, `deriveTopicState`, `summariseTopics`) rederives threads, phases (`content`/`awaiting-accept`/`challenge`/`done`) and challenge tallies from the message list alone.
+- **Full-screen start gate:** `TopicEntryOverlay` shows the topic intro + a "Start learning" button when a topic is created.
+- **"Your Topics" header control:** `TopicsMenuButton`/`TopicsMenu` (a right-side `Sheet`) sits next to the Private/Public selector; selecting a topic filters the view to that topic's sub-conversation (`visibleMessages`), shown via `ActiveTopicBar`.
+- **Content → challenge gating:** the readiness gate now uses the exact options `["Accept the challenge", "Read next topic", "Explain differently"]` (the client keys off these labels). The challenge stays hidden until "Accept"; "Explain differently" reteaches; "Read next topic" defers (banks) the challenge. `TopicContentCard` renders the gate buttons.
+- **One challenge at a time + banked queue:** `AnswerPanel` is now challenge-scoped (renders only in `challenge` phase) with a "Challenge N of M" indicator (`ChallengeProgress`). Deferred challenges are banked and worked through one at a time.
+- **Soft close-lock:** leaving/switching a topic with outstanding challenges pops a confirm dialog (`requestLeave`/`confirmLeave`/`cancelLeave` in the context, `AlertDialog` in `shell.tsx`).
+- **Reopen reattach:** `resumeTopic` re-emits a marker so follow-ups on a reopened completed topic rejoin that topic's thread.
+- **Removed:** `components/chat/topic-list-panel.tsx` (replaced by the header menu + in-thread bar).
+
+---
+
+## Phase 17 Log: Guest History Retention & Data Cleanup
+
+- **Status:** Completed
+- **Logged-in-only history:** the sidebar history list is now shown only to regular (logged-in) users; guests see the "Login to save…" prompt instead (`components/chat/sidebar-history.tsx`, gated on `user.type === "guest"`). Guests can still chat and resume within their session, but their history isn't listed or kept long-term.
+- **1-day guest retention:** new `deleteExpiredGuestChats()` query (`lib/db/queries.ts`) purges chats belonging to guest users (`email like 'guest-%'`) older than 24h, along with their votes/messages/streams. Runs two ways: **opportunistically** (fire-and-forget on every `createGuestUser`) and via a **daily Vercel cron** (`vercel.json` → `/api/cron/cleanup-guests` at 03:00, protected by `CRON_SECRET`).
+- **Delete removes all data:** verified `deleteChatById` already removes the chat plus all chat-scoped rows (votes, messages, streams). Documents/suggestions are user-scoped (not chat-scoped) and correctly untouched.
+- **Env:** added `CRON_SECRET` to `.env.example`.
+
+---
+
 ## Current Feature Summary
 
 The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for maths"):
 
-- **Teaching:** short, visual, Socratic micro-lessons; one interactive question at a time; readiness gate before challenges.
-- **Interactive answers:** quizzes and prompts answered via a form panel (radio/select/text) above the chat — not typed into chat — with instant gamified ✅/❌ feedback + sound.
-- **Persistence:** per-student profiles, topic mastery (0–5), XP / streaks / badges, short-term goals and exam dates, GCSE-domain rollups — all saved across sessions (multiple children per account).
+- **Teaching:** short, visual, Socratic micro-lessons; one interactive question at a time; content shown first, then a gate before any challenge.
+- **Topic threads:** one chat holds many per-topic sub-conversations; a full-screen start gate opens each topic; "Your Topics" header menu switches between them; a topic can't be closed (without confirming) until its challenges are done.
+- **Interactive answers:** challenges answered via a form panel (radio/select/text) above the chat — not typed into chat — one at a time ("Challenge N of M"), with instant gamified ✅/❌ feedback + sound.
+- **Persistence:** per-student profiles, topic mastery (0–5), XP / streaks / badges, short-term goals and exam dates, GCSE-domain rollups — all saved across sessions (multiple children per account). Topic threads/phases are rederived from saved messages, so they survive reload.
 - **Plans & coaching:** goal-based learning plans with steps + %, check-ins, parent/child reports, GCSE-readiness tracking.
-- **UX:** sunset theme, sound effects, live progress badges + achievement toast, pinned topic list for big pastes, large-input chunking, automatic new-session on topic switch.
-- **Tools:** `getCurriculumTopics`, `getStudentProgress`, `updateStudentProfile`, `updateTopicProgress`, `manageGoals`, `startNewTopicSession`, `askQuestion` (no legacy weather/document tools).
+- **Model routing:** Vercel AI Gateway with a transparent **Gemini fallback** (and a `USE_GEMINI_ONLY` local-dev switch) when the gateway errors / is rate limited.
+- **UX:** sunset theme, sound effects, live progress badges + achievement toast, large-input chunking, in-chat topic switching.
+- **Tools:** `getCurriculumTopics`, `getStudentProgress`, `updateStudentProfile`, `updateTopicProgress`, `manageGoals`, `startNewTopicSession` (in-chat topic thread + marker), `askQuestion` (no legacy weather/document tools).

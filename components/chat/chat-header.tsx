@@ -1,14 +1,15 @@
 "use client";
 
 import { PanelLeftIcon } from "lucide-react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { guestRegex } from "@/lib/constants";
 import { ProgressPill } from "./progress-indicator";
 import { SoundToggle } from "./sound-toggle";
+import { TopicsMenuButton } from "./topics-menu";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
 
 function AuthButtons() {
@@ -73,6 +74,8 @@ function PureChatHeader({
           selectedVisibilityType={selectedVisibilityType}
         />
       )}
+
+      <TopicsMenuButton />
 
       <div className="ml-auto flex items-center gap-2">
         <ProgressPill />

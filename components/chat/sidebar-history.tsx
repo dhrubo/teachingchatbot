@@ -103,6 +103,12 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   const pathname = usePathname();
   const id = pathname?.startsWith("/chat/") ? pathname.split("/")[2] : null;
 
+  // Chat history is only kept for logged-in (regular) users. Guests can chat
+  // and resume within their session, but their history isn't listed or saved
+  // long-term (it's purged after ~1 day) — so treat guests like signed-out
+  // here and invite them to register.
+  const isGuest = !user || user.type === "guest";
+
   const {
     data: paginatedChatHistories,
     setSize,
@@ -110,7 +116,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     isLoading,
     mutate,
   } = useSWRInfinite<ChatHistory>(
-    user ? getChatHistoryPaginationKey : () => null,
+    isGuest ? () => null : getChatHistoryPaginationKey,
     fetcher,
     { fallbackData: [], revalidateOnFocus: false }
   );
@@ -154,7 +160,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     toast.success("Chat deleted");
   };
 
-  if (!user) {
+  if (isGuest) {
     return (
       <SidebarGroup className="group-data-[collapsible=icon]:hidden">
         <SidebarGroupContent>

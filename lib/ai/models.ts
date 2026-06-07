@@ -1,5 +1,9 @@
 export const DEFAULT_CHAT_MODEL = "moonshotai/kimi-k2.5";
 
+// Gemini model used as a fallback when the Vercel AI Gateway is unavailable
+// (rate limited / erroring). Requires GOOGLE_GENERATIVE_AI_API_KEY to be set.
+export const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash";
+
 export const titleModel = {
   id: "moonshotai/kimi-k2.5",
   name: "Kimi K2.5",

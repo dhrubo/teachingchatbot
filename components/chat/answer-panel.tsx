@@ -2,17 +2,21 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { isAnswerCorrect, isGraded } from "@/lib/active-question";
+import { Button } from "@/components/ui/button";
 import { useActiveChat } from "@/hooks/use-active-chat";
+import { isAnswerCorrect, isGraded } from "@/lib/active-question";
 import { playSound } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { ChallengeProgress } from "./challenge-progress";
+import { MathText } from "./math-text";
 import { ProgressBar } from "./progress-indicator";
 
 export function AnswerPanel() {
-  const { activeQuestion, submitAnswer, status } = useActiveChat();
+  const { activeChallenge, submitAnswer, status } = useActiveChat();
   const [value, setValue] = useState("");
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+
+  const activeQuestion = activeChallenge;
 
   // Reset when a new question appears.
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset on question id
@@ -21,6 +25,9 @@ export function AnswerPanel() {
     setFeedback(null);
   }, [activeQuestion?.id]);
 
+  // Render whenever there's an open question to answer (graded challenge or a
+  // non-graded mid-lesson question). Control gates are handled as buttons
+  // elsewhere and are already excluded from activeChallenge.
   if (!activeQuestion) {
     return null;
   }
@@ -69,6 +76,7 @@ export function AnswerPanel() {
       initial={{ opacity: 0, y: 12 }}
       transition={{ duration: 0.4 }}
     >
+      <ChallengeProgress className="mb-3" />
       {graded && <ProgressBar className="mb-3" />}
 
       <div className="mb-2 flex items-center justify-between">
@@ -104,7 +112,7 @@ export function AnswerPanel() {
       {/* Show the prompt text in the panel (esp. for non-quiz prompts that
           have no challenge card in the thread). */}
       <p className="mb-3 text-[15px] font-medium leading-relaxed text-foreground">
-        {activeQuestion.prompt}
+        <MathText>{activeQuestion.prompt}</MathText>
       </p>
 
       {type === "multiple_choice" && (
@@ -132,7 +140,7 @@ export function AnswerPanel() {
               >
                 {String.fromCharCode(65 + i)}
               </span>
-              {opt}
+              <MathText>{opt}</MathText>
             </button>
           ))}
         </div>

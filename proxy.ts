@@ -13,6 +13,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Cron endpoints authenticate themselves with CRON_SECRET (Bearer token),
+  // not a session cookie — skip the guest-redirect so the scheduler can reach
+  // them.
+  if (pathname.startsWith("/api/cron")) {
+    return NextResponse.next();
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,

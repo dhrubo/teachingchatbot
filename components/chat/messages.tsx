@@ -1,14 +1,16 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { ArrowDownIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useActiveChat } from "@/hooks/use-active-chat";
 import { useMessages } from "@/hooks/use-messages";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ActiveTopicBar } from "./active-topic-bar";
 import { useDataStream } from "./data-stream-provider";
 import { Greeting } from "./greeting";
 import { PreviewMessage, ThinkingMessage } from "./message";
-import { TopicListPanel } from "./topic-list-panel";
+import { TopicContentCard } from "./topic-content-card";
 
 type MessagesProps = {
   addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
@@ -50,6 +52,10 @@ function PureMessages({
     status,
   });
 
+  // When a topic thread is open, show only that thread's sub-conversation;
+  // otherwise show the whole chat.
+  const { visibleMessages } = useActiveChat();
+
   useDataStream();
 
   const prevChatIdRef = useRef(chatId);
@@ -75,14 +81,14 @@ function PureMessages({
         ref={messagesContainerRef}
         style={isArtifactVisible ? { scrollbarWidth: "none" } : undefined}
       >
-        <TopicListPanel />
+        <ActiveTopicBar />
         <div className="mx-auto flex min-h-full min-w-0 max-w-5xl flex-col gap-6 px-3 py-8 md:gap-8 md:px-6">
-          {messages.map((message, index) => (
+          {visibleMessages.map((message, index) => (
             <PreviewMessage
               addToolApprovalResponse={addToolApprovalResponse}
               chatId={chatId}
               isLoading={
-                status === "streaming" && messages.length - 1 === index
+                status === "streaming" && visibleMessages.length - 1 === index
               }
               isReadonly={isReadonly}
               key={message.id}
@@ -90,7 +96,7 @@ function PureMessages({
               onEdit={onEditMessage}
               regenerate={regenerate}
               requiresScrollPadding={
-                hasSentMessage && index === messages.length - 1
+                hasSentMessage && index === visibleMessages.length - 1
               }
               setMessages={setMessages}
               vote={
@@ -101,9 +107,10 @@ function PureMessages({
             />
           ))}
 
-          {status === "submitted" && messages.at(-1)?.role !== "assistant" && (
-            <ThinkingMessage />
-          )}
+          <TopicContentCard />
+
+          {status === "submitted" &&
+            visibleMessages.at(-1)?.role !== "assistant" && <ThinkingMessage />}
 
           <div
             className="min-h-[24px] min-w-[24px] shrink-0"
