@@ -1,12 +1,16 @@
 import { tool } from "ai";
 import { z } from "zod";
 
-// Poses an interactive question to the student. The frontend renders the
-// answer controls (radios / select / text box) in a panel above the chat
-// input and grades the answer on the client, so ALWAYS provide correctAnswer.
+// Poses ANY question that needs a response — a graded quiz question OR a
+// non-graded prompt (e.g. name, year, "which topic?", "continue or switch?").
+// The frontend renders the answer controls (radios / dropdown / text box) in a
+// panel above the chat input so the student NEVER has to type the answer in the
+// main chat box. For graded quiz questions, include correctAnswer for instant
+// feedback; omit it for non-graded prompts (no grading/animation, just collects
+// the answer).
 export const askQuestion = tool({
   description:
-    "Ask the student ONE interactive question. The app shows the answer controls (multiple choice / dropdown / text box) above the chat input and the student answers there — so do NOT also write the options as text. Use this for every 'YOUR TURN' question. Always include the correctAnswer so the app can give instant feedback.",
+    "Ask the student ANY question that needs an answer — a quiz question OR a non-graded prompt (their name, their year, which topic to start, continue-or-switch, etc.). The app shows the answer controls (multiple choice / dropdown / text box) above the chat input and the student answers THERE, never by typing in the main chat box. So do NOT write the options as text, and do NOT ask the student to 'type' an answer in chat — always use this tool. Include correctAnswer ONLY for graded quiz questions (gives instant ✅/❌ feedback); omit it for open prompts like names or topic choices.",
   inputSchema: z.object({
     prompt: z.string().describe("The question text shown to the student."),
     type: z
@@ -22,8 +26,9 @@ export const askQuestion = tool({
       ),
     correctAnswer: z
       .string()
+      .optional()
       .describe(
-        "The correct answer. For choices, must exactly match one option."
+        "The correct answer, for GRADED quiz questions only (must match an option for choices). Omit for non-graded prompts like names or topic choices."
       ),
     explanation: z
       .string()
@@ -35,7 +40,7 @@ export const askQuestion = tool({
     prompt,
     type,
     options: options ?? [],
-    correctAnswer,
+    correctAnswer: correctAnswer ?? "",
     explanation: explanation ?? "",
   }),
 });

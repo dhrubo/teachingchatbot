@@ -32,6 +32,7 @@ import {
   countAnsweredQuestions,
   getActiveQuestion,
   isAnswerCorrect,
+  isGraded,
 } from "@/lib/active-question";
 import type { ChatMessage } from "@/lib/types";
 import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
@@ -353,15 +354,16 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       if (!activeQuestion) {
         return;
       }
-      const correct = isAnswerCorrect(activeQuestion, answer);
+      // Graded quiz question → tell the tutor the result so it can react.
+      // Non-graded prompt (name, topic choice…) → just send the answer plainly.
+      const text = isGraded(activeQuestion)
+        ? `My answer: ${answer}\n\n[${
+            isAnswerCorrect(activeQuestion, answer) ? "CORRECT" : "INCORRECT"
+          } — the right answer is ${activeQuestion.correctAnswer}. Confirm briefly and continue with the next tiny step.]`
+        : answer;
       sendMessage({
         role: "user",
-        parts: [
-          {
-            type: "text",
-            text: `My answer: ${answer}\n\n[${correct ? "CORRECT" : "INCORRECT"} — the right answer is ${activeQuestion.correctAnswer}. Confirm briefly and continue with the next tiny step.]`,
-          },
-        ],
+        parts: [{ type: "text", text }],
       });
     },
     [activeQuestion, sendMessage]

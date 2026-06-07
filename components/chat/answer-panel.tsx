@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { isAnswerCorrect } from "@/lib/active-question";
+import { isAnswerCorrect, isGraded } from "@/lib/active-question";
 import { useActiveChat } from "@/hooks/use-active-chat";
 import { playSound } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
@@ -27,14 +27,22 @@ export function AnswerPanel() {
 
   const isBusy = status === "submitted" || status === "streaming";
 
+  const graded = isGraded(activeQuestion);
+
   const handleSubmit = () => {
     if (!value.trim() || isBusy || feedback) {
       return;
     }
-    const correct = isAnswerCorrect(activeQuestion, value);
-    setFeedback(correct ? "correct" : "wrong");
-    playSound(correct ? "success" : "wrong");
-    // Fire the tutor's continuation immediately (in parallel with the
+    if (graded) {
+      // Quiz question → instant ✅/❌ + sound, then continue.
+      const correct = isAnswerCorrect(activeQuestion, value);
+      setFeedback(correct ? "correct" : "wrong");
+      playSound(correct ? "success" : "wrong");
+    } else {
+      // Non-graded prompt (name, topic choice…) → just collect it.
+      playSound("pop");
+    }
+    // Fire the tutor's continuation immediately (in parallel with any
     // feedback animation) so the next reply starts streaming sooner.
     submitAnswer(value);
   };
@@ -61,11 +69,11 @@ export function AnswerPanel() {
       initial={{ opacity: 0, y: 12 }}
       transition={{ duration: 0.4 }}
     >
-      <ProgressBar className="mb-3" />
+      {graded && <ProgressBar className="mb-3" />}
 
       <div className="mb-2 flex items-center justify-between">
         <span className="font-semibold text-primary text-xs uppercase tracking-wide">
-          Your answer
+          {graded ? "Your answer" : "Your response"}
         </span>
         <AnimatePresence>
           {feedback && (
@@ -83,6 +91,12 @@ export function AnswerPanel() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Show the prompt text in the panel (esp. for non-quiz prompts that
+          have no challenge card in the thread). */}
+      <p className="mb-2 text-[13px] font-medium leading-snug text-foreground">
+        {activeQuestion.prompt}
+      </p>
 
       {type === "multiple_choice" && (
         <div className="grid gap-1.5 sm:grid-cols-2">
@@ -156,7 +170,7 @@ export function AnswerPanel() {
           size="sm"
           type="button"
         >
-          Check answer
+          {graded ? "Check answer" : "Send"}
         </Button>
       </div>
     </motion.div>

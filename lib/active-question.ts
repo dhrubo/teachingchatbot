@@ -60,6 +60,12 @@ export function getActiveQuestion(
   return answeredAfter ? null : lastQuestion;
 }
 
+// A question is "graded" only if it has a correct answer to check against.
+// Non-graded prompts (name, topic choice, continue-or-switch) just collect input.
+export function isGraded(question: ActiveQuestion): boolean {
+  return question.correctAnswer.trim().length > 0;
+}
+
 export function isAnswerCorrect(
   question: ActiveQuestion,
   answer: string
