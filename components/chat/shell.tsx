@@ -27,6 +27,7 @@ import { submitEditedMessage } from "./message-editor";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
 import { TopicEntryOverlay } from "./topic-entry-overlay";
+import { TopicSelectScreen } from "./topic-select-screen";
 
 export function ChatShell() {
   const {
@@ -112,6 +113,8 @@ export function ChatShell() {
               status={status}
               votes={votes}
             />
+
+            <TopicSelectScreen />
 
             <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-5xl gap-2 border-t-0 bg-background px-3 pb-3 md:px-6 md:pb-4">
               {!isReadonly && (

@@ -16,10 +16,8 @@ import type { ChatMessage } from "./types";
 // ---------------------------------------------------------------------------
 
 export type TopicPhase =
-  | "content" // teaching shown, gate not yet posed
-  | "awaiting-accept" // gate posed (Accept / Read next / Explain differently)
+  | "content" // teaching shown, no open challenge
   | "challenge" // a graded challenge is open
-  | "awaiting-recovery" // wrong answer; recovery gate posed (See explanation / …)
   | "done"; // topic finished (challenge cleared)
 
 export type TopicStatus = "not-started" | "in-progress" | "done";
@@ -96,30 +94,6 @@ function readMarker(part: Part): { id: string; title: string } | null {
     return null;
   }
   return { id: out.topicId || topicSlug(title), title };
-}
-
-function isGatePart(part: Part): boolean {
-  if (part.type !== "tool-askQuestion") {
-    return false;
-  }
-  const out = partOutput<AskQuestionOutput>(part);
-  if (!out) {
-    return false;
-  }
-  return (out.options ?? []).some((o) => o.toLowerCase().includes(GATE_MARKER));
-}
-
-function isRecoveryGatePart(part: Part): boolean {
-  if (part.type !== "tool-askQuestion") {
-    return false;
-  }
-  const out = partOutput<AskQuestionOutput>(part);
-  if (!out) {
-    return false;
-  }
-  return (out.options ?? []).some((o) =>
-    o.toLowerCase().includes(RECOVERY_MARKER)
-  );
 }
 
 function isGradedChallengePart(part: Part): boolean {
@@ -206,27 +180,12 @@ export function deriveTopicState(thread: TopicThread): {
 } {
   let challengeTotal = 0;
   let challengeDone = 0;
-  let sawGate = false;
-
-  // Track whether the most recent gate-type question (still unanswered) is a
-  // recovery gate, so a wrong answer surfaces the recovery buttons.
-  let openRecoveryGate = false;
 
   thread.messages.forEach((message, i) => {
     const followedByUser = thread.messages
       .slice(i + 1)
       .some((m) => m.role === "user");
     for (const part of message.parts ?? []) {
-      if (isGatePart(part)) {
-        sawGate = true;
-      }
-      if (isRecoveryGatePart(part)) {
-        // Unanswered recovery gate → recovery phase; answered → cleared.
-        openRecoveryGate = !followedByUser;
-      } else if (isGatePart(part) || isGradedChallengePart(part)) {
-        // A newer accept-gate or graded challenge supersedes a recovery gate.
-        openRecoveryGate = false;
-      }
       if (isGradedChallengePart(part)) {
         challengeTotal += 1;
         // A challenge is "done" if a user message follows it in this thread.
@@ -244,13 +203,8 @@ export function deriveTopicState(thread: TopicThread): {
   let phase: TopicPhase;
   if (hasOpenChallenge) {
     phase = "challenge";
-  } else if (openRecoveryGate) {
-    // A wrong answer was given and the recovery gate is awaiting a choice.
-    phase = "awaiting-recovery";
   } else if (challengeTotal > 0 && challengeDone >= challengeTotal) {
     phase = "done";
-  } else if (sawGate) {
-    phase = "awaiting-accept";
   } else {
     phase = "content";
   }

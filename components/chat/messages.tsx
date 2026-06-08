@@ -10,7 +10,6 @@ import { ActiveTopicBar } from "./active-topic-bar";
 import { useDataStream } from "./data-stream-provider";
 import { Greeting } from "./greeting";
 import { PreviewMessage, ThinkingMessage } from "./message";
-import { TopicContentCard } from "./topic-content-card";
 
 type MessagesProps = {
   addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
@@ -106,8 +105,6 @@ function PureMessages({
               }
             />
           ))}
-
-          <TopicContentCard />
 
           {status === "submitted" &&
             visibleMessages.at(-1)?.role !== "assistant" && <ThinkingMessage />}

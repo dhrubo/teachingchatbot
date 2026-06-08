@@ -89,17 +89,12 @@ type ActiveChatContextValue = {
   setTopicsMenuOpen: Dispatch<SetStateAction<boolean>>;
   topicPhase: TopicPhase;
   visibleMessages: ChatMessage[];
-  acceptChallenge: () => void;
-  readNextTopic: () => void;
-  explainDifferently: () => void;
-  recoverWith: (option: string) => void;
   resumeTopic: (topicId: string) => void;
   pickTopic: (title: string) => void;
   activeChallenge: ActiveQuestion | null;
   challengeIndex: number;
   challengeCount: number;
   hasIncompleteChallenges: (topicId: string | null) => boolean;
-  bankedTopicIds: string[];
   requestLeave: (targetId: string | null) => void;
   leaveTopicTarget: string | null;
   confirmLeave: () => void;
@@ -166,9 +161,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   // Whether the "Your topics" sheet is open. Lifted here so the start-gate
   // overlay can offer "choose a different topic" by opening it directly.
   const [topicsMenuOpen, setTopicsMenuOpen] = useState(false);
-  // Topics whose challenge was deferred via "Read next topic" — a sequential
-  // queue worked through one at a time when the student enters challenge mode.
-  const [bankedTopicIds, setBankedTopicIds] = useState<string[]>([]);
   // Soft close-lock: the topic the student is trying to leave, pending confirm.
   const [leaveTopicTarget, setLeaveTopicTarget] = useState<string | null>(null);
 
@@ -538,53 +530,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const acceptChallenge = useCallback(() => {
-    sendMessage({
-      role: "user",
-      parts: [{ type: "text", text: "Accept the challenge" }],
-    });
-  }, [sendMessage]);
-
-  const readNextTopic = useCallback(() => {
-    // Bank the current topic's challenge to run later in the queue.
-    if (selectedTopicId) {
-      setBankedTopicIds((prev) =>
-        prev.includes(selectedTopicId) ? prev : [...prev, selectedTopicId]
-      );
-    }
-    sendMessage({
-      role: "user",
-      parts: [{ type: "text", text: "Read next topic" }],
-    });
-  }, [sendMessage, selectedTopicId]);
-
-  const explainDifferently = useCallback(() => {
-    sendMessage({
-      role: "user",
-      parts: [{ type: "text", text: "Explain differently" }],
-    });
-  }, [sendMessage]);
-
-  // Student's choice from the wrong-answer recovery gate. The option text
-  // matches the exact labels the tutor prompt keys its reaction off. For the
-  // help options we append a hidden directive so the model EXPLAINS only and
-  // re-shows the recovery gate, rather than throwing a new graded question —
-  // belt-and-braces alongside the system prompt, since the model tends to
-  // re-test otherwise.
-  const recoverWith = useCallback(
-    (option: string) => {
-      const isHelp = option !== "Try the question again";
-      const text = isHelp
-        ? `${option}\n\n[Explain ONLY — do NOT ask a new graded question now. After explaining, call askQuestion (no correctAnswer) with the four recovery options: "See the explanation", "Break it down further", "Explain another way", "Try the question again".]`
-        : `${option}\n\n[I'm ready — now pose a graded challenge again (askQuestion WITH correctAnswer) at the same or slightly easier level.]`;
-      sendMessage({
-        role: "user",
-        parts: [{ type: "text", text }],
-      });
-    },
-    [sendMessage]
-  );
-
   // Reopen a completed topic and reattach follow-ups to it by re-emitting a
   // marker via the tutor (explicit resume signal).
   const resumeTopic = useCallback(
@@ -691,17 +636,12 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       setTopicsMenuOpen,
       topicPhase,
       visibleMessages,
-      acceptChallenge,
-      readNextTopic,
-      explainDifferently,
-      recoverWith,
       resumeTopic,
       pickTopic,
       activeChallenge,
       challengeIndex,
       challengeCount,
       hasIncompleteChallenges,
-      bankedTopicIds,
       requestLeave,
       leaveTopicTarget,
       confirmLeave,
@@ -742,17 +682,12 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       topicsMenuOpen,
       topicPhase,
       visibleMessages,
-      acceptChallenge,
-      readNextTopic,
-      explainDifferently,
-      recoverWith,
       resumeTopic,
       pickTopic,
       activeChallenge,
       challengeIndex,
       challengeCount,
       hasIncompleteChallenges,
-      bankedTopicIds,
       requestLeave,
       leaveTopicTarget,
       confirmLeave,

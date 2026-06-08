@@ -1,4 +1,4 @@
-import { geolocation, ipAddress } from "@vercel/functions";
+import { ipAddress } from "@vercel/functions";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -24,7 +24,6 @@ import {
   DEFAULT_CHAT_MODEL,
   getCapabilities,
 } from "@/lib/ai/models";
-import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { TUTOR_SYSTEM_PROMPT } from "@/lib/ai/prompts-tutor";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { getCurriculumTopics } from "@/lib/ai/tools/get-curriculum-topics";
@@ -180,15 +179,6 @@ export async function POST(request: Request) {
         message as ChatMessage,
       ];
     }
-
-    const { longitude, latitude, city, country } = geolocation(request);
-
-    const requestHints: RequestHints = {
-      longitude,
-      latitude,
-      city,
-      country,
-    };
 
     if (message?.role === "user") {
       await saveMessages({

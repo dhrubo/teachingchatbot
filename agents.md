@@ -161,6 +161,82 @@ The application now compiles cleanly and runs as a curriculum-scoped Socratic tu
 
 ---
 
+## Phase 18 Log: Dead Code Cleanup & Modularity
+
+- **Status:** Completed
+- **Actions Taken:**
+    1.  **Removed dead tool files:** `get-weather.ts`, `create-document.ts`, `edit-document.ts`, `update-document.ts`, `request-suggestions.ts` no longer exist in `lib/ai/tools/`.
+    2.  **Cleaned up `lib/types.ts`:** Removed dead `ChatTools` entries (`getWeather`, `createDocument`, `updateDocument`, `requestSuggestions`), keeping only `askQuestion` and `startNewTopicSession`.
+    3.  **Cleaned up `components/chat/message.tsx`:** Removed all rendering code for `tool-getWeather`, `tool-createDocument`, `tool-updateDocument`, `tool-requestSuggestions`. The file now only handles `tool-askQuestion`.
+    4.  **Cleaned up `app/(chat)/api/chat/route.ts`:** Removed unused `systemPrompt` / `RequestHints` imports and `geolocation` call.
+    5.  **Split queries into domain modules:** `lib/db/queries.ts` → `lib/db/queries/{auth,chat,document,student}.ts` + `index.ts`. Imports unchanged via barrel re-exports.
+    6.  **Added `vitest` and unit tests** for core logic: `lib/ai/detect-large-input.test.ts` (22 tests), `lib/__tests__/active-question.test.ts` (13 tests), `lib/__tests__/topic-threads.test.ts` (19 tests). Run with `pnpm test:unit`.
+
+## Phase 19 Log: No-Retry Wrong Answer Flow
+
+- **Status:** Completed
+- **Actions Taken:**
+    1.  **`components/chat/answer-panel.tsx`:** Removed "Try again" button and retry logic. Wrong answers now show the explanation inline for 1.5s, then auto-submit the INCORRECT result to the tutor. The tutor receives the INCORRECT signal and asks a new, slightly easier question.
+    2.  **`lib/ai/prompts-tutor.ts`:** Updated all sections referencing "Try again" / retry behavior to describe the new no-retry flow.
+
+## Future Scope
+
+### Science Curriculum Extension
+
+Extend the app from maths-only to include Year 8/9 Science.
+
+**Proposed approach:**
+1.  **`lib/ai/curriculum.ts`:** Add `year8ScienceCurriculum` and `year9ScienceCurriculum` (topics: biology cells, chemistry reactions, physics forces/energy, etc.).
+2.  **`lib/ai/prompts-tutor.ts`:** Update ROLE to "UK maths and science tutor". Add science-specific teaching guidance (experiments, diagrams, variables, units).
+3.  **Home screen:** Extend the Year 8/9 toggle to a subject+year picker (Maths Y8, Maths Y9, Science Y8, Science Y9).
+4.  **StudentProfile:** Add a `subjects` field so a student can be enrolled in maths, science, or both.
+5.  **TopicProgress:** Use a composite key `(studentId, subject, topic)` so science and maths progress don't collide.
+6.  **Prompt sections:** Add science-specific OUTPUT STYLE rules (e.g. "use 🧪 for experiments", draw force diagrams with arrows, explain variables clearly).
+
+### Parent Mode & Syllabus Upload
+
+Allow parents to upload their own syllabus, curriculum, and past test papers before their children use the app.
+
+**Proposed approach:**
+1.  **File upload endpoint:** New API route `/api/syllabus/upload` accepting PDF/docx/text. Store uploaded syllabus/test papers in Vercel Blob or Postgres.
+2.  **Parent dashboard:** A private area where a parent can:
+    - Upload a syllabus (PDF or text) → the system parses it into topic lists.
+    - Upload past test papers → the system stores them and references question types.
+    - Set custom exam dates and goals for each child.
+    - Review child progress reports (already supported via parentReportNotes).
+3.  **Syllabus → tutor context:** When a parent uploads a syllabus, inject it into the tutor's context as overriding/replacing the built-in `fullMathsCurriculum`. The tutor then teaches only topics from the uploaded syllabus.
+4.  **Test paper analysis:** On upload, extract question types, difficulty levels, and topic coverage. The tutor can then generate practice questions matching the uploaded test style.
+5.  **Access control:** Syllabus visibility is per-student, per-parent-account. Only the parent's children's sessions use the custom syllabus.
+6.  **DB schema additions:**
+    - `ParentSyllabus` table: `id, userId, title, content (parsed topics), fileUrl, createdAt`.
+    - `TestPaper` table: `id, syllabusId, fileUrl, questionTypes (json), topics (json), createdAt`.
+    - Link to `StudentProfile` to determine which syllabus applies.
+
+## Recommendations
+
+### 1. Monolithic prompt — consider retrieval augmentation
+`lib/ai/prompts-tutor.ts` is 550+ lines. This eats context for longer conversations. Consider moving the full curriculum listing, gamification tables, and GCSE pathway details into a retrieval system (e.g. RAG or a tool the tutor calls on-demand) rather than inlining everything.
+
+### 2. `upsertTopicProgress` undefined guard
+In `lib/db/queries/student.ts`, the upsert uses `{ ...data }` directly in the `SET` clause. If `data` contains keys with `undefined` values, they may overwrite existing DB rows on conflict. Add a `pickDefined` helper to strip undefined entries before the upsert.
+
+### 3. Guest email uniqueness
+`guest-${Date.now()}` is millisecond-precision. Under very high concurrent signup load this could theoretically collide. Consider appending a random suffix or using a UUID.
+
+### 4. Server-side vs prompt chunking paths diverge
+The pre-processor in `lib/ai/detect-large-input.ts` returns a static "Open the Your topics bar" message, while the prompt's chunking rule says "Offer a few options (A/B/C…/Other)". A guest and a logged-in user get different experiences. Align these two paths.
+
+### 5. Soft close-lock edge case
+The confirm dialog (`requestLeave`) uses `selectedTopicId` to check `hasIncompleteChallenges`, but the user may have already switched `selectedTopicId` by the time the dialog resolves. Add a capture at request time.
+
+### 6. Difficulty progression signal
+The no-retry flow submits `[INCORRECT]` to the tutor. The prompt says "ask a slightly easier question", but there's no structured signal telling the tutor *how* much easier to go. Consider passing the student's actual answer in the submission so the tutor can analyse the error pattern.
+
+### 7. Write more tests
+Core logic covered (54 tests). Next priorities: `countAnsweredQuestions` edge cases, challenge banked queue behavior, the `resumeTopic` reattach flow, and the `submitAnswer` formatting logic.
+
+---
+
 ## Phase 17 Log: Guest History Retention & Data Cleanup
 
 - **Status:** Completed
