@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  MessageSquareIcon,
   PanelLeftIcon,
   PenSquareIcon,
   TrashIcon,
+  LogInIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -43,12 +43,15 @@ import {
   AlertDialogTitle,
 } from "../ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { SaraMascot } from "@/components/brand/sara-mascot";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
   const { setOpenMobile, toggleSidebar } = useSidebar();
   const { mutate } = useSWRConfig();
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
+
+  const isGuest = !user || user.type === "guest";
 
   const handleDeleteAll = () => {
     setShowDeleteAllDialog(false);
@@ -74,10 +77,10 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 <SidebarMenuButton
                   asChild
                   className="size-8 !px-0 items-center justify-center group-data-[collapsible=icon]:group-hover/logo:opacity-0"
-                  tooltip="Chatbot"
+                  tooltip="SARA"
                 >
                   <Link href="/" onClick={() => setOpenMobile(false)}>
-                    <MessageSquareIcon className="size-4 text-sidebar-foreground/50" />
+                    <SaraMascot size={24} animated={false} />
                   </Link>
                 </SidebarMenuButton>
                 <Tooltip>
@@ -111,13 +114,13 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                       setOpenMobile(false);
                       router.push("/");
                     }}
-                    tooltip="New Chat"
+                    tooltip="New mission"
                   >
                     <PenSquareIcon className="size-4" />
-                    <span className="font-medium">New chat</span>
+                    <span className="font-medium">New mission</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {user && (
+                {user && !isGuest && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       className="rounded-lg text-sidebar-foreground/40 transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive"
@@ -132,7 +135,33 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-          <SidebarHistory user={user} />
+          {isGuest ? (
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <div className="flex flex-col items-center gap-3 px-3 py-6 text-center">
+                  <SaraMascot size={40} animated={false} />
+                  <div>
+                    <p className="text-xs font-medium text-sidebar-foreground/80">
+                      Free mode
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-sidebar-foreground/40">
+                      5 questions per day
+                    </p>
+                  </div>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-4 py-1.5 text-xs font-medium text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={() => setOpenMobile(false)}
+                  >
+                    <LogInIcon className="size-3" />
+                    Sign in to save
+                  </Link>
+                </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : (
+            <SidebarHistory user={user} />
+          )}
         </SidebarContent>
         <SidebarFooter className="border-t border-sidebar-border pt-2 pb-3">
           {user && <SidebarUserNav user={user} />}

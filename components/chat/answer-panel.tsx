@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useActiveChat } from "@/hooks/use-active-chat";
 import { isAnswerCorrect, isGraded } from "@/lib/active-question";
+import {
+  type AnswerAttempt,
+  detectAnswerPatterns,
+} from "@/lib/answer-patterns";
 import { playSound } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
 import { ChallengeProgress } from "./challenge-progress";
@@ -12,17 +16,35 @@ import { MathText } from "./math-text";
 import { ProgressBar } from "./progress-indicator";
 
 export function AnswerPanel() {
-  const { activeChallenge, submitAnswer, status } = useActiveChat();
+  const {
+    activeChallenge,
+    submitAnswer,
+    status,
+    bundleActive,
+    challengeIndex,
+    currentConcept,
+  } = useActiveChat();
   const [value, setValue] = useState("");
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [wrongChoice, setWrongChoice] = useState<string | null>(null);
   // Track the wrong answer locally so we can send it when the student clicks
   // "Next challenge" rather than auto-submitting.
   const [pendingWrongAnswer, setPendingWrongAnswer] = useState<string | null>(null);
+  // Deterministic readiness gate: shown before the first challenge in a bundle.
+  const [gateDismissed, setGateDismissed] = useState(false);
+  // How many times the student has asked to have THIS concept re-explained.
+  // On the 3rd attempt we escalate the reteach to an explicit visual diagram.
+  const [explainAttempts, setExplainAttempts] = useState(0);
+  // Recent answer attempts on the current concept, used for deterministic
+  // pattern detection (no LLM call). Resets when the concept changes.
+  const [attempts, setAttempts] = useState<AnswerAttempt[]>([]);
+
+  // After this many confused attempts on the same concept, demand a visual.
+  const VISUAL_ESCALATION_AT = 3;
 
   const activeQuestion = activeChallenge;
 
-  // Reset when a new question appears.
+  // Per-QUESTION UI reset (a new challenge id swaps the controls).
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset on question id
   useEffect(() => {
     setValue("");
@@ -31,9 +53,31 @@ export function AnswerPanel() {
     setPendingWrongAnswer(null);
   }, [activeQuestion?.id]);
 
+  // Per-CONCEPT reset (only when the topic genuinely changes). The attempt
+  // history and reteach counter must survive a reteach — which swaps in a new
+  // bundle with new question ids but is still the SAME concept.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on concept
+  useEffect(() => {
+    setExplainAttempts(0);
+    setAttempts([]);
+    // Each new lesson/topic gets its own readiness gate before its first
+    // challenge — otherwise dismissing one lesson's gate would skip every
+    // later lesson's gate.
+    setGateDismissed(false);
+  }, [currentConcept]);
+
+  // The pattern (if any) detected from this concept's attempts so far. Pure,
+  // deterministic — shown to the student and fed into reteach turns.
+  const detectedPattern = detectAnswerPatterns(attempts);
+
   if (!activeQuestion) {
     return null;
   }
+
+  // Deterministic readiness gate for bundle challenges:
+  // show a "I'm ready" prompt before the first bundle challenge.
+  const showBundleGate =
+    bundleActive && challengeIndex === 0 && !gateDismissed;
 
   const isBusy = status === "submitted" || status === "streaming";
   const graded = isGraded(activeQuestion);
@@ -44,6 +88,17 @@ export function AnswerPanel() {
   // button so the student can read, learn, and move on at their own pace.
   const grade = (answer: string) => {
     const correct = isAnswerCorrect(activeQuestion, answer);
+    // Record the attempt for deterministic pattern detection (no LLM call).
+    setAttempts((prev) => [
+      ...prev,
+      {
+        concept: currentConcept,
+        prompt: activeQuestion.prompt,
+        correctAnswer: activeQuestion.correctAnswer,
+        chosen: answer,
+        wasCorrect: correct,
+      },
+    ]);
     if (correct) {
       setFeedback("correct");
       setWrongChoice(null);
@@ -81,25 +136,41 @@ export function AnswerPanel() {
     }
   };
 
+  // Directive appended to a reteach once the student has been confused enough
+  // times on the same concept — forces a worked VISUAL explanation rather than
+  // yet another prose retry.
+  const visualReteachDirective = (correctAnswer: string) =>
+    `[INCORRECT — the right answer is ${correctAnswer}. The student has now asked for help ${VISUAL_ESCALATION_AT} times and is still stuck. Stop using prose. Explain this concept VISUALLY: draw a step-by-step diagram in text — use a fraction bar, area model, number line, grouped boxes or labelled arrows as appropriate — laid out across multiple lines so the structure is obvious. Keep words to a minimum, let the picture carry the explanation, then ask one very easy question.]`;
+
   // After a wrong answer, the student chooses one of two paths:
   const handleExplainDifferently = () => {
     if (!pendingWrongAnswer) {
       return;
     }
+    const nextAttempt = explainAttempts + 1;
+    setExplainAttempts(nextAttempt);
     setPendingWrongAnswer(null);
-    submitAnswer(
-      `${pendingWrongAnswer}\n\n[INCORRECT — the right answer is ${activeQuestion.correctAnswer}. The student still feels unsure. Please explain this concept in a completely different way with a fresh example, then ask a new question at an easier level.]`
-    );
+    const directive =
+      nextAttempt >= VISUAL_ESCALATION_AT
+        ? visualReteachDirective(activeQuestion.correctAnswer)
+        : `[INCORRECT — the right answer is ${activeQuestion.correctAnswer}. The student still feels unsure. Please explain this concept in a completely different way with a fresh example, then ask a new question at an easier level.]`;
+    // Feed any detected error pattern to the tutor so it targets the actual
+    // misconception. No extra LLM call — this rides on the reteach turn.
+    const observation = detectedPattern
+      ? `\n\n[${detectedPattern.tutorObservation}]`
+      : "";
+    submitAnswer(`${pendingWrongAnswer}\n\n${directive}${observation}`);
   };
 
+  // "Next challenge" — advance locally for bundles (no LLM call), or send to
+  // the LLM for individual (non-bundle) questions.
   const handleNextChallenge = () => {
     if (!pendingWrongAnswer) {
       return;
     }
     setPendingWrongAnswer(null);
-    submitAnswer(
-      `${pendingWrongAnswer}\n\n[INCORRECT — the right answer is ${activeQuestion.correctAnswer}. The student has read the explanation and is ready to move on. Give a brief tip addressing the mistake they made (be specific, don't just say "good try"), then ask a new question targeting the same concept at a slightly easier level.]`
-    );
+    // submitAnswer checks for active bundle and advances locally if one exists
+    submitAnswer(pendingWrongAnswer);
   };
 
   const correctAnswer = activeQuestion.correctAnswer;
@@ -127,6 +198,52 @@ export function AnswerPanel() {
       : feedback === "correct"
         ? { opacity: 1, y: 0, scale: [1, 1.03, 1] }
         : { opacity: 1, y: 0 };
+
+  if (showBundleGate) {
+    return (
+      <motion.div
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-2 w-full rounded-2xl border border-primary/30 bg-card/80 p-5 shadow-[var(--shadow-card)]"
+        initial={{ opacity: 0, y: 12 }}
+        transition={{ duration: 0.35 }}
+      >
+        <p className="mb-1 font-bold text-[17px] text-foreground">
+          Ready for a challenge? 🎯
+        </p>
+        <p className="mb-4 text-[14px] leading-relaxed text-muted-foreground">
+          Time to test your understanding! These are quick questions to lock in
+          what you&apos;ve just learned.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            className="rounded-full bg-[image:var(--gradient-sunset)] px-5 font-semibold text-white shadow-lg transition-transform hover:scale-[1.03] active:scale-[0.98]"
+            onClick={() => setGateDismissed(true)}
+            size="sm"
+            type="button"
+          >
+            I{"\u2019"}m ready 🚀
+          </Button>
+          <Button
+            className="rounded-full border border-primary/40 bg-background px-4 font-semibold text-foreground shadow-sm transition-transform hover:scale-[1.03] hover:bg-accent active:scale-[0.98]"
+            onClick={() => {
+              const nextAttempt = explainAttempts + 1;
+              setExplainAttempts(nextAttempt);
+              submitAnswer(
+                nextAttempt >= VISUAL_ESCALATION_AT
+                  ? visualReteachDirective(activeQuestion.correctAnswer)
+                  : `[INCORRECT — The student wants a different explanation of ${activeQuestion.correctAnswer}. Please explain this concept in a completely different way with a fresh example, then ask a new easier question.]`
+              );
+            }}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Explain more 🔄
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -261,6 +378,13 @@ export function AnswerPanel() {
             {activeQuestion.explanation && (
               <p className="text-[14px] leading-relaxed text-muted-foreground">
                 <MathText>{activeQuestion.explanation}</MathText>
+              </p>
+            )}
+            {/* Deterministic pattern note — surfaced to the student when a
+                recurring mistake is detected (no LLM call). */}
+            {detectedPattern && (
+              <p className="mt-2 rounded-lg bg-primary/10 px-2.5 py-1.5 text-[13px] font-medium leading-relaxed text-primary">
+                {detectedPattern.studentNote}
               </p>
             )}
           </motion.div>

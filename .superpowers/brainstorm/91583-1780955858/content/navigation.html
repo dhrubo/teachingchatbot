@@ -1,0 +1,49 @@
+<h2>🧭 Navigation with a separate landing page</h2>
+<p class="subtitle">Since you chose a separate landing page (C), how should navigation work when the student starts a mission?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Landing at / — chat moves to /learn</h3>
+      <p><code>/</code> = SARA dashboard (hero, stats, missions)<br>
+      <code>/learn</code> or <code>/chat</code> = the chat tutoring view<br>
+      <br>
+      Top nav bar: <strong>[SARA logo] [Learn] [Progress]</strong><br>
+      "Start mission" → navigates to <code>/learn</code> with topic pre-loaded<br>
+      <br>
+      ✅ Clean separation, real landing page<br>
+      ⚠️ Changes existing routing, logged-in redirect needs updating</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Dashboard at /dashboard — chat stays at /</h3>
+      <p><code>/dashboard</code> = SARA hero + stats + mission + topic map<br>
+      <code>/</code> = current chat view (unchanged)<br>
+      <code>/chat/[id]</code> = existing chats<br>
+      <br>
+      Header nav switches between them<br>
+      "Start mission" → navigates to <code>/</code> (new chat) with topic pre-loaded<br>
+      ✅ Minimal routing changes, backwards compatible<br>
+      ⚠️ Chat isn't under /chat</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Landing overlays the empty chat</h3>
+      <p>The SARA dashboard renders on <code>/</code> when no chat is active (replacing the current greeting component). Once a student starts a mission, the dashboard slides away and the chat UI takes over.<br>
+      <br>
+      "Start mission" → transitions to chat view on the same page<br>
+      ✅ No routing changes, logged-in redirect still works<br>
+      ✅ Feels like a single-page app with smart states<br>
+      ⚠️ Less "separate page" than you might have wanted</p>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:16px;color:var(--text-secondary)">I'd recommend <strong>A</strong> since you explicitly chose a separate page — it gives the cleanest separation. But C is much less work and keeps routing simple. What feels right?</p>

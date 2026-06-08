@@ -10,7 +10,13 @@ export const isTestEnvironment = Boolean(
 
 export const guestRegex = /^guest-\d+$/;
 
-export const DUMMY_PASSWORD = generateDummyPassword();
+let _dummyPassword: string | null = null;
+export function getDummyPassword(): string {
+  if (!_dummyPassword) {
+    _dummyPassword = generateDummyPassword();
+  }
+  return _dummyPassword;
+}
 
 // Friendly, tappable topic quick-starts for the home screen, grouped by
 // school year. `label` is the short chip text; `prompt` is the message that

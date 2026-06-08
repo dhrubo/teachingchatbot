@@ -1,0 +1,47 @@
+<h2>🎨 Color palette direction</h2>
+<p class="subtitle">Current theme is sunset coral/amber. The spec asks to add purple/violet. Here are 2 palette directions:</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Extended sunset</h3>
+      <p>Keep the current coral/amber as primary. Add violet as a secondary accent for badges, highlights, and the mascot's glow. Cream/off-white for backgrounds.</p>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <span style="background:#F97316;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#FB923C;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#7C3AED;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#A78BFA;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#FEF3C7;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#1C1917;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+      </div>
+      <p style="margin-top:4px;font-size:12px">orange amber violet purple cream dark</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Minimal CSS changes</li><li>Instantly familiar</li><li>Violet adds freshness</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Deep space sunset</h3>
+      <p>Shift primary to deep violet/indigo, with coral/amber as accent highlights. Dark mode becomes true dark (navy-black). Glowing neon accents. More dramatic and futuristic.</p>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <span style="background:#7C3AED;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#4F46E5;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#F97316;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#FBBF24;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#0F172A;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+        <span style="background:#E2E8F0;width:36px;height:36px;border-radius:8px;display:inline-block"></span>
+      </div>
+      <p style="margin-top:4px;font-size:12px">violet indigo orange amber dark light</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>More distinctive</li><li>Techie/futuristic vibe</li><li>Stronger brand identity</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>CSS overhaul needed</li><li>Loses warm tutor feel</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:16px;color:var(--text-secondary)">I'd recommend <strong>A</strong> — keeps what works, adds violet where it matters (mascot glow, badges, highlights). Less risk, less work.</p>

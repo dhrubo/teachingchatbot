@@ -237,7 +237,11 @@ export async function getChatById({ id }: { id: string }) {
 
 export async function saveMessages({ messages }: { messages: DBMessage[] }) {
   try {
-    return await db.insert(message).values(messages);
+    // Idempotent insert: a re-sent / Strict-Mode-doubled message keeps the same
+    // id, so a second write must be a no-op rather than a primary-key error
+    // (which would otherwise sink the whole batch and leave the assistant turn
+    // unsaved). To UPDATE an existing message use updateMessage instead.
+    return await db.insert(message).values(messages).onConflictDoNothing();
   } catch (_error) {
     throw new ChatbotError("bad_request:database", "Failed to save messages");
   }

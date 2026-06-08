@@ -61,6 +61,8 @@ import {
   slashCommands,
 } from "./slash-commands";
 import { AnswerPanel } from "./answer-panel";
+import { HarderChallengePrompt } from "./harder-challenge-prompt";
+import { RegistrationPrompt } from "./registration-prompt";
 import { SuggestedActions } from "./suggested-actions";
 import type { VisibilityType } from "./visibility-selector";
 
@@ -423,6 +425,9 @@ function PureMultimodalInput({
 
       {!editingMessage && <AnswerPanel />}
 
+      <HarderChallengePrompt />
+      <RegistrationPrompt />
+
       <PromptInput
         className="[&>div]:rounded-2xl [&>div]:border [&>div]:border-border/30 [&>div]:bg-card/70 [&>div]:shadow-[var(--shadow-composer)] [&>div]:transition-shadow [&>div]:duration-300 [&>div]:focus-within:shadow-[var(--shadow-composer-focus)]"
         onSubmit={() => {
@@ -517,7 +522,7 @@ function PureMultimodalInput({
           placeholder={
             editingMessage
               ? "Edit your message..."
-              : "Ask me anything maths… 🧮"
+              : "Ask SARA anything maths… 🧮"
           }
           ref={textareaRef}
           value={input}

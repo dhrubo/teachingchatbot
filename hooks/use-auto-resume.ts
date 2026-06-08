@@ -5,6 +5,11 @@ import { useEffect } from "react";
 import { useDataStream } from "@/components/chat/data-stream-provider";
 import type { ChatMessage } from "@/lib/types";
 
+// Module-level guard: React Strict Mode in dev unmounts/remounts the
+// component tree, which re-initializes useRef. A module-level variable
+// persists across remounts and prevents double-firing resumeStream.
+let hasResumed = false;
+
 export type UseAutoResumeParams = {
   autoResume: boolean;
   initialMessages: ChatMessage[];
@@ -27,7 +32,8 @@ export function useAutoResume({
 
     const mostRecentMessage = initialMessages.at(-1);
 
-    if (mostRecentMessage?.role === "user") {
+    if (mostRecentMessage?.role === "user" && !hasResumed) {
+      hasResumed = true;
       resumeStream();
     }
   }, [autoResume, initialMessages.at, resumeStream]);

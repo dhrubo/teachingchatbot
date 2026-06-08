@@ -26,6 +26,7 @@ import { DataStreamHandler } from "./data-stream-handler";
 import { submitEditedMessage } from "./message-editor";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
+import { SaraDashboard } from "./sara-dashboard";
 import { TopicEntryOverlay } from "./topic-entry-overlay";
 import { TopicSelectScreen } from "./topic-select-screen";
 
@@ -85,6 +86,9 @@ export function ChatShell() {
           )}
         >
           <AchievementToast />
+          {messages.length === 0 && !isLoading && (
+            <SaraDashboard />
+          )}
           <ChatHeader
             chatId={chatId}
             isReadonly={isReadonly}

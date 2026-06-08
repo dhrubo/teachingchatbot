@@ -11,6 +11,7 @@ export const sheetDocumentHandler = createDocumentHandler<"sheet">({
     const { fullStream } = streamText({
       model: getLanguageModel(modelId),
       system: `${sheetPrompt}\n\nOutput ONLY the raw CSV data. No explanations, no markdown fences.`,
+      maxRetries: 0,
       prompt: title,
     });
 
@@ -33,6 +34,7 @@ export const sheetDocumentHandler = createDocumentHandler<"sheet">({
     const { fullStream } = streamText({
       model: getLanguageModel(modelId),
       system: `${updateDocumentPrompt(document.content, "sheet")}\n\nOutput ONLY the raw CSV data. No explanations, no markdown fences.`,
+      maxRetries: 0,
       prompt: description,
     });
 

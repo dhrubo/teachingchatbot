@@ -1,0 +1,76 @@
+<h2>🏗️ Design overview — SARA rebrand</h2>
+<p class="subtitle">Here's the full plan. I'll go section by section — tell me if each part looks right.</p>
+
+<div class="section" style="margin-top:16px">
+  <h3>1. Architecture: Dashboard replaces greeting</h3>
+  <p><strong>No routing changes.</strong> The SARA dashboard renders at <code>/</code> instead of the current <code>Greeting</code> component (only when no chat is active).</p>
+  <ul>
+    <li><code>/</code> → SARA dashboard (hero + stats + missions + coach)</li>
+    <li>Pick a mission → dashboard slides out, chat slides in (no URL change)</li>
+    <li><code>/chat/[id]</code> → existing chat (unchanged)</li>
+    <li>Logged-in redirect to last chat still works</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>2. New components</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div style="background:var(--bg-secondary);border-radius:8px;padding:10px">
+      <strong>sara-mascot.tsx</strong><br>
+      <small>Inline SVG: geometric figure, glowing aura, stylus, math symbols. Props: size, animated, mood</small>
+    </div>
+    <div style="background:var(--bg-secondary);border-radius:8px;padding:10px">
+      <strong>mission-card.tsx</strong><br>
+      <small>Card with topic, progress, emoji. Hover lift, glow. Links to /chat</small>
+    </div>
+    <div style="background:var(--bg-secondary);border-radius:8px;padding:10px">
+      <strong>player-stats.tsx</strong><br>
+      <small>XP, streak, level, badges in a glass card</small>
+    </div>
+    <div style="background:var(--bg-secondary);border-radius:8px;padding:10px">
+      <strong>topic-map.tsx</strong><br>
+      <small>Grid of mission cards with locked/progress states</small>
+    </div>
+    <div style="background:var(--bg-secondary);border-radius:8px;padding:10px">
+      <strong>coach-bubble.tsx</strong><br>
+      <small>Quote bubble from SARA, daily rotating messages</small>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. Sidebar (FREE mode)</h3>
+  <ul>
+    <li>Guests: show "Current mission" panel (sara mini icon + topic) + "Free mode: 5/day"</li>
+    <li>No history list for guests</li>
+    <li>Premium/logged-in: keep existing history sidebar</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>4. Copy & metadata</h3>
+  <ul>
+    <li>Title: "SARA — Smart AI Reasoning Assistant"</li>
+    <li>Tagline: "Learn bright. Level up."</li>
+    <li>Greeting → "Meet SARA, your AI maths coach"</li>
+    <li>Subtitle → "Build confidence with tiny lessons, smart hints, and one challenge at a time."</li>
+    <li>topics → missions, challenges → boss checks</li>
+  </ul>
+</div>
+
+<div class="options" style="margin-top:20px">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✅</div>
+    <div class="content">
+      <h3>Looks good — next section</h3>
+      <p>Let me see the visual layout mockup</p>
+    </div>
+  </div>
+  <div class="option" data-choice="revise" onclick="toggleSelect(this)">
+    <div class="letter">🔄</div>
+    <div class="content">
+      <h3>I'd like to change something</h3>
+      <p>Tell me what to adjust</p>
+    </div>
+  </div>
+</div>

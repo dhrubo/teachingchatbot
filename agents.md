@@ -247,15 +247,143 @@ Core logic covered (54 tests). Next priorities: `countAnsweredQuestions` edge ca
 
 ---
 
+## Phase 20 Log: No-Retry Bundle Flow, Duplicate LLM Calls Fix & Diagnostics
+
+- **Status:** Completed
+- **Problem:** Logs showed 4 identical `lesson_bundle` calls per user message. Root cause: each correct answer within a bundle called `sendMessage()`, hitting the chat API and triggering a new LLM call (1 lesson + 3 answers = 4 calls). React Strict Mode double-invoked effects in dev, amplifying the issue.
+- **Actions Taken:**
+  1. **`hooks/use-active-chat.tsx`:** Replaced message-derived `currentIndex` with local `bundleIndex` state. Bundle answers now increment `bundleIndex` only — zero `sendMessage` calls for correct / next-challenge. Only "Explain differently" (reteach) hits the LLM. Cleaned up unused `StoredBundle`, `isBundleComplete`, `getCurrentChallenge`, `advanceBundle` imports.
+  2. **`hooks/use-auto-resume.ts`:** Added `resumedRef` ref guard so `resumeStream()` fires at most once under React Strict Mode. Fixed missing `useRef` import.
+  3. **`app/(chat)/api/chat/route.ts`:** Added `bundleEmitted` flag (like `questionAsked`) — LLM can only emit one bundle per response; subsequent calls are skipped.
+  4. **`lib/ai/stream-with-provider-fallback.ts`:** Each call gets a unique `requestId` (`ai-{ts}-{counter}`). Return type changed to `{ result, requestId, provider, model }` so callers can log which provider handled the request.
+  5. **`lib/ai/ai-call-log.ts` (new):** Ring buffer of last 200 AI calls for debugging without tailing logs.
+  6. **`app/(chat)/api/debug/ai-calls/route.ts` (new):** Dev-only endpoint returning recent AI calls as JSON.
+  7. **`components/chat/answer-panel.tsx`:** Added a deterministic readiness gate before the first bundle challenge (**"I'm ready 🚀"** / **"Explain more 🔄"**), replacing the prompt-level non-deterministic gate instruction.
+
+### Future Consideration
+- `bundleIndex` resets to 0 on page reload (no messages to derive from). Redoing a few challenges on reload is fast (instant feedback), so this is acceptable for now.
+
+---
+
+## Phase 21 Log: Request Latency — Critical-Path Optimisation
+
+- **Status:** Completed
+- **Problem:** Responses were slow to *start* streaming. The chat route ran a long chain of sequential, blocking operations before `streamText` was ever called, so time-to-first-token paid for all of them serially.
+- **Actions Taken (`app/(chat)/api/chat/route.ts`):**
+  1. **Parallelised the three independent DB reads.** `getMessageCountByUserId` (rate-limit count), `getChatById`, and `getMessagesByChatId` previously ran as three serial round-trips; they now run together in a single `Promise.all`. (`getMessagesByChatId` keyed on the request id returns `[]` for a not-yet-created chat, so firing it speculatively is harmless — it's only consumed inside the `if (chat)` branch.) Rate-limit and ownership checks still run, just after the batch resolves.
+  2. **Deferred the user-message write** with `after(saveMessages(...))`. The current turn builds `uiMessages` from memory (DB rows + the incoming message), so persisting the user message only matters for a *later* reload/edit request — by which point `after()` has flushed. Removes one DB round-trip from time-to-first-token on both the normal and chunking paths.
+  3. **Single-model capability lookup.** Replaced `await getCapabilities()` (a `Promise.all` over all 9 models, which can trigger Gateway `fetch`es) with a new `getModelCapabilities(modelId)` (`lib/ai/models.ts`) that resolves just the selected model — from `STATIC_CAPABILITIES` synchronously on the default Gemini path. `getCapabilities()` is retained for `/api/models` (the model picker legitimately needs all of them).
+- **Verified:** `tsc --noEmit` clean; 54/54 unit tests pass.
+- **Re: Recommendation #1 (monolithic prompt):** Investigated. The system prompt is ~29 KB (~7.3 K tokens), but the curriculum is only ~2.2 KB of that — the bulk is tuned instructional content built up across 20 phases (output style, gating, gamification). Removing the inline curriculum would force an extra `getCurriculumTopics` tool round-trip (a first-turn latency *regression*), and trimming instructions is a behaviour change, not a safe optimisation. Gemini already does implicit prefix caching (≥1024 tokens) on the stable system prompt with no code change, so the heavy prefix is not re-processed each turn. Left the prompt unchanged deliberately; a genuine RAG/trim is still open as future scope but needs a behaviour-review pass, not a blind cut.
+
+## Phase 22 Log: Stuck-on-Reply Fix (Topic Gate Buried the Question)
+
+- **Status:** Completed
+- **Symptom:** "App is slow / localhost stuck." Actually the server answered fine (logs showed the full streamed reply) but **nothing appeared** — the screen was blocked.
+- **Root cause:** On a vague request like *"Let's do some algebra"*, the model called `startNewTopicSession` for the broad **area** "algebra" *and* then asked a clarifying A/B/C question in the same turn. The tool's `data-new-topic-session` part made `onData` set `topicEntry`, which renders `TopicEntryOverlay` — a fixed `z-50` full-screen start gate offering only "Start learning" / "Choose a different topic". The actual question's answer panel was trapped behind it → student stuck.
+- **Fixes (defence in depth):**
+  1. **Client guard (`hooks/use-active-chat.tsx`):** `data-new-topic-session` now selects the topic immediately but **holds** the start gate in `pendingTopicEntryRef` instead of opening it. `onFinish` resolves it: the overlay opens only if the finished assistant turn poses no open question (`getActiveQuestion([message]) === null`). A turn that also asks a question shows the answer panel instead of the gate.
+  2. **Prompt rule (`lib/ai/prompts-tutor.ts`, TOPIC CONSISTENCY section):** never call `startNewTopicSession` for a broad area ("algebra", "geometry", "number") — only for a specific teachable topic. If the student names a broad area, ask which specific sub-topic via `askQuestion` *without* starting a session that turn. Starting a session and asking a clarifying question in the same turn is explicitly forbidden.
+- **Verified:** `tsc --noEmit` clean; 54/54 unit tests pass.
+
+## Phase 23 Log: Visual Explanation Escalation After Repeated Confusion
+
+- **Status:** Completed
+- **Feature:** When a student stays stuck on the same concept, the reteach now escalates to an explicit **visual** explanation instead of yet another prose retry.
+- **Trigger:** 3 confused attempts on the same concept (`VISUAL_ESCALATION_AT = 3`), counting both "Explain differently 🔄" (wrong-answer path) and "Explain more 🔄" (pre-challenge gate). Counter resets when the active question changes (new concept).
+- **Implementation (`components/chat/answer-panel.tsx`):** local `explainAttempts` state; a shared `visualReteachDirective()` appended to the reteach message on the Nth attempt that instructs the model to drop prose and draw a step-by-step text diagram (fraction bar / area model / number line / grouped boxes / labelled arrows), then ask one very easy question.
+- **Prompt (`lib/ai/prompts-tutor.ts`):** added a rule so that when an INCORRECT directive explicitly asks for a VISUAL explanation, the model LEADS with a worked text diagram (minimal words) and a single easy `emitChallengeBundle` question.
+- **Note on "slow responses":** each reteach is a full LLM generation (a fresh `emitChallengeBundle`), so it's inherently a few seconds on Gemini Flash Lite — the logged `lesson_bundle` calls `-1/-2/-3` were one generation per reteach, not redundant calls. The visual escalation makes the *third* reteach more useful rather than faster.
+- **Verified:** `tsc --noEmit` clean; 54/54 unit tests pass.
+
+## Phase 24 Log: Deterministic Answer-Pattern Detection (Observe & Feed Back)
+
+- **Status:** Completed
+- **Idea (user):** can the tutor "watch" the student's inputs and feed back observations / detect patterns? Built as deterministic detection (NO extra LLM call) feeding two targets: the student (inline) and the tutor (on reteach turns it already makes).
+- **`lib/answer-patterns.ts` (new, pure + unit-tested):** `detectAnswerPatterns(attempts)` returns the single most-relevant pattern:
+  - **repeated-distractor** — same wrong choice ≥2× → one concrete misconception (highest priority).
+  - **repeat-wrong** — ≥2 different wrong answers on the same concept → stuck on the method.
+  - Each pattern carries a kid-friendly `studentNote` and a factual `tutorObservation`. (An accuracy-slipping branch was dropped as unreachable given the repeat-wrong threshold.)
+- **`hooks/use-active-chat.tsx`:** added `currentConcept` to the context — a stable concept key (bundle topic > selected topic title > challenge prompt) that **survives a reteach** (which swaps in a new bundle with new challenge ids). Pattern detection keys off this, not the per-question id.
+- **`components/chat/answer-panel.tsx`:** records each graded attempt locally (`{concept, prompt, correctAnswer, chosen, wasCorrect}`); the attempt history + reteach counter reset on `currentConcept` change (not question id). When a pattern is detected it (1) shows the `studentNote` inline in the wrong-answer card and (2) appends the `tutorObservation` to the reteach directive — so the tutor targets the actual misconception with **zero extra LLM calls**.
+- **Tests:** `lib/answer-patterns.test.ts` (9 tests). Total now 63.
+- **Verified:** `tsc --noEmit` clean; 63/63 unit tests pass.
+
+## Phase 25 Log: Two Runtime Errors — Deferred-Write Rejection & Duplicate React Keys
+
+- **Status:** Completed
+- **Error 1 — `A promise passed to after() rejected` (regression from Phase 21):** the deferred user-message write passed an *eagerly-started* promise to `after()` with no error handling, so a duplicate-id insert (Strict-Mode double-fire / resend) surfaced as an unhandled rejection. **Fix (`app/(chat)/api/chat/route.ts`):** pass a `async () => {…}` callback to `after()` (so it truly runs post-response) wrapped in try/catch — a missed user-message write is non-fatal because the current turn already uses the in-memory message.
+- **Error 2 — `Encountered two children with the same key`:** `visibleMessages` was `messages.slice(0, introEndIndex).concat(selectedThread.messages)`; the intro slice and the thread slice can overlap (resumed topic whose merged messages reach before `introEndIndex`, or a marker message counted in both), producing duplicate ids in the render list. Latent bug, exposed by Phase 22 now selecting a topic thread on `data-new-topic-session`. **Fix (`hooks/use-active-chat.tsx`):** dedupe `visibleMessages` by id (keep first occurrence, preserve order).
+- **Verified:** `tsc --noEmit` clean; 63/63 unit tests pass.
+
+## Phase 26 Log: Duplicate Keys (Both Branches) & Idempotent Saves
+
+- **Status:** Completed
+- **Context:** Phase 25's dedupe only covered the `selectedThread` branch of `visibleMessages`; the `!selectedThread` branch returned `messages` raw. Duplicate-key errors kept firing from `messages.tsx:86` even before a topic was selected — because `messages` (useChat state) itself briefly holds the same id twice during the new-chat → `/chat/{id}` transition (streamed state + the SWR `/api/messages` refetch), amplified by React Strict Mode. The "Cannot read properties of undefined (reading 'state')" TypeError was a downstream symptom of React's broken reconciliation under colliding keys.
+- **Fixes:**
+  1. **`hooks/use-active-chat.tsx`:** `visibleMessages` now dedupes by id on **both** branches, preserving order and referential identity when nothing was removed.
+  2. **`lib/db/queries/chat.ts`:** `saveMessages` is now idempotent — `.onConflictDoNothing()`. A re-sent / doubled message id becomes a no-op instead of a primary-key error that would sink the whole batch (leaving the assistant turn unsaved). This is the source-level fix for the `after() rejected` DB error. (Updates still go through `updateMessage`.)
+- **Note:** `Message_v2.id` is the PK, so no duplicate ROWS were ever persisted — the duplication was purely client-side state. No DB cleanup needed.
+- **Verified:** `tsc --noEmit` clean; 63/63 unit tests pass.
+
+## Phase 27 Log: Topic Overlay Burying the Challenge Gate (regression from Phase 22)
+
+- **Status:** Completed
+- **Symptom:** Start a topic ("get better at percentages") → screen hangs on the first challenge the student never accepted; the lesson text ends with a narrated "Here is your first challenge 👇".
+- **Root cause (mine, Phase 22):** the held-overlay guard in `onFinish` only treated a turn as "poses something to answer" if it contained an open **askQuestion** (`getActiveQuestion`). A topic-start turn that teaches then calls **`emitChallengeBundle`** (the normal graded-lesson path) wasn't detected → the full-screen `TopicEntryOverlay` opened on top of the readiness gate / answer panel → stuck.
+- **Fixes:**
+  1. **`hooks/use-active-chat.tsx`:** the guard now also detects an emitted `tool-emitChallengeBundle` part; if the turn poses a question OR a bundle, the overlay is suppressed and the inline lesson + readiness gate show instead.
+  2. **`components/chat/answer-panel.tsx`:** `gateDismissed` now resets on `currentConcept` change, so every new lesson gets its own readiness gate (previously, dismissing one lesson's gate skipped all later gates).
+  3. **`lib/ai/prompts-tutor.ts`:** after `emitChallengeBundle`, the tutor must stop after the short lesson and NOT narrate the challenge ("Here is your first challenge 👇") — the app renders its own gate + card, so narration duplicates the UI.
+- **Verified:** `tsc --noEmit` clean; 63/63 unit tests pass.
+
+## Phase 28 Log: Auto-Send Loop Guard (flood of /api/chat POSTs)
+
+- **Status:** Completed
+- **Symptom:** Dev log flooded with dozens of `[Dev Only] … bot protection will return HUMAN` lines (one per `/api/chat` POST) with no matching `[ai]` calls — i.e. the client was POSTing `/api/chat` in a tight loop.
+- **Root cause:** `sendAutomaticallyWhen` returned true whenever the **last** message carried an approved `approval-responded` part, with no guard against re-firing. If the follow-up request didn't clear that message from the end (failed auth, produced no output, etc.), the predicate stayed true and `useChat` re-POSTed indefinitely. Pre-existing, not introduced this session.
+- **Fix (`hooks/use-active-chat.tsx`):** added `autoSentForRef` — the predicate now fires at most once per message id (`autoSentForRef.current === lastMessage.id` → skip).
+- **Verified:** `tsc --noEmit` clean; 63/63 unit tests pass.
+
+## Phase 29 Log: "Nothing Displayed After Answering" — Silent Tool-Only Turns
+
+- **Status:** Completed
+- **Symptom:** Answer a few graded questions, then the screen stops updating — old explanations remain, each answer fires a real `[ai]` call but nothing new renders. (`[chat-send]` diagnostic confirmed these were distinct, legitimate sends — NOT the auto-send loop, which Phase 28 fixed.)
+- **Root cause:** Only `tool-askQuestion` (and the answer-panel-driving `tool-emitChallengeBundle`) render anything in the thread. The other tools — `updateTopicProgress`, `updateStudentProfile`, `manageGoals`, `getStudentProgress`, `startNewTopicSession`, `getCurriculumTopics` — render NOTHING. After a CORRECT answer the model often replied with ONLY an `updateTopicProgress` call. The old `hasRenderableContent` counted *any* tool with output as renderable → the turn was kept and the empty-turn auto-retry was skipped → the student saw no change.
+- **Fixes:**
+  1. **`hooks/use-active-chat.tsx` + `app/(chat)/api/chat/route.ts`:** `hasRenderableContent` now only counts a `VISIBLE_TOOL_TYPES` set (`tool-askQuestion`, `tool-emitChallengeBundle`) or non-empty text. A silent tool-only turn is now treated as content-less → client auto-retries (bounded by `retriedEmptyRef`) and the server doesn't persist it. The two copies must stay in sync.
+  2. **`lib/ai/prompts-tutor.ts`:** added a CRITICAL rule — never end a turn with only a silent tool call; every turn must end with visible text and/or the next challenge/question. Save progress, THEN show the next step.
+- **Verified:** `tsc --noEmit` clean; 63/63 unit tests pass; `tests/e2e/topic-select.test.ts` passes against the live server.
+
+## Phase 30 Log: Removed Temporary Send Diagnostic
+
+- **Status:** Completed
+- Removed the temporary `console.warn("[chat-send]", …)` from `prepareSendMessagesRequest` in `hooks/use-active-chat.tsx`. It was added in the Phase 28 investigation to confirm whether `/api/chat` was being POSTed in a loop; the diagnostic proved the sends were distinct/legitimate (the loop was the auto-send predicate, fixed in Phase 28), so it's no longer needed.
+
+---
+
+## Open Issues & Concerns (as of this debugging session)
+
+A run of UI/flow bugs were fixed across Phases 21–30. Several were caused or *exposed* by the topic-thread + overlay interactions; the fixes are sound but a few rely on model behaviour or are defensive rather than root-cause. Honest open items:
+
+1. **Topic-thread slicing is fragile (defensive fixes in place).** `visibleMessages` and `deriveTopicThreads` can overlap/produce duplicate ids in edge cases (resume merges, marker messages counted twice). Phase 26 added a render-boundary dedupe by id — this stops the symptom reliably but the underlying slice overlap still exists. A proper fix would make the slices non-overlapping at the source. Risky surgery; deferred.
+2. **`pickTopic` selects locally before any thread exists.** Phase (topic-select fix) sets `selectedTopicId = topicSlug(title)` immediately so the chooser dismisses deterministically. If the model then phrases the topic differently (different slug) or never emits a `startNewTopicSession` marker, `selectedThread` stays null and the view falls back to the whole chat. Acceptable, but the local id and the eventual marker id can diverge.
+3. **"Always end visibly" depends on the model + a bounded retry.** Phase 29 fixed silent tool-only turns by (a) not counting silent tools as renderable and (b) a prompt rule. If the model still ends a turn with only a silent tool call, the client auto-retries ONCE (`retriedEmptyRef`) then shows a "tap again" toast. Worst case is a nudge, not a freeze — but it's not a hard guarantee.
+4. **`hasRenderableContent` / `VISIBLE_TOOL_TYPES` is duplicated** in `hooks/use-active-chat.tsx` and `app/(chat)/api/chat/route.ts` and must be kept in sync by hand. Adding a new student-visible tool means updating both. Candidate for a shared module.
+5. **Response speed is still inherent, not fixed.** Phases 21 optimised the pre-stream critical path (parallel DB reads, deferred write, single-model caps), but each reteach/answer is still a full LLM generation on Gemini Flash Lite with a ~7K-token prompt. Real levers (prompt trim / faster model / measure-first) remain open — see Recommendation #1.
+6. **e2e coverage is thin for the flows that broke.** Added `tests/e2e/topic-select.test.ts` (paste list → pick dismisses chooser). The graded-answer loop, bundle gate, overlay-vs-gate, and silent-turn retry are NOT yet covered by e2e — most fixes this session were verified by code reasoning + manual report, not automated tests driving the full flow.
+7. **botid `c.js Error` is dev noise.** The console `Error` from `c.js` and the repeated `[Dev Only] … will return HUMAN` lines are botid failing open in local dev — not an app fault. Can be silenced by setting `developmentOptions.bypass`.
+
 ## Current Feature Summary
 
 The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for maths"):
 
-- **Teaching:** short, visual, Socratic micro-lessons; one interactive question at a time; content shown first, then a gate before any challenge.
+- **Teaching:** short, visual, Socratic micro-lessons; one interactive question at a time; content shown first, then a deterministic readiness gate before any bundle challenge.
 - **Topic threads:** one chat holds many per-topic sub-conversations; a full-screen start gate opens each topic; "Your Topics" header menu switches between them; a topic can't be closed (without confirming) until its challenges are done.
-- **Interactive answers:** challenges answered via a form panel (radio/select/text) above the chat — not typed into chat — one at a time ("Challenge N of M"), with instant gamified ✅/❌ feedback + sound.
+- **Interactive answers:** challenges answered via a form panel (radio/select/text) above the chat — not typed into chat — one at a time ("Challenge N of M"), with instant gamified ✅/❌ feedback + sound. Bundle challenges advance locally with **zero LLM calls** (correct, wrong, or next-challenge — only "Explain differently" hits the LLM).
 - **Persistence:** per-student profiles, topic mastery (0–5), XP / streaks / badges, short-term goals and exam dates, GCSE-domain rollups — all saved across sessions (multiple children per account). Topic threads/phases are rederived from saved messages, so they survive reload.
 - **Plans & coaching:** goal-based learning plans with steps + %, check-ins, parent/child reports, GCSE-readiness tracking.
 - **Model routing:** Vercel AI Gateway with a transparent **Gemini fallback** (and a `USE_GEMINI_ONLY` local-dev switch) when the gateway errors / is rate limited.
+- **Diagnostics:** each AI call has a unique `requestId` logged with `[ai] provider=... reason=... requestId=...`. Dev-only `/api/debug/ai-calls` endpoint and `/api/debug/ai-provider` for troubleshooting without live logs.
 - **UX:** sunset theme, sound effects, live progress badges + achievement toast, large-input chunking, in-chat topic switching.
-- **Tools:** `getCurriculumTopics`, `getStudentProgress`, `updateStudentProfile`, `updateTopicProgress`, `manageGoals`, `startNewTopicSession` (in-chat topic thread + marker), `askQuestion` (no legacy weather/document tools).
+- **Tools:** `getCurriculumTopics`, `getStudentProgress`, `updateStudentProfile`, `updateTopicProgress`, `manageGoals`, `startNewTopicSession` (in-chat topic thread + marker), `emitChallengeBundle` (pre-generated 3–5 challenge bundles, locally graded), `askQuestion` (no legacy weather/document tools).

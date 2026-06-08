@@ -5,11 +5,7 @@ export function useScrollToBottom() {
   const endRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const isAtBottomRef = useRef(true);
-  const isUserScrollingRef = useRef(false);
-
-  useEffect(() => {
-    isAtBottomRef.current = isAtBottom;
-  }, [isAtBottom]);
+  const userLeftBottomRef = useRef(false);
 
   const checkIfAtBottom = useCallback(() => {
     if (!containerRef.current) {
@@ -27,6 +23,7 @@ export function useScrollToBottom() {
       top: containerRef.current.scrollHeight,
       behavior,
     });
+    userLeftBottomRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -35,25 +32,18 @@ export function useScrollToBottom() {
       return;
     }
 
-    let scrollTimeout: ReturnType<typeof setTimeout>;
-
     const handleScroll = () => {
-      isUserScrollingRef.current = true;
-      clearTimeout(scrollTimeout);
-
       const atBottom = checkIfAtBottom();
       setIsAtBottom(atBottom);
       isAtBottomRef.current = atBottom;
-
-      scrollTimeout = setTimeout(() => {
-        isUserScrollingRef.current = false;
-      }, 150);
+      if (!atBottom) {
+        userLeftBottomRef.current = true;
+      }
     };
 
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       container.removeEventListener("scroll", handleScroll);
-      clearTimeout(scrollTimeout);
     };
   }, [checkIfAtBottom]);
 
@@ -64,7 +54,7 @@ export function useScrollToBottom() {
     }
 
     const scrollIfNeeded = () => {
-      if (isAtBottomRef.current && !isUserScrollingRef.current) {
+      if (isAtBottomRef.current && !userLeftBottomRef.current) {
         requestAnimationFrame(() => {
           container.scrollTo({
             top: container.scrollHeight,
@@ -99,6 +89,7 @@ export function useScrollToBottom() {
   function onViewportEnter() {
     setIsAtBottom(true);
     isAtBottomRef.current = true;
+    userLeftBottomRef.current = false;
   }
 
   function onViewportLeave() {
@@ -109,7 +100,7 @@ export function useScrollToBottom() {
   const reset = useCallback(() => {
     setIsAtBottom(true);
     isAtBottomRef.current = true;
-    isUserScrollingRef.current = false;
+    userLeftBottomRef.current = false;
   }, []);
 
   return {

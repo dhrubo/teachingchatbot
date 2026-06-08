@@ -13,6 +13,7 @@ export const textDocumentHandler = createDocumentHandler<"text">({
       system:
         "Write about the given topic. Markdown is supported. Use headings wherever appropriate.",
       experimental_transform: smoothStream({ chunking: "word" }),
+      maxRetries: 0,
       prompt: title,
     });
 
@@ -36,6 +37,7 @@ export const textDocumentHandler = createDocumentHandler<"text">({
       model: getLanguageModel(modelId),
       system: updateDocumentPrompt(document.content, "text"),
       experimental_transform: smoothStream({ chunking: "word" }),
+      maxRetries: 0,
       prompt: description,
     });
 

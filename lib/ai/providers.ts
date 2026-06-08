@@ -1,113 +1,203 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import type {
-  LanguageModelV3,
-  LanguageModelV3CallOptions,
-} from "@ai-sdk/provider";
-import { customProvider, gateway } from "ai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import type { LanguageModel } from "ai";
+import { gateway } from "ai";
 import { isTestEnvironment } from "../constants";
-import { GEMINI_FALLBACK_MODEL, titleModel } from "./models";
-
-export const myProvider = isTestEnvironment
-  ? (() => {
-      const { chatModel, titleModel } = require("./models.mock");
-      return customProvider({
-        languageModels: {
-          "chat-model": chatModel,
-          "title-model": titleModel,
-        },
-      });
-    })()
-  : null;
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
+const googlePremium = process.env.GOOGLE_GENERATIVE_AI_API_KEY_PREMIUM
+  ? createGoogleGenerativeAI({
+      apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY_PREMIUM,
+    })
+  : null;
+
 const hasGeminiKey = Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+const hasPremiumGeminiKey = Boolean(
+  process.env.GOOGLE_GENERATIVE_AI_API_KEY_PREMIUM
+);
+const hasGroqKey = Boolean(process.env.GROQ_API_KEY);
+const hasOpenRouterKey = Boolean(process.env.OPENROUTER_API_KEY);
+const useGateway =
+  process.env.USE_VERCEL_AI_GATEWAY === "1" &&
+  Boolean(process.env.AI_GATEWAY_API_KEY);
 
-// Set USE_GEMINI_ONLY=1 to bypass the AI Gateway entirely and use Gemini for
-// every call (handy for local dev when the gateway is rate limited).
-const useGeminiOnly = process.env.USE_GEMINI_ONLY === "1" && hasGeminiKey;
+const GEMINI_MODEL =
+  process.env.GOOGLE_GENERATIVE_AI_MODEL ?? "gemini-3.1-flash-lite";
+const GROQ_MODEL =
+  process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-chat-v3-0324:free";
 
-/**
- * Wraps a primary (gateway) language model so that if a call fails — most
- * commonly because the Vercel AI Gateway is rate limited / out of credits —
- * it transparently retries the same request against Gemini.
- *
- * Both streaming and non-streaming calls are covered. The fallback only kicks
- * in when a Gemini API key is configured; otherwise the original error is
- * rethrown so behaviour is unchanged.
- */
-function withGeminiFallback(primary: LanguageModelV3): LanguageModelV3 {
-  if (!hasGeminiKey) {
-    return primary;
+console.info("[ai-config] model=" + GEMINI_MODEL);
+console.info("[ai-config] keys: free=" + (hasGeminiKey ? "SET ✓" : "unset") + " premium=" + (hasPremiumGeminiKey ? "SET ✓" : "unset") + " groq=" + (hasGroqKey ? "SET ✓" : "unset") + " openrouter=" + (hasOpenRouterKey ? "SET ✓" : "unset") + " gateway=" + (useGateway ? "SET ✓" : "unset"));
+
+export function isUsingGateway(): boolean {
+  return useGateway;
+}
+
+export function currentProvider(): string {
+  if (useGateway) return "gateway";
+  if (hasGeminiKey) return "gemini";
+  if (hasGroqKey) return "groq";
+  if (hasOpenRouterKey) return "openrouter";
+  return "none";
+}
+
+function getGroqModel() {
+  const { groq } = require("@ai-sdk/groq");
+  return groq(GROQ_MODEL);
+}
+
+function getOpenRouterModel() {
+  const openrouter = createOpenRouter({
+    apiKey: process.env.OPENROUTER_API_KEY,
+  });
+  return openrouter.chat(OPENROUTER_MODEL);
+}
+
+export type ProviderCandidate = {
+  name: string;
+  model: LanguageModel;
+  modelName: string;
+};
+
+export function getTutorProviderCandidates(
+  isPremium?: boolean
+): ProviderCandidate[] {
+  const candidates: ProviderCandidate[] = [];
+
+  if (isTestEnvironment) {
+    const { chatModel } = require("./models.mock");
+    candidates.push({
+      name: "mock",
+      model: chatModel,
+      modelName: "mock",
+    });
+    return candidates;
   }
 
-  const fallback = google(GEMINI_FALLBACK_MODEL);
+  if (useGateway) {
+    const modelName =
+      process.env.AI_GATEWAY_MODEL ?? "google/gemini-3.1-flash-lite";
+    candidates.push({
+      name: "vercel-ai-gateway",
+      model: gateway.languageModel(modelName),
+      modelName,
+    });
+  }
 
-  // Gateway-specific provider options (e.g. `gateway.order`) are meaningless to
-  // Gemini and can cause it to reject the request, so strip them on fallback.
-  const sanitize = (
-    options: LanguageModelV3CallOptions
-  ): LanguageModelV3CallOptions => {
-    const { gateway: _gateway, ...providerOptions } =
-      options.providerOptions ?? {};
-    return { ...options, providerOptions };
-  };
+  // Premium Gemini key for signed-in users and admins. Falls back to the
+  // free key if no premium key is configured.
+  if (isPremium && hasPremiumGeminiKey) {
+    candidates.push({
+      name: "gemini-premium(GOOGLE_GENERATIVE_AI_API_KEY_PREMIUM)",
+      model: googlePremium!(GEMINI_MODEL),
+      modelName: GEMINI_MODEL,
+    });
+  }
 
-  const logFallback = (error: unknown) => {
-    console.warn(
-      `[ai] Gateway model "${primary.modelId}" failed; falling back to Gemini "${GEMINI_FALLBACK_MODEL}".`,
-      error instanceof Error ? error.message : error
-    );
-  };
+  if (hasGeminiKey) {
+    candidates.push({
+      name: "gemini-free(GOOGLE_GENERATIVE_AI_API_KEY)",
+      model: google(GEMINI_MODEL),
+      modelName: GEMINI_MODEL,
+    });
+  }
 
-  return {
-    specificationVersion: primary.specificationVersion,
-    provider: primary.provider,
-    modelId: primary.modelId,
-    supportedUrls: primary.supportedUrls,
+  if (hasGroqKey) {
+    candidates.push({
+      name: "groq",
+      model: getGroqModel(),
+      modelName: GROQ_MODEL,
+    });
+  }
 
-    async doGenerate(options) {
-      try {
-        return await primary.doGenerate(options);
-      } catch (error) {
-        logFallback(error);
-        return await fallback.doGenerate(sanitize(options));
+  if (hasOpenRouterKey) {
+    candidates.push({
+      name: "openrouter",
+      model: getOpenRouterModel(),
+      modelName: OPENROUTER_MODEL,
+    });
+  }
+
+  // Respect AI_PROVIDER_ORDER if set (comma-separated provider names).
+  const order = process.env.AI_PROVIDER_ORDER;
+  if (order) {
+    const preferred = order.split(",").map((s) => s.trim().toLowerCase());
+    const ordered: ProviderCandidate[] = [];
+    for (const name of preferred) {
+      const idx = candidates.findIndex((c) => c.name === name);
+      if (idx !== -1) {
+        ordered.push(candidates[idx]);
+        candidates.splice(idx, 1);
       }
-    },
+    }
+    // Append any remaining candidates not in the order list.
+    ordered.push(...candidates);
+    return ordered;
+  }
 
-    async doStream(options) {
-      try {
-        return await primary.doStream(options);
-      } catch (error) {
-        logFallback(error);
-        return await fallback.doStream(sanitize(options));
-      }
-    },
-  };
+  return candidates;
 }
 
-export function getLanguageModel(modelId: string) {
-  if (isTestEnvironment && myProvider) {
-    return myProvider.languageModel(modelId);
+export function getTutorModel() {
+  const candidates = getTutorProviderCandidates();
+
+  if (candidates.length === 0) {
+    throw new Error(SETUP_ERROR);
   }
 
-  if (useGeminiOnly) {
-    return google(GEMINI_FALLBACK_MODEL);
-  }
-
-  return withGeminiFallback(gateway.languageModel(modelId));
+  return candidates[0].model;
 }
 
-export function getTitleModel() {
-  if (isTestEnvironment && myProvider) {
-    return myProvider.languageModel("title-model");
-  }
+export function isQuotaError(error: unknown): boolean {
+  const text =
+    error instanceof Error
+      ? `${error.name}\n${error.message}\n${error.stack ?? ""}`
+      : JSON.stringify(error);
 
-  if (useGeminiOnly) {
-    return google(GEMINI_FALLBACK_MODEL);
-  }
-
-  return withGeminiFallback(gateway.languageModel(titleModel.id));
+  return (
+    text.includes("429") ||
+    text.includes("RESOURCE_EXHAUSTED") ||
+    text.toLowerCase().includes("quota") ||
+    text.toLowerCase().includes("rate limit") ||
+    text.toLowerCase().includes("rate_limit") ||
+    text.toLowerCase().includes("too many requests")
+  );
 }
+
+export function getLanguageModel(_modelId?: string): LanguageModel {
+  return getTutorModel();
+}
+
+export function getTitleModel(): LanguageModel {
+  if (isTestEnvironment) {
+    const { titleModel } = require("./models.mock");
+    return titleModel;
+  }
+
+  const candidates = getTutorProviderCandidates();
+  if (candidates.length === 0) {
+    throw new Error(SETUP_ERROR);
+  }
+
+  return candidates[0].model;
+}
+
+const SETUP_ERROR = [
+  "No AI provider configured.",
+  "",
+  "Add one of these free provider keys to your .env.local:",
+  "",
+  "GOOGLE_GENERATIVE_AI_API_KEY",
+  "  (recommended) https://aistudio.google.com/apikey",
+  "",
+  "GROQ_API_KEY",
+  "  https://console.groq.com/keys",
+  "",
+  "OPENROUTER_API_KEY",
+  "  https://openrouter.ai/settings/keys",
+].join("\n");

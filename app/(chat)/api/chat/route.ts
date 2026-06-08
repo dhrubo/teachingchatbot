@@ -17,18 +17,23 @@ import {
   detectLargeInput,
   extractTopics,
 } from "@/lib/ai/detect-large-input";
-import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import { getEntitlements } from "@/lib/ai/entitlements";
 import {
   allowedModelIds,
   chatModels,
   DEFAULT_CHAT_MODEL,
-  getCapabilities,
+  getModelCapabilities,
 } from "@/lib/ai/models";
 import { TUTOR_SYSTEM_PROMPT } from "@/lib/ai/prompts-tutor";
-import { getLanguageModel } from "@/lib/ai/providers";
+import {
+  getTutorProviderCandidates,
+  isUsingGateway,
+} from "@/lib/ai/providers";
 import { getCurriculumTopics } from "@/lib/ai/tools/get-curriculum-topics";
 import { getStudentProgress } from "@/lib/ai/tools/get-student-progress";
 import { manageGoals } from "@/lib/ai/tools/manage-goals";
+import { streamTextWithFallback } from "@/lib/ai/stream-with-provider-fallback";
+import { emitChallengeBundle } from "@/lib/ai/tools/emit-challenge-bundle";
 import { startNewTopicSession } from "@/lib/ai/tools/start-new-topic-session";
 import { updateStudentProfile } from "@/lib/ai/tools/update-student-profile";
 import { updateTopicProgress } from "@/lib/ai/tools/update-topic-progress";
@@ -50,6 +55,8 @@ import { ChatbotError } from "@/lib/errors";
 import { checkIpRateLimit } from "@/lib/ratelimit";
 import type { ChatMessage } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
+import { isLLMTitleEnabled } from "@/lib/ai/title";
+import { createChatTitle } from "@/lib/ai/title";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
@@ -65,16 +72,26 @@ function getStreamContext() {
 
 export { getStreamContext };
 
-// True if a message carries something worth showing: non-empty text, or any
-// tool call with output. Step markers / empty text alone don't count, so a
-// failed (content-less) assistant turn isn't persisted as a blank bubble.
+// Tools whose output the student actually sees. Must mirror the client's
+// VISIBLE_TOOL_TYPES (hooks/use-active-chat.tsx): askQuestion renders a
+// challenge card, emitChallengeBundle drives the answer panel. Silent
+// persistence tools (updateTopicProgress, manageGoals, …) render nothing.
+const VISIBLE_TOOL_TYPES = new Set([
+  "tool-askQuestion",
+  "tool-emitChallengeBundle",
+]);
+
+// True if a message carries something the STUDENT can see: non-empty text, or
+// a VISIBLE tool call with output. Step markers, empty text, and silent
+// tool-only turns don't count — so a content-less assistant turn isn't
+// persisted as a blank/invisible bubble the student can't get past.
 function hasRenderableContent(message: { parts?: unknown[] }): boolean {
   return (message.parts ?? []).some((part) => {
     const p = part as { type?: string; text?: string; output?: unknown };
     if (p.type === "text") {
       return (p.text ?? "").trim().length > 0;
     }
-    if (typeof p.type === "string" && p.type.startsWith("tool-")) {
+    if (typeof p.type === "string" && VISIBLE_TOOL_TYPES.has(p.type)) {
       return p.output !== undefined;
     }
     return false;
@@ -112,18 +129,25 @@ export async function POST(request: Request) {
 
     const userType: UserType = session.user.type;
 
-    const messageCount = await getMessageCountByUserId({
-      id: session.user.id,
-      differenceInHours: 1,
-    });
+    const isToolApprovalFlow = Boolean(messages);
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerHour) {
+    // These three reads are independent of each other — fire them concurrently
+    // rather than paying for three serial DB round-trips before the model can
+    // start. getMessagesByChatId keyed on the request id returns [] for a
+    // not-yet-created chat, which is harmless: we only use it when `chat` exists.
+    const [messageCount, chat, chatMessages] = await Promise.all([
+      getMessageCountByUserId({
+        id: session.user.id,
+        differenceInHours: 1,
+      }),
+      getChatById({ id }),
+      getMessagesByChatId({ id }),
+    ]);
+
+    if (messageCount > getEntitlements(userType).maxMessagesPerHour) {
       return new ChatbotError("rate_limit:chat").toResponse();
     }
 
-    const isToolApprovalFlow = Boolean(messages);
-
-    const chat = await getChatById({ id });
     let messagesFromDb: DBMessage[] = [];
     let titlePromise: Promise<string> | null = null;
 
@@ -131,15 +155,27 @@ export async function POST(request: Request) {
       if (chat.userId !== session.user.id) {
         return new ChatbotError("forbidden:chat").toResponse();
       }
-      messagesFromDb = await getMessagesByChatId({ id });
+      messagesFromDb = chatMessages;
     } else if (message?.role === "user") {
+      const title = isLLMTitleEnabled()
+        ? "New chat"
+        : createChatTitle(
+            message.parts
+              .filter((p) => p.type === "text")
+              .map((p) => (p as { text: string }).text)
+              .join(" ")
+          );
       await saveChat({
         id,
         userId: session.user.id,
-        title: "New chat",
+        title,
         visibility: selectedVisibilityType,
       });
-      titlePromise = generateTitleFromUserMessage({ message });
+      if (isLLMTitleEnabled()) {
+        titlePromise = generateTitleFromUserMessage({ message });
+      } else {
+        titlePromise = Promise.resolve(title);
+      }
     }
 
     let uiMessages: ChatMessage[];
@@ -181,17 +217,31 @@ export async function POST(request: Request) {
     }
 
     if (message?.role === "user") {
-      await saveMessages({
-        messages: [
-          {
-            chatId: id,
-            id: message.id,
-            role: "user",
-            parts: message.parts,
-            attachments: [],
-            createdAt: new Date(),
-          },
-        ],
+      // Persist the user message off the critical path. The current turn builds
+      // `uiMessages` from memory (DB rows + this message), so this write only
+      // matters for reload/edit on a *later* request — by which point `after()`
+      // has flushed. Deferring it removes a DB round-trip from
+      // time-to-first-token. Pass a CALLBACK (not an eagerly-started promise) so
+      // it truly runs after the response, and swallow errors — a duplicate id
+      // (Strict-Mode double-fire / resend) must not surface as an unhandled
+      // rejection, and a missed user-message write is non-fatal here.
+      after(async () => {
+        try {
+          await saveMessages({
+            messages: [
+              {
+                chatId: id,
+                id: message.id,
+                role: "user",
+                parts: message.parts,
+                attachments: [],
+                createdAt: new Date(),
+              },
+            ],
+          });
+        } catch {
+          /* non-critical: the turn already used the in-memory message */
+        }
       });
     }
 
@@ -268,8 +318,7 @@ export async function POST(request: Request) {
     }
 
     const modelConfig = chatModels.find((m) => m.id === chatModel);
-    const modelCapabilities = await getCapabilities();
-    const capabilities = modelCapabilities[chatModel];
+    const capabilities = await getModelCapabilities(chatModel);
     const isReasoningModel = capabilities?.reasoning === true;
     const supportsTools = capabilities?.tools === true;
 
@@ -285,6 +334,7 @@ export async function POST(request: Request) {
             "updateTopicProgress",
             "manageGoals",
             "startNewTopicSession",
+            "emitChallengeBundle",
             "askQuestion",
           ]
     ) as (
@@ -294,50 +344,98 @@ export async function POST(request: Request) {
       | "updateTopicProgress"
       | "manageGoals"
       | "startNewTopicSession"
+      | "emitChallengeBundle"
       | "askQuestion"
     )[];
 
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
-        const result = streamText({
-          model: getLanguageModel(chatModel),
-          system: TUTOR_SYSTEM_PROMPT,
-          messages: modelMessages,
-          stopWhen: stepCountIs(8),
-          experimental_activeTools: activeTools,
-          providerOptions: {
-            ...(modelConfig?.gatewayOrder && {
-              gateway: { order: modelConfig.gatewayOrder },
-            }),
-            ...(modelConfig?.reasoningEffort && {
-              openai: { reasoningEffort: modelConfig.reasoningEffort },
-            }),
+        // Enforce one question / one bundle per response — the model can fire
+        // multiple calls in a single generation, flooding the UI with
+        // challenges the student can't answer. The guard skips duplicates.
+        let questionAsked = false;
+        let bundleEmitted = false;
+
+        const candidates = getTutorProviderCandidates(
+          session.user.type !== "guest"
+        );
+
+        const {
+          result: llmResult,
+          requestId,
+          provider,
+          model,
+        } = await streamTextWithFallback(
+          candidates,
+          {
+            system: TUTOR_SYSTEM_PROMPT,
+            messages: modelMessages,
+            stopWhen: stepCountIs(8),
+            experimental_activeTools: activeTools,
+            providerOptions: {
+              ...(isUsingGateway() && modelConfig?.gatewayOrder && {
+                gateway: { order: modelConfig.gatewayOrder },
+              }),
+              ...(isUsingGateway() && modelConfig?.reasoningEffort && {
+                openai: { reasoningEffort: modelConfig.reasoningEffort },
+              }),
+            },
+            tools: {
+              getCurriculumTopics,
+              getStudentProgress: getStudentProgress({ session }),
+              updateStudentProfile: updateStudentProfile({
+                session,
+                dataStream,
+              }),
+              updateTopicProgress: updateTopicProgress({
+                session,
+                dataStream,
+              }),
+              manageGoals: manageGoals({ session }),
+              startNewTopicSession: startNewTopicSession({ dataStream }),
+              emitChallengeBundle: {
+                ...emitChallengeBundle,
+                execute: async (...args: any[]) => {
+                  if (bundleEmitted) {
+                    return { skipped: true };
+                  }
+                  bundleEmitted = true;
+                  return emitChallengeBundle.execute!(args[0], args[1]);
+                },
+              },
+              askQuestion: {
+                ...askQuestion,
+                execute: async (...args: any[]) => {
+                  if (questionAsked) {
+                    return { skipped: true };
+                  }
+                  questionAsked = true;
+                  return askQuestion.execute!(args[0], args[1]);
+                },
+              },
+            },
+            experimental_telemetry: {
+              isEnabled: isProductionEnvironment,
+              functionId: "stream-text",
+            },
           },
-          tools: {
-            getCurriculumTopics,
-            getStudentProgress: getStudentProgress({ session }),
-            updateStudentProfile: updateStudentProfile({ session, dataStream }),
-            updateTopicProgress: updateTopicProgress({ session, dataStream }),
-            manageGoals: manageGoals({ session }),
-            startNewTopicSession: startNewTopicSession({ dataStream }),
-            askQuestion,
-          },
-          experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: "stream-text",
-          },
-        });
+          (name) => {
+            console.info("provider fallback switched to", name);
+          }
+        );
 
         dataStream.merge(
-          result.toUIMessageStream({ sendReasoning: isReasoningModel })
+          llmResult.toUIMessageStream({ sendReasoning: isReasoningModel })
         );
 
         if (titlePromise) {
           try {
             const title = await titlePromise;
             dataStream.write({ type: "data-chat-title", data: title });
-            updateChatTitleById({ chatId: id, title });
+            if (isLLMTitleEnabled()) {
+              await updateChatTitleById({ chatId: id, title });
+            }
           } catch (_) {
             /* non-fatal */
           }
@@ -390,6 +488,10 @@ export async function POST(request: Request) {
         }
       },
       onError: (error) => {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes("All providers exhausted")) {
+          return "All my AI providers are currently overloaded or out of quota. Please try again later, or ask a parent to check the API keys.";
+        }
         if (
           error instanceof Error &&
           error.message?.includes(
@@ -397,6 +499,12 @@ export async function POST(request: Request) {
           )
         ) {
           return "AI Gateway requires a valid credit card on file to service requests. Please visit https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card to add a card and unlock your free credits.";
+        }
+        if (
+          error instanceof Error &&
+          error.message?.includes("API key not valid")
+        ) {
+          return "Your AI provider API key is invalid. Please check your GOOGLE_GENERATIVE_AI_API_KEY.";
         }
         return "That didn't work 😅 — give it another try?";
       },
@@ -437,6 +545,13 @@ export async function POST(request: Request) {
       )
     ) {
       return new ChatbotError("bad_request:activate_gateway").toResponse();
+    }
+
+    if (
+      error instanceof Error &&
+      error.message?.includes("All providers exhausted")
+    ) {
+      return new ChatbotError("offline:chat").toResponse();
     }
 
     console.error("Unhandled error in chat API:", error, { vercelId });

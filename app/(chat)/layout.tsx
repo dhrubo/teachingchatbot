@@ -28,10 +28,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 async function SidebarShell({ children }: { children: React.ReactNode }) {
   const [session, cookieStore] = await Promise.all([auth(), cookies()]);
   const isCollapsed = cookieStore.get("sidebar_state")?.value !== "true";
+  const user = session?.user;
+  const isGuest = !user || (user as { type?: string }).type === "guest";
 
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>
-      <AppSidebar user={session?.user} />
+      {!isGuest && <AppSidebar user={user} />}
       <SidebarInset>
         <Toaster
           position="top-center"

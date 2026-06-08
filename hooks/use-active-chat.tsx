@@ -30,6 +30,9 @@ import {
   isAnswerCorrect,
   isGraded,
 } from "@/lib/active-question";
+import {
+  type ChallengeBundle,
+} from "@/lib/ai/challenge-bundle";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import type { Vote } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
@@ -92,25 +95,44 @@ type ActiveChatContextValue = {
   resumeTopic: (topicId: string) => void;
   pickTopic: (title: string) => void;
   activeChallenge: ActiveQuestion | null;
+  // A stable key for the concept being practised, surviving reteach/new-bundle
+  // (bundle topic > selected topic > challenge prompt). Used for deterministic
+  // answer-pattern detection.
+  currentConcept: string;
   challengeIndex: number;
   challengeCount: number;
+  bundleActive: boolean;
   hasIncompleteChallenges: (topicId: string | null) => boolean;
   requestLeave: (targetId: string | null) => void;
   leaveTopicTarget: string | null;
   confirmLeave: () => void;
   cancelLeave: () => void;
+  canRequestHarder: boolean;
+  requestHarderChallenge: () => void;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
 
-// True if a message has something to show: non-empty text or a tool call with
-// output. Used to detect failed (content-less) assistant turns.
+// Tools whose output is actually shown to the student (askQuestion renders a
+// challenge card; emitChallengeBundle drives the answer panel). Other tools
+// (updateTopicProgress, updateStudentProfile, manageGoals, getStudentProgress,
+// startNewTopicSession, getCurriculumTopics) persist data or steer state but
+// render NOTHING in the thread — a turn made up only of those is invisible to
+// the student, which looks like "nothing happened / old explanations remain".
+const VISIBLE_TOOL_TYPES = new Set([
+  "tool-askQuestion",
+  "tool-emitChallengeBundle",
+]);
+
+// True if a message has something the STUDENT can see: non-empty text or a
+// visible tool call with output. Silent persistence tools don't count, so a
+// tool-only-silent turn is treated as content-less and triggers the retry.
 function hasRenderableContent(message: ChatMessage): boolean {
   return (message.parts ?? []).some((part) => {
     if (part.type === "text") {
       return (part.text ?? "").trim().length > 0;
     }
-    if (part.type.startsWith("tool-")) {
+    if (VISIBLE_TOOL_TYPES.has(part.type)) {
       return (part as { output?: unknown }).output !== undefined;
     }
     return false;
@@ -150,6 +172,17 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const [topicList, setTopicList] = useState<string[]>([]);
   const [completedTopics, setCompletedTopics] = useState<string[]>([]);
 
+  // Local bundle index — tracks which challenge in the current bundle is active.
+  // Separate from messages to avoid sending a user message (and hitting the LLM)
+  // for every correct answer.
+  const [bundleIndex, setBundleIndex] = useState(0);
+  const prevBundleIdRef = useRef<string | null>(null);
+  // Tracks correctness per challenge id in the current bundle.
+  // Reset when a new bundle arrives.
+  const bundleResultsRef = useRef<Map<string, boolean>>(new Map());
+  // Whether to offer a "Challenge me harder" option after an all-correct bundle.
+  const [canRequestHarder, setCanRequestHarder] = useState(false);
+
   // ---- Topic threads (per-topic sub-conversations within one chat) ----
   // The currently open topic thread (null = show the whole chat / intro).
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
@@ -163,6 +196,14 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const [topicsMenuOpen, setTopicsMenuOpen] = useState(false);
   // Soft close-lock: the topic the student is trying to leave, pending confirm.
   const [leaveTopicTarget, setLeaveTopicTarget] = useState<string | null>(null);
+  // A topic-start whose full-screen gate is held until the turn finishes — so a
+  // clarifying question in the same turn isn't buried behind the overlay.
+  const pendingTopicEntryRef = useRef<{ topicId: string; title: string } | null>(
+    null
+  );
+  // The message id we last auto-sent for, to stop sendAutomaticallyWhen from
+  // re-firing in a loop when the triggering message stays at the end.
+  const autoSentForRef = useRef<string | null>(null);
 
   const chatIdFromUrl = extractChatId(pathname);
   const isNewChat = !chatIdFromUrl;
@@ -187,7 +228,10 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   // Auto-retry bookkeeping for content-less assistant turns. regenerateRef is
   // filled in after useChat returns (regenerate isn't available inside config).
-  const retriedEmptyRef = useRef<Set<string>>(new Set());
+  // NOTE: this is a boolean, not a Set keyed on message.id — because
+  // regenerate() creates a NEW assistant message each time with a different
+  // id, a per-id guard would never fire and allow infinite retries.
+  const retriedEmptyRef = useRef(false);
   const regenerateRef = useRef<(() => void) | null>(null);
 
   const { data: chatData, isLoading } = useSWR(
@@ -220,15 +264,27 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     generateId: generateUUID,
     sendAutomaticallyWhen: ({ messages: currentMessages }) => {
       const lastMessage = currentMessages.at(-1);
-      return (
+      const shouldSend =
         lastMessage?.parts?.some(
           (part) =>
+            part != null &&
             "state" in part &&
             part.state === "approval-responded" &&
             "approval" in part &&
             (part.approval as { approved?: boolean })?.approved === true
-        ) ?? false
-      );
+        ) ?? false;
+      // Guard against an auto-send loop: if the triggering message stays at the
+      // end (e.g. the follow-up request failed auth / produced no output), the
+      // predicate would keep returning true and POST /api/chat forever. Fire at
+      // most once per message id.
+      if (!shouldSend || !lastMessage) {
+        return false;
+      }
+      if (autoSentForRef.current === lastMessage.id) {
+        return false;
+      }
+      autoSentForRef.current = lastMessage.id;
+      return true;
     },
     transport: new DefaultChatTransport({
       api: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat`,
@@ -239,6 +295,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
           lastMessage?.role !== "user" ||
           request.messages.some((msg) =>
             msg.parts?.some((part) => {
+              if (part == null) return false;
               const state = (part as { state?: string }).state;
               return (
                 state === "approval-responded" || state === "output-denied"
@@ -264,10 +321,13 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       if (dataPart.type === "data-new-topic-session") {
         const d = dataPart.data as { topic?: string; topicId?: string };
         if (d?.topic && d?.topicId) {
-          // Select the new topic thread and open its full-screen start gate.
-          // No navigation — the thread lives inside the current chat.
+          // Select the new topic thread now, but DON'T open the full-screen
+          // start gate yet — hold it until the turn finishes. If the same turn
+          // also poses a clarifying / choice question, opening the overlay would
+          // bury the answer panel behind it and leave the student stuck. The
+          // decision is made in onFinish once the full message is known.
           setSelectedTopicId(d.topicId);
-          setTopicEntry({ topicId: d.topicId, title: d.topic });
+          pendingTopicEntryRef.current = { topicId: d.topicId, title: d.topic };
         }
       }
       if (dataPart.type === "data-topic-progress") {
@@ -316,17 +376,43 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     onFinish: ({ message }) => {
       playSound("receive");
       mutate(unstable_serialize(getChatHistoryPaginationKey));
+      // Resolve a held topic-start gate. Only open the full-screen overlay if
+      // the turn didn't also pose an open question — otherwise the answer panel
+      // would be trapped behind the overlay and the student couldn't respond.
+      const pending = pendingTopicEntryRef.current;
+      if (pending) {
+        pendingTopicEntryRef.current = null;
+        // "Poses something to answer" = an open askQuestion OR an emitted
+        // challenge bundle. Either means the answer panel / readiness gate must
+        // be visible, so we must NOT open the full-screen topic overlay on top
+        // of it (that buries the controls and the student is stuck).
+        const emittedBundle =
+          message.role === "assistant" &&
+          (message.parts ?? []).some((p) => {
+            const part = p as { type?: string; output?: unknown };
+            return (
+              part.type === "tool-emitChallengeBundle" &&
+              part.output != null
+            );
+          });
+        const posesQuestion =
+          message.role === "assistant" &&
+          getActiveQuestion([message]) !== null;
+        if (!posesQuestion && !emittedBundle) {
+          setTopicEntry(pending);
+        }
+      }
       // A content-less assistant turn (model streamed only step markers and
       // stopped) leaves the student stuck. Auto-retry once; if it's still
       // empty, surface a friendly nudge instead of a silent blank bubble.
       if (message.role === "assistant" && !hasRenderableContent(message)) {
-        if (retriedEmptyRef.current.has(message.id)) {
+        if (retriedEmptyRef.current) {
           toast({
             type: "error",
             description: "Hmm, that didn't come through — tap the topic again?",
           });
         } else {
-          retriedEmptyRef.current.add(message.id);
+          retriedEmptyRef.current = true;
           // Defer so we're not regenerating inside the finishing stream's
           // callback.
           setTimeout(() => regenerateRef.current?.(), 50);
@@ -419,28 +505,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     [messages]
   );
 
-  const submitAnswer = useCallback(
-    (answer: string) => {
-      if (!activeQuestion) {
-        return;
-      }
-      // Graded quiz question → tell the tutor the result so it can react.
-      // Non-graded prompt (name, topic choice…) → just send the answer plainly.
-      const text = isGraded(activeQuestion)
-        ? `My answer: ${answer}\n\n[${
-            isAnswerCorrect(activeQuestion, answer) ? "CORRECT" : "INCORRECT"
-          } — the right answer is ${activeQuestion.correctAnswer}. Confirm briefly and continue with the next tiny step.]`
-        : answer;
-      sendMessage({
-        role: "user",
-        parts: [{ type: "text", text }],
-      });
-    },
-    [activeQuestion, sendMessage]
-  );
-
-  const clearAchievement = useCallback(() => setAchievement(null), []);
-
   // ---- Derived topic-thread state ----
   const { threads, introEndIndex } = useMemo(
     () => deriveTopicThreads(messages),
@@ -463,23 +527,61 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     () => (selectedThread ? deriveTopicState(selectedThread) : null),
     [selectedThread]
   );
-  const topicPhase: TopicPhase = topicState?.phase ?? "content";
 
-  // Messages shown in the thread view: the selected topic's slice, or — when
-  // no topic is selected — the intro messages plus everything (back-compat for
-  // old chats with no markers).
-  const visibleMessages = useMemo(() => {
-    if (!selectedThread) {
-      return messages;
+  // Derive the challenge bundle from messages. Just the raw bundle data —
+  // no index tracking (that's managed by local bundleIndex state to avoid
+  // sending a user message per answer).
+  const computedBundle = useMemo<ChallengeBundle | null>(() => {
+    const msgs = selectedThread?.messages ?? messages;
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      for (const part of msgs[i].parts ?? []) {
+        const p = part as { type?: string; output?: unknown };
+        if (
+          p.type === "tool-emitChallengeBundle" &&
+          "output" in p &&
+          p.output
+        ) {
+          const out = p.output as ChallengeBundle;
+          if (out?.challenges?.length) {
+            return out;
+          }
+          break;
+        }
+      }
     }
-    return messages.slice(0, introEndIndex).concat(selectedThread.messages);
-  }, [messages, selectedThread, introEndIndex]);
+    return null;
+  }, [selectedThread, messages]);
 
-  // The open question in the selected thread that the student should answer in
-  // the form — any open askQuestion that ISN'T a control gate (Accept / recovery
-  // are rendered as buttons instead). Covers both graded challenges and the
-  // tutor's non-graded mid-lesson questions.
+  // Reset bundleIndex when a new bundle arrives (detected by first challenge id).
+  const bundleKey = computedBundle?.challenges[0]?.id ?? null;
+  useEffect(() => {
+    if (bundleKey !== prevBundleIdRef.current) {
+      prevBundleIdRef.current = bundleKey;
+      setBundleIndex(0);
+      bundleResultsRef.current = new Map();
+      setCanRequestHarder(false);
+    }
+  }, [bundleKey]);
+
+  // The open challenge that the student should answer in the form.
+  // Priority: pending bundle challenge > regular askQuestion > null.
   const activeChallenge = useMemo(() => {
+    if (computedBundle && bundleIndex < computedBundle.challenges.length) {
+      const bch = computedBundle.challenges[bundleIndex];
+      if (bch) {
+        return {
+          id: bch.id,
+          prompt: bch.prompt,
+          type:
+            bch.type === "short_text"
+              ? ("text" as const)
+              : ("multiple_choice" as const),
+          options: bch.options ?? [],
+          correctAnswer: bch.correctAnswer,
+          explanation: bch.explanation,
+        };
+      }
+    }
     if (!selectedThread) {
       return null;
     }
@@ -488,10 +590,156 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       return null;
     }
     return q;
-  }, [selectedThread]);
+  }, [selectedThread, computedBundle, bundleIndex]);
 
-  const challengeCount = topicState?.challengeTotal ?? 0;
-  const challengeIndex = topicState?.challengeDone ?? 0;
+  const submitAnswer = useCallback(
+    (answer: string) => {
+      const q = activeChallenge ?? activeQuestion;
+      if (!q) {
+        return;
+      }
+
+      // If the answer already contains a CORRECT/INCORRECT directive block
+      // (e.g. from answer-panel's "Explain differently 🔄" handler), pass it
+      // through as-is — the student asked for reteaching, so we call the LLM.
+      if (/\[(CORRECT|INCORRECT)/.test(answer)) {
+        sendMessage({
+          role: "user",
+          parts: [{ type: "text", text: answer }],
+        });
+        return;
+      }
+
+      // Bundle challenge: advance locally — no sendMessage, no LLM call.
+      // The next pre-generated challenge appears immediately. When the
+      // LAST challenge is answered (bundle complete), send a message to
+      // the AI so it can respond with results / next-steps / a question.
+      if (
+        computedBundle &&
+        computedBundle.challenges.some((c) => c.id === q.id)
+      ) {
+        // Grade and track the result.
+        const wasCorrect = isAnswerCorrect(q as ActiveQuestion, answer);
+        bundleResultsRef.current.set(q.id, wasCorrect);
+
+        const nextIndex = bundleIndex + 1;
+        const isLast = nextIndex >= computedBundle.challenges.length;
+        setBundleIndex((i) => Math.min(i + 1, computedBundle.challenges.length));
+        if (isLast) {
+          // Check if every challenge was correct.
+          const allCorrect = computedBundle.challenges.every(
+            (c) => bundleResultsRef.current.get(c.id) === true
+          );
+          if (allCorrect) {
+            // Offer a harder challenge instead of moving on immediately.
+            setCanRequestHarder(true);
+          } else {
+            sendMessage({
+              role: "user",
+              parts: [
+                {
+                  type: "text",
+                  text: `I answered all ${computedBundle.challenges.length} challenges on "${computedBundle.topic}". Give a brief summary of what was covered, then ask what I'd like to learn next.`,
+                },
+              ],
+            });
+          }
+        }
+        return;
+      }
+
+      // Non-graded prompt (name, topic choice…) — send plainly to the LLM.
+      if (!isGraded(q as ActiveQuestion)) {
+        sendMessage({
+          role: "user",
+          parts: [{ type: "text", text: answer }],
+        });
+        return;
+      }
+
+      // Graded question (no bundle) — tell the tutor the result.
+      const text = `My answer: ${answer}\n\n[${
+        isAnswerCorrect(q as ActiveQuestion, answer) ? "CORRECT" : "INCORRECT"
+      } — the right answer is ${(q as ActiveQuestion).correctAnswer}. Confirm briefly and continue with the next tiny step.]`;
+      sendMessage({
+        role: "user",
+        parts: [{ type: "text", text }],
+      });
+    },
+    [activeChallenge, activeQuestion, computedBundle, sendMessage, bundleIndex]
+  );
+
+  const requestHarderChallenge = useCallback(() => {
+    if (!computedBundle) return;
+    setCanRequestHarder(false);
+    sendMessage({
+      role: "user",
+      parts: [
+        {
+          type: "text",
+          text: `I got every challenge right on "${computedBundle.topic}" — give me harder questions on the same topic to really challenge me.`,
+        },
+      ],
+    });
+  }, [computedBundle, sendMessage]);
+
+  const clearAchievement = useCallback(() => setAchievement(null), []);
+
+  // Messages shown in the thread view: the selected topic's slice, or — when
+  // no topic is selected — the intro messages plus everything (back-compat for
+  // old chats with no markers).
+  const visibleMessages = useMemo(() => {
+    // Build the list, then ALWAYS dedupe by id. Duplicates can arrive two ways:
+    //   - the intro slice and a selected thread's slice overlapping; and
+    //   - `messages` itself briefly holding the same id twice during the
+    //     new-chat → /chat/{id} transition (streamed state + the SWR
+    //     /api/messages refetch), amplified by React Strict Mode.
+    // React keys must be unique or messages render twice / vanish, so we dedupe
+    // both branches at the render boundary.
+    const combined = selectedThread
+      ? messages.slice(0, introEndIndex).concat(selectedThread.messages)
+      : messages;
+    const seen = new Set<string>();
+    const deduped = combined.filter((m) => {
+      if (seen.has(m.id)) {
+        return false;
+      }
+      seen.add(m.id);
+      return true;
+    });
+    // Preserve referential identity when nothing was removed, so downstream
+    // memoised consumers don't re-render needlessly.
+    return deduped.length === combined.length ? combined : deduped;
+  }, [messages, selectedThread, introEndIndex]);
+
+  // Challenge progress: for bundle-based lessons use local bundleIndex
+  // (which doesn't send messages per answer). For askQuestion-based lessons
+  // use the message-derived state.
+  const challengeCount = computedBundle
+    ? computedBundle.challenges.length
+    : (topicState?.challengeTotal ?? 0);
+  const challengeIndex = computedBundle
+    ? bundleIndex
+    : (topicState?.challengeDone ?? 0);
+
+  // Whether a bundle is currently active (has uncompleted challenges).
+  const bundleActive = computedBundle !== null && bundleIndex < computedBundle.challenges.length;
+
+  // Stable concept key for pattern detection: the bundle topic survives a
+  // reteach (which swaps in a new bundle with new challenge ids), the selected
+  // topic title is the next-best anchor, then the raw challenge prompt.
+  const currentConcept =
+    computedBundle?.topic ??
+    selectedThread?.title ??
+    activeChallenge?.prompt ??
+    "";
+
+  // Topic phase: account for local bundle progress when computing state.
+  const topicPhase: TopicPhase = computedBundle
+    ? bundleIndex >= computedBundle.challenges.length
+      ? "done"
+      : "challenge"
+    : (topicState?.phase ?? "content");
 
   const hasIncompleteChallenges = useCallback(
     (topicId: string | null): boolean => {
@@ -503,10 +751,17 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         return false;
       }
       const { challengeTotal, challengeDone, phase } = deriveTopicState(thread);
-      // Outstanding if there's an open challenge or banked-but-unfinished work.
-      return phase === "challenge" || challengeDone < challengeTotal;
+      if (phase === "challenge" || challengeDone < challengeTotal) return true;
+      // Also check bundle progress for the currently visible bundle.
+      if (computedBundle && bundleIndex < computedBundle.challenges.length) {
+        // Check if this bundle belongs to the given topicId
+        const bundleForThread =
+          selectedThread && topicSlug(computedBundle.topic) === topicId;
+        if (bundleForThread) return true;
+      }
+      return false;
     },
-    [threads]
+    [threads, computedBundle, bundleIndex, selectedThread]
   );
 
   // ---- Topic-thread actions ----
@@ -557,6 +812,14 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         setSelectedTopicId(existing.id);
         return;
       }
+      // Select the topic locally NOW so the full-screen TopicSelectScreen
+      // hides immediately (its `show` gate is `!selectedTopicId`). Previously
+      // this waited for the tutor to call startNewTopicSession and emit
+      // data-new-topic-session; if the model instead asked a clarifying
+      // question (or did nothing), the select screen stayed up forever and the
+      // student "couldn't select anything". The marker the tutor emits later
+      // still drives the persisted thread; this just makes the UI deterministic.
+      setSelectedTopicId(topicSlug(title));
       sendMessage({
         role: "user",
         parts: [{ type: "text", text: `Let's start with ${title}.` }],
@@ -639,13 +902,17 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       resumeTopic,
       pickTopic,
       activeChallenge,
+      currentConcept,
       challengeIndex,
       challengeCount,
+      bundleActive,
       hasIncompleteChallenges,
       requestLeave,
       leaveTopicTarget,
       confirmLeave,
       cancelLeave,
+      canRequestHarder,
+      requestHarderChallenge,
     }),
     [
       chatId,
@@ -685,13 +952,17 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       resumeTopic,
       pickTopic,
       activeChallenge,
+      currentConcept,
       challengeIndex,
       challengeCount,
+      bundleActive,
       hasIncompleteChallenges,
       requestLeave,
       leaveTopicTarget,
       confirmLeave,
       cancelLeave,
+      canRequestHarder,
+      requestHarderChallenge,
     ]
   );
 

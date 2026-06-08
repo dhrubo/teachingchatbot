@@ -1,0 +1,24 @@
+<h2>🎯 Starting a mission — what happens next?</h2>
+<p class="subtitle">When the student clicks "Start today's mission" or taps a mission card, the SARA dashboard should transition to the chat. How should it work?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Immediate teaching</h3>
+      <p>Dashboard fades out, new chat opens with the topic pre-selected. The AI immediately starts teaching the first micro-lesson. <strong>Smooth, frictionless.</strong></p>
+      <p style="font-size:13px;margin-top:4px">Example: Clicks "Percentages" → chat opens → AI says "Let's start with finding 10% of a number. What's 10% of 80?"</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Topic entry gate</h3>
+      <p>Dashboard opens the chat, but the existing <strong>TopicEntryOverlay</strong> shows first (the full-screen "Start learning →" gate with topic intro). Student sees the topic name and gets a moment to prepare.</p>
+      <p style="font-size:13px;margin-top:4px">Example: Clicks "Percentages" → gate overlay shows "Let's learn Percentages!" with [Start learning] → chat begins</p>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:16px;color:var(--text-secondary)">I'd recommend <strong>A</strong> — the dashboard itself is already a transition moment. Adding another gate would be redundant.</p>

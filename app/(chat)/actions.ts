@@ -6,7 +6,7 @@ import { auth } from "@/app/(auth)/auth";
 import type { VisibilityType } from "@/components/chat/visibility-selector";
 import { titleModel } from "@/lib/ai/models";
 import { titlePrompt } from "@/lib/ai/prompts";
-import { getTitleModel } from "@/lib/ai/providers";
+import { getTitleModel, isUsingGateway } from "@/lib/ai/providers";
 import {
   deleteMessagesByChatIdAfterTimestamp,
   getChatById,
@@ -29,8 +29,11 @@ export async function generateTitleFromUserMessage({
     model: getTitleModel(),
     system: titlePrompt,
     prompt: getTextFromMessage(message),
+    maxRetries: 0,
     providerOptions: {
-      gateway: { order: titleModel.gatewayOrder },
+      ...(isUsingGateway() && {
+        gateway: { order: titleModel.gatewayOrder },
+      }),
     },
   });
   return text

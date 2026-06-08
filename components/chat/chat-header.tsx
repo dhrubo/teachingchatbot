@@ -52,30 +52,42 @@ function PureChatHeader({
   isReadonly: boolean;
 }) {
   const { state, toggleSidebar, isMobile } = useSidebar();
+  const { data } = useSession();
+  const isGuest = !data?.user || guestRegex.test(data.user.email ?? "");
 
-  if (state === "collapsed" && !isMobile) {
+  // Desktop collapsed: hide header on desktop when sidebar is collapsed.
+  // But for guests (no sidebar) always show the header.
+  if (state === "collapsed" && !isMobile && !isGuest) {
     return null;
   }
 
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-sidebar/80 px-3 backdrop-blur-sm">
-      <Button
-        className="md:hidden"
-        onClick={toggleSidebar}
-        size="icon-sm"
-        variant="ghost"
-      >
-        <PanelLeftIcon className="size-4" />
-      </Button>
+      {!isGuest && (
+        <Button
+          className="md:hidden"
+          onClick={toggleSidebar}
+          size="icon-sm"
+          variant="ghost"
+        >
+          <PanelLeftIcon className="size-4" />
+        </Button>
+      )}
 
-      {!isReadonly && (
+      {!isReadonly && !isGuest && (
         <VisibilitySelector
           chatId={chatId}
           selectedVisibilityType={selectedVisibilityType}
         />
       )}
 
-      <TopicsMenuButton />
+      {!isGuest && <TopicsMenuButton />}
+
+      {isGuest && (
+        <span className="text-sm font-semibold tracking-tight text-white/90">
+          SARA
+        </span>
+      )}
 
       <div className="ml-auto flex items-center gap-2">
         <ProgressPill />

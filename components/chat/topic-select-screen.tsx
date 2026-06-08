@@ -60,6 +60,7 @@ export function TopicSelectScreen() {
         <motion.div
           animate={{ opacity: 1 }}
           className="absolute inset-0 z-30 overflow-y-auto overscroll-contain bg-background"
+          data-testid="topic-select-screen"
           exit={{ opacity: 0 }}
           initial={{ opacity: 0 }}
         >
@@ -94,6 +95,7 @@ export function TopicSelectScreen() {
                           ? "border-green-500/40 bg-green-500/5 text-muted-foreground"
                           : "border-primary/30 bg-card hover:border-primary hover:bg-primary/5"
                       )}
+                      data-testid="topic-select-option"
                       disabled={busy || picked !== null}
                       initial={{ opacity: 0, y: 14 }}
                       key={topic.id}

@@ -1,71 +1,204 @@
-<a href="https://chatbot.ai-sdk.dev/demo">
-  <img alt="Chatbot" src="app/(chat)/opengraph-image.png">
-  <h1 align="center">Chatbot</h1>
-</a>
+# 🚀 Deploy Your Own AI Maths Tutor
 
-<p align="center">
-    Chatbot (formerly AI Chatbot) is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
-</p>
+Build a personalised AI maths tutor for your child.
 
-<p align="center">
-  <a href="https://chatbot.ai-sdk.dev/docs"><strong>Read Docs</strong></a> ·
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#model-providers"><strong>Model Providers</strong></a> ·
-  <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
-  <a href="#running-locally"><strong>Running locally</strong></a>
-</p>
-<br/>
+Powered by:
+
+- [Next.js](https://nextjs.org) App Router
+- [AI SDK](https://ai-sdk.dev) by Vercel
+- [Gemini](https://ai.google.dev) by Google
+- [Neon](https://neon.tech) Serverless Postgres
+- [Tailwind CSS](https://tailwindcss.com)
 
 ## Features
 
-- [Next.js](https://nextjs.org) App Router
-  - Advanced routing for seamless navigation and performance
-  - React Server Components (RSCs) and Server Actions for server-side rendering and increased performance
-- [AI SDK](https://ai-sdk.dev/docs/introduction)
-  - Unified API for generating text, structured objects, and tool calls with LLMs
-  - Hooks for building dynamic chat and generative user interfaces
-  - Supports OpenAI, Anthropic, Google, xAI, and other model providers via AI Gateway
-- [shadcn/ui](https://ui.shadcn.com)
-  - Styling with [Tailwind CSS](https://tailwindcss.com)
-  - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
-- Data Persistence
-  - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history and user data
-  - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
-- [Auth.js](https://authjs.dev)
-  - Simple and secure authentication
+- **Year 8/9 maths tutoring** — full UK curriculum coverage
+- **Interactive quizzes** — one question at a time with instant feedback
+- **XP and streaks** — gamified motivation (Duolingo-style)
+- **Topic mastery tracking** — score 0–5 per topic, GCSE domain rollups
+- **Short-term goals** — plan-based learning with progress tracking
+- **Multiple student profiles** — one account, several children
+- **Parent reports** — confidence notes and progress summaries
+- **Socratic teaching style** — patient, encouraging, visual micro-lessons
 
-## Model Providers
+## Free Mode Limitations
 
-This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. Models are configured in `lib/ai/models.ts` with per-model provider routing. Included models: Mistral, Moonshot, DeepSeek, OpenAI, and xAI.
+When `APP_MODE=FREE` (the default), guest users (not signed in) have limited
+access:
 
-### AI Gateway Authentication
+- **5 questions per day** — after reaching the limit, guests are prompted to
+  sign up or come back the next day.
+- **1 conversation** — the current chat session; previous chats are not
+  retained.
+- **24-hour chat retention** — guest conversations are auto-cleaned after
+  24 hours.
+- **No history sidebar** — guests cannot browse previous conversations.
+- **No admin or parent dashboards** — these features are available only in
+  PREMIUM mode.
 
-**For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
+Set `APP_MODE=PREMIUM` in your environment to unlock all features for all
+users (registered user features remain unchanged; guest limits still apply).
 
-**For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env.local` file.
+## Quick Start
 
-With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
+### 1. Get a free Gemini API key
 
-## Deploy Your Own
+Visit [Google AI Studio](https://aistudio.google.com/apikey) and create an API key.
 
-You can deploy your own version of Chatbot to Vercel with one click:
+No credit card required.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/templates/next.js/chatbot)
+### 2. Clone and set up
 
-## Running locally
+```bash
+git clone <your-repo-url>
+cd teachingchatbot
+pnpm install
+```
 
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
+### 3. Configure environment
 
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
+Copy `.env.example` to `.env.local` and add your keys:
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+```bash
+cp .env.example .env.local
+```
+
+The minimum required config:
+
+```env
+GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_key_here
+GOOGLE_GENERATIVE_AI_MODEL=gemini-3.1-flash-lite
+POSTGRES_URL=your_neon_database_url
+AUTH_SECRET=your_random_secret
+```
+
+### 4. Set up the database
+
+```bash
+pnpm db:migrate
+```
+
+### 5. Run locally
+
+```bash
+pnpm dev
+```
+
+Open [localhost:3000](http://localhost:3000) and start teaching.
+
+### 6. Deploy to Vercel
+
+Import the repository into Vercel and add these environment variables:
+
+- `GOOGLE_GENERATIVE_AI_API_KEY`
+- `GOOGLE_GENERATIVE_AI_MODEL`
+- `POSTGRES_URL`
+- `AUTH_SECRET`
+
+Deploy. Done.
+
+## AI Providers
+
+The tutor works out-of-the-box with **Gemini** (free tier, no credit card needed). Add Groq and/or OpenRouter for **automatic fallback** when quota runs out.
+
+| Provider | Requirement | Default Model |
+|---|---|---|
+| **Gemini** (default) | `GOOGLE_GENERATIVE_AI_API_KEY` | `gemini-3.1-flash-lite` |
+| **Groq** (fallback) | `GROQ_API_KEY` | `llama-3.3-70b-versatile` |
+| **OpenRouter** (fallback) | `OPENROUTER_API_KEY` | `deepseek/deepseek-chat-v3-0324:free` |
+| **Vercel AI Gateway** (advanced) | `USE_VERCEL_AI_GATEWAY=1` + `AI_GATEWAY_API_KEY` | configurable |
+
+See [docs/providers.md](docs/providers.md) for details.
+
+## FAQ
+
+### Is Gemini free?
+
+Yes. Google provides a generous free tier suitable for families, students, and hobby projects. Most tutoring deployments fit comfortably within it.
+
+### Do I need a credit card?
+
+No — Gemini requires no billing information.
+
+### Do I need Vercel AI Gateway?
+
+No. The default setup uses Gemini directly. AI Gateway is only needed if you want to route through multiple providers via a single endpoint.
+
+### Can I use another model?
+
+Yes — Gemini, Groq, OpenRouter, or any model accessible through Vercel AI Gateway are supported. The app automatically falls back to the next configured provider on quota errors.
+
+### What is provider fallback?
+
+If Gemini hits a rate limit or quota cap, the app transparently retries with Groq, then OpenRouter. No error message, no interruption. Just add the extra API keys.
+
+### Do I need to deploy on Vercel?
+
+No. The app runs anywhere that supports Node.js. Environment variables work the same on any platform.
+
+## Built with Free AI Tools
+
+This project can be developed entirely using **free tiers**:
+
+| Tool | Free Tier Details |
+|---|---|
+| **Gemini** (model provider) | Free API key at [aistudio.google.com](https://aistudio.google.com/apikey) — no credit card |
+| **OpenCode** (coding agent) | Open-source CLI — use with Gemini, Groq, or any OpenAI-compatible provider |
+| **Obra Superpowers** (workflows) | Free, open-source — installs as an OpenCode plugin |
+| **Neon** (database) | Free Postgres tier at [neon.tech](https://neon.tech) |
+| **Vercel** (hosting) | Hobby plan — free for personal projects |
+
+No paid AI subscriptions are required to build, test, or deploy this project.
+
+See [docs/opencode.md](docs/opencode.md) for the full OpenCode development workflow and [CONTRIBUTING.md](CONTRIBUTING.md) for contributor guidance.
+
+## Documentation
+
+- [Provider setup guide](docs/providers.md) — switching models, enabling Gateway
+- Curriculum and topics are configured in `lib/ai/curriculum.ts`
+- System prompt lives in `lib/ai/prompts-tutor.ts`
+
+## Running locally (full setup)
 
 ```bash
 pnpm install
-pnpm db:migrate # Setup database or apply latest database changes
+pnpm db:migrate
 pnpm dev
 ```
 
 Your app template should now be running on [localhost:3000](http://localhost:3000).
+
+## Reducing Free AI Usage
+
+This app is designed to minimise API calls so it works comfortably on free-tier AI providers.
+
+A normal lesson uses:
+
+- **1 AI call** for the lesson and challenge bundle
+- **0 AI calls** for multiple-choice grading (graded locally)
+- **0 AI calls** for correct/wrong feedback (static templates)
+- **0 AI calls** for XP/streak/progress updates (computed in code)
+- **0 AI calls** for chat titles (deterministic by default)
+
+To keep usage low:
+
+- The LLM generates 3-5 challenges at once via `emitChallengeBundle` — not one at a time via `askQuestion`
+- Objective answers (multiple-choice, short-text with answer key) are graded locally
+- Feedback uses pre-generated hints and explanations from the bundle — no LLM call per answer
+- XP, streaks, badges, topic progress, challenge counts, and progress bars are computed in code
+- Chat titles are deterministic by default (first 40 characters of the first message)
+- Set `ENABLE_LLM_TITLE_GENERATION=1` to restore LLM-generated titles
+
+### Provider Fallback
+
+If Gemini hits a quota limit, the app transparently falls back to Groq, then OpenRouter:
+
+```env
+GOOGLE_GENERATIVE_AI_API_KEY=your_key_here
+GROQ_API_KEY=your_groq_key
+OPENROUTER_API_KEY=your_openrouter_key
+```
+
+No error message, no interruption — just add the extra API keys.
+
+See [docs/providers.md](docs/providers.md) for the full provider setup guide.
