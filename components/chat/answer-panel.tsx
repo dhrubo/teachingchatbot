@@ -265,7 +265,7 @@ export function AnswerPanel() {
               animate={{ opacity: 1, scale: 1 }}
               className={cn(
                 "flex items-center gap-1.5 font-bold text-[15px]",
-                feedback === "correct" ? "text-green-600" : "text-destructive"
+                feedback === "correct" ? "text-green-400" : "text-destructive"
               )}
               exit={{ opacity: 0 }}
               initial={{ opacity: 0, scale: 0.6 }}
@@ -372,7 +372,7 @@ export function AnswerPanel() {
                 Your answer: <MathText>{wrongChoice}</MathText> ❌
               </p>
             )}
-            <p className="mb-1 font-semibold text-[13px] text-green-700">
+            <p className="mb-1 font-semibold text-[13px] text-green-400">
               ✅ Correct: <MathText>{correctAnswer}</MathText>
             </p>
             {activeQuestion.explanation && (
