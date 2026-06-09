@@ -1,7 +1,7 @@
 // lib/ai/guest-mission.ts
 import { type MissionDefinition, getMission } from "./missions";
 
-const GUEST_MISSION_IDS = [
+export const GUEST_MISSION_IDS = [
   "missions/percentages",
   "missions/ratio",
   "missions/algebra-basics",
@@ -30,7 +30,7 @@ function hash(str: string): number {
 
 export function pickGuestMission(date: Date = new Date()): MissionDefinition | undefined {
   const seed = dateSeed(date);
-  const idx = hash(seed) % GUEST_MISSION_IDS.length;
+  const idx = (hash(seed) >>> 0) % GUEST_MISSION_IDS.length;
   return getMission(GUEST_MISSION_IDS[idx]);
 }
 
