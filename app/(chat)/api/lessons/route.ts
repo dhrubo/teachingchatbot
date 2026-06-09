@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { type NextRequest, NextResponse } from "next/server";
 import postgres from "postgres";
@@ -81,8 +81,49 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // All concept cards for a mission (across its lessons), in order. Used by
+    // the mission orchestrator to run the cards → gate → challenge flow.
+    const missionCardsSlug = searchParams.get("missionCards");
+    if (missionCardsSlug) {
+      const missionRow = await db
+        .select()
+        .from(mission)
+        .where(eq(mission.slug, missionCardsSlug))
+        .limit(1);
+
+      if (missionRow.length === 0) {
+        return NextResponse.json({ cards: [] });
+      }
+
+      const lessons = await db
+        .select()
+        .from(lesson)
+        .where(eq(lesson.missionId, missionRow[0].id))
+        .orderBy(asc(lesson.order));
+
+      const lessonIds = lessons.map((l) => l.id);
+      const cards = lessonIds.length
+        ? await db
+            .select()
+            .from(conceptCard)
+            .where(inArray(conceptCard.lessonId, lessonIds))
+            .orderBy(asc(conceptCard.lessonId), asc(conceptCard.order))
+        : [];
+
+      // Map DB rows → the UI ConceptCard shape (visual/example/explanation).
+      const uiCards = cards.map((c) => ({
+        id: `cc-${c.id}`,
+        title: c.title,
+        visual: c.visual ?? "",
+        example: c.example ?? "",
+        explanation: c.body,
+      }));
+
+      return NextResponse.json({ cards: uiCards });
+    }
+
     return NextResponse.json(
-      { error: "Specify ?year=8 or ?mission=X or ?lesson=Y" },
+      { error: "Specify ?year=8 or ?mission=X or ?lesson=Y or ?missionCards=X" },
       { status: 400 }
     );
   } catch (err) {

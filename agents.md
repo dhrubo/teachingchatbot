@@ -473,3 +473,29 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 ### Open Items
 - **Mission-slug ↔ archetype-slug mismatch.** Mission ids (`missions/ratio`) are mapped to archetype `missionSlug` by stripping `missions/`; a few don't line up (e.g. `ratio` vs `ratio-and-proportion`) and hit the graceful "no questions available" path until aligned.
 - **Drizzle snapshot not regenerated for `0008`** — the migration applies at runtime, but a future `pnpm db:generate` will prompt about the diff.
+
+---
+
+## Phase 34 Log: Topic Flow Wired to the Gated Mission System + Nav/Home UX
+
+- **Status:** Completed
+- **Root cause (the "topics jump into challenges" bug):** the entire gated mission system built in Phases 31–33 was **dead code** for topic selection. Every topic entry point (`SaraDashboard` Today's Mission / Mission Map / "What You'll Learn", and `pickTopic`) called `sendMessage()` straight to the LLM (the ungated chat flow); the orchestrator's `startMission()` was never invoked. So picking "Ratio and Proportion" produced LLM teaching text + (in older chats) an inline question, and typing "ok" just sent another LLM turn that could surface a question. The concept-card → explicit-consent flow simply never ran.
+- **Actions Taken:**
+    1.  **Routed topic selection through the mission orchestrator.** New `hooks/use-start-topic.tsx` (`useStartTopic`) fetches a mission's concept cards from `/api/lessons?missionCards=<slug>` (new endpoint mode returning all of a mission's cards mapped to the UI shape) and hands them to the orchestrator — running the gated **cards → lesson footer → explicit Start Challenge Mode** flow with **zero LLM calls**. `SaraDashboard.startMission` and the Mission Map now call this instead of `sendMessage()`. Pads to ≥3 cards with deterministic fallbacks when the DB has none.
+    2.  **Reworked `mission-orchestrator.tsx`** to an `ActiveMission` (`slug`/`title`/`emoji`) + a flat `allCards` array shown in **batches of 3** (`CARDS_PER_BATCH`). New phases `loading`/`cards`/`gate`(footer)/`challenge`/`results`; `continueLearning()` reveals the next batch; `hasMoreCards`/`currentCards` exposed. `startChallengeMode()` now hard-guards via `canStartChallenge(...)`.
+    3.  **Strengthened the gate (`lib/challenge-gate.ts`):** added `canStartChallenge({ explicitUserClick, conceptCardsSeen })` — **both** an explicit click **and** ≥3 cards are required, no exceptions. Typing "ok"/"yes"/"next" can never start a challenge (no explicit click).
+    4.  **Lesson footer (`shell.tsx`):** after each card batch the footer offers **Continue Learning** (only when more cards exist), **Start Challenge Mode**, **Choose Another Topic** — never an automatic challenge. Added a `loading` overlay; cards now come from `currentCards` (DB), not the local mission def.
+    5.  **"Choose a Topic" top nav (`components/chat/topic-picker.tsx`, new):** a header dropdown (Popover) grouping topics by **Year 8 / Year 9**, selectable directly → `useStartTopic`. Sources live missions from `/api/lessons?year=N` with a static fallback list. Added to `chat-header.tsx` for guests and logged-in users.
+    6.  **Logo → Return Home (`components/chat/home-logo.tsx`, new):** clicking the SARA logo (header) or sidebar logo / "New mission" resets the mission UI (`exitMission`) and navigates to `/` — **preserving** messages, progress, mastery and saved data (UI reset, not delete). An active full-screen challenge run is left alone so a mis-tap can't lose it. `MissionProvider` lifted in `app/(chat)/layout.tsx` to wrap the sidebar too (so it can call `useMission`).
+    7.  **Homepage (`sara-dashboard.tsx`):** "What You'll Learn" is now **informational** (non-clickable list) pointing at the nav dropdown; Today's Mission and the Mission Map remain the action CTAs. Kept the hero / What is SARA / How it Works sections.
+    8.  **Tests:** added `canStartChallenge` cases (typed-ack never starts; both conditions required) to `challenge-gate.test.ts`. **104/104 unit tests pass.**
+    9.  **Verified:** `pnpm test:unit` green, `next build` clean (type-check + all routes), all new/changed files lint-clean under `ultracite` (repo-wide error count reduced).
+
+### Key Decisions
+- **Topic selection no longer touches the LLM.** Lessons render DB concept cards through the orchestrator; the LLM chat remains for free-form questions only. This is the intended Phase 31–33 architecture, finally wired up.
+- **`canStartChallenge` requires an explicit click AND ≥3 cards** — the orchestrator enforces it even if some future caller wires `startChallengeMode` to a non-button event.
+- **Return Home ≠ Delete Session** — the logo only resets mission UI state; data is untouched.
+
+### Open Items
+- The pasted-syllabus `pickTopic` flow still uses the LLM chat path (those topics aren't DB missions, so they have no concept-card bank). It no longer shows premature challenges (Phase 33 suppresses graded inline questions), but it teaches via LLM text rather than the carded mission flow.
+- The nav `TopicPicker` fallback slugs are best-effort; topics whose slug doesn't match a seeded mission fall back to deterministic cards + the "no questions available" challenge path until mission/archetype slugs are aligned (carried over from Phase 33).

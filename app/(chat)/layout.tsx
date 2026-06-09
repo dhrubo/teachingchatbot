@@ -33,26 +33,28 @@ async function SidebarShell({ children }: { children: React.ReactNode }) {
   const isGuest = !user || (user as { type?: string }).type === "guest";
 
   return (
-    <SidebarProvider defaultOpen={!isCollapsed}>
-      {!isGuest && <AppSidebar user={user} />}
-      <SidebarInset>
-        <Toaster
-          position="top-center"
-          theme="system"
-          toastOptions={{
-            className:
-              "!bg-card !text-foreground !border-border/50 !shadow-[var(--shadow-float)]",
-          }}
-        />
-        <Suspense fallback={<div className="flex h-dvh" />}>
-          <MissionProvider>
+    // MissionProvider wraps BOTH the sidebar and the inset so the sidebar logo /
+    // "New mission" can reset the mission UI (useMission) too.
+    <MissionProvider>
+      <SidebarProvider defaultOpen={!isCollapsed}>
+        {!isGuest && <AppSidebar user={user} />}
+        <SidebarInset>
+          <Toaster
+            position="top-center"
+            theme="system"
+            toastOptions={{
+              className:
+                "!bg-card !text-foreground !border-border/50 !shadow-[var(--shadow-float)]",
+            }}
+          />
+          <Suspense fallback={<div className="flex h-dvh" />}>
             <ActiveChatProvider>
               <ChatShell />
             </ActiveChatProvider>
-          </MissionProvider>
-        </Suspense>
-        {children}
-      </SidebarInset>
-    </SidebarProvider>
+          </Suspense>
+          {children}
+        </SidebarInset>
+      </SidebarProvider>
+    </MissionProvider>
   );
 }

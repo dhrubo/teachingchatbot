@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bandFromScore,
   emptyMastery,
+  type MasteryState,
   moveBand,
   updateMastery,
 } from "../adaptive/update-mastery";
@@ -36,10 +37,10 @@ describe("updateMastery", () => {
   });
 
   it("moves down after 2 wrong in a row", () => {
-    let m = {
+    let m: MasteryState = {
       ...emptyMastery(),
       masteryScore: 60,
-      currentBand: "could" as const,
+      currentBand: "could",
     };
     m = updateMastery(m, { isCorrect: false, difficultyBand: "could" });
     const bandAfterOne = m.currentBand;

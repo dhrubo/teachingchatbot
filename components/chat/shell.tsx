@@ -18,7 +18,6 @@ import {
   useArtifact,
   useArtifactSelector,
 } from "@/hooks/use-artifact";
-import { conceptCardsForLesson } from "@/lib/ai/missions";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AchievementToast } from "./achievement-toast";
@@ -63,18 +62,20 @@ export function ChatShell() {
   const {
     mission,
     phase,
-    activeLessonId,
+    currentCards,
+    hasMoreCards,
     consentState,
     recordCardSeen,
     completeCards,
+    continueLearning,
     startChallengeMode,
     finishChallenge,
     exitMission,
     challengeResults,
   } = useMission();
 
-  // Mission ids look like "missions/percentages"; archetypes key off the bare slug.
-  const missionSlug = mission?.id.replace(/^missions\//, "") ?? "";
+  // ActiveMission.slug is already the bare slug the adaptive engine keys off.
+  const missionSlug = mission?.slug ?? "";
 
   const handleMissionContinue = useCallback(() => {
     exitMission();
@@ -157,7 +158,18 @@ export function ChatShell() {
                 votes={votes}
               />
 
-              {phase === "cards" && mission && activeLessonId && (
+              {phase === "loading" && mission && (
+                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-background/95 backdrop-blur-sm">
+                  <span className="animate-pulse text-3xl">
+                    {mission.emoji}
+                  </span>
+                  <p className="text-sm text-muted-foreground">
+                    Loading {mission.title}…
+                  </p>
+                </div>
+              )}
+
+              {phase === "cards" && mission && currentCards.length > 0 && (
                 <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-8 backdrop-blur-sm">
                   <div className="w-full max-w-lg px-4">
                     <div className="mb-3 text-center">
@@ -170,40 +182,38 @@ export function ChatShell() {
                       </p>
                     </div>
                     <ConceptCardSlides
-                      cards={conceptCardsForLesson(mission, activeLessonId)}
+                      cards={currentCards}
                       onCardSeen={recordCardSeen}
                       onComplete={completeCards}
-                      onHelp={() => {
-                        exitMission();
-                        sendMessage({
-                          role: "user",
-                          parts: [
-                            {
-                              type: "text",
-                              text: "Can you explain this concept differently?",
-                            },
-                          ],
-                        });
-                      }}
                     />
                   </div>
                 </div>
               )}
 
-              {/* CHALLENGE GATE — explicit consent before any question is fetched
-                  or rendered. Reached only after the concept cards are complete. */}
+              {/* LESSON FOOTER — shown after a batch of cards. The challenge is
+                  NEVER started automatically: the student explicitly chooses.
+                  "Start Challenge Mode" is gated (≥3 cards + this click). */}
               {phase === "gate" && mission && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 px-4 backdrop-blur-sm">
                   <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-card p-6 text-center">
                     <span className="text-3xl">{mission.emoji}</span>
                     <h3 className="mt-2 text-lg font-bold text-foreground">
-                      Ready for Challenge Mode?
+                      {mission.title}
                     </h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      You've reviewed the concepts. Try {mission.title} with 5
-                      adaptive questions — or keep learning first.
+                      What would you like to do next?
                     </p>
                     <div className="mt-5 flex flex-col gap-2">
+                      {hasMoreCards && (
+                        <Button
+                          className="rounded-full"
+                          onClick={continueLearning}
+                          size="sm"
+                          variant="outline"
+                        >
+                          Continue Learning
+                        </Button>
+                      )}
                       <Button
                         className="rounded-full bg-[image:var(--gradient-sunset)] px-6 font-semibold text-white shadow-lg"
                         onClick={startChallengeMode}
@@ -217,26 +227,7 @@ export function ChatShell() {
                         size="sm"
                         variant="ghost"
                       >
-                        Keep Learning
-                      </Button>
-                      <Button
-                        className="rounded-full"
-                        onClick={() => {
-                          exitMission();
-                          sendMessage({
-                            role: "user",
-                            parts: [
-                              {
-                                type: "text",
-                                text: "Can you explain this concept differently?",
-                              },
-                            ],
-                          });
-                        }}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        Explain Differently
+                        Choose Another Topic
                       </Button>
                     </div>
                   </div>

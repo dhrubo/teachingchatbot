@@ -3,6 +3,7 @@ import {
   type ChallengeConsentState,
   canOfferChallenge,
   canShowChallengeQuestion,
+  canStartChallenge,
   consentStateForPhase,
   MIN_CONCEPT_CARDS_BEFORE_CHALLENGE,
 } from "../challenge-gate";
@@ -36,6 +37,30 @@ describe("canOfferChallenge", () => {
     expect(canOfferChallenge({ conceptCardsSeen: 1, minConceptCards: 1 })).toBe(
       true
     );
+  });
+});
+
+describe("canStartChallenge", () => {
+  it("requires BOTH an explicit click AND enough cards", () => {
+    // explicit click but not enough cards → no
+    expect(
+      canStartChallenge({ explicitUserClick: true, conceptCardsSeen: 2 })
+    ).toBe(false);
+    // enough cards but no explicit click (e.g. typed "ok") → no
+    expect(
+      canStartChallenge({ explicitUserClick: false, conceptCardsSeen: 5 })
+    ).toBe(false);
+    // both satisfied → yes
+    expect(
+      canStartChallenge({ explicitUserClick: true, conceptCardsSeen: 3 })
+    ).toBe(true);
+  });
+
+  it("never starts on a typed acknowledgement (no explicit click)", () => {
+    // Simulates "ok"/"yes"/"next" — there is no explicit Start click.
+    expect(
+      canStartChallenge({ explicitUserClick: false, conceptCardsSeen: 99 })
+    ).toBe(false);
   });
 });
 

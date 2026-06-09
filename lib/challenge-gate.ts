@@ -37,6 +37,30 @@ export function canOfferChallenge(params: {
   return params.conceptCardsSeen >= min;
 }
 
+/**
+ * The authoritative guard for *entering* Challenge Mode. BOTH conditions are
+ * required, no exceptions:
+ *   1. the student explicitly clicked "Start Challenge Mode", AND
+ *   2. they have seen at least MIN_CONCEPT_CARDS_BEFORE_CHALLENGE cards.
+ *
+ * Challenge Mode must NEVER start because the student typed "ok"/"yes"/"next"
+ * etc., because a topic was selected, or because the LLM said so. Call this from
+ * the only action allowed to activate the challenge.
+ */
+export function canStartChallenge(params: {
+  explicitUserClick: boolean;
+  conceptCardsSeen: number;
+  minConceptCards?: number;
+}): boolean {
+  return (
+    params.explicitUserClick === true &&
+    canOfferChallenge({
+      conceptCardsSeen: params.conceptCardsSeen,
+      minConceptCards: params.minConceptCards,
+    })
+  );
+}
+
 /** Map a mission phase to a consent state (keeps the orchestrator in sync). */
 export function consentStateForPhase(
   phase: string,

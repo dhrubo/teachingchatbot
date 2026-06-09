@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 import { SaraMascot } from "@/components/brand/sara-mascot";
+import { useMission } from "@/components/chat/mission-orchestrator";
 import {
   getChatHistoryPaginationKey,
   SidebarHistory,
@@ -49,6 +50,14 @@ export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
   const { setOpenMobile, toggleSidebar } = useSidebar();
   const { mutate } = useSWRConfig();
+  const { exitMission } = useMission();
+
+  // Return Home: reset the mission UI (overlays) without deleting any data.
+  const goHome = () => {
+    setOpenMobile(false);
+    exitMission();
+    router.push("/");
+  };
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
   const isGuest = !user || user.type === "guest";
@@ -75,13 +84,11 @@ export function AppSidebar({ user }: { user: User | undefined }) {
             <SidebarMenuItem className="flex flex-row items-center justify-between">
               <div className="group/logo relative flex items-center justify-center">
                 <SidebarMenuButton
-                  asChild
                   className="size-8 !px-0 items-center justify-center group-data-[collapsible=icon]:group-hover/logo:opacity-0"
-                  tooltip="SARA"
+                  onClick={goHome}
+                  tooltip="Home"
                 >
-                  <Link href="/" onClick={() => setOpenMobile(false)}>
-                    <SaraMascot animated={false} size={24} />
-                  </Link>
+                  <SaraMascot animated={false} size={24} />
                 </SidebarMenuButton>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -110,10 +117,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     className="h-8 rounded-lg border border-sidebar-border text-[13px] text-sidebar-foreground/70 transition-colors duration-150 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                    onClick={() => {
-                      setOpenMobile(false);
-                      router.push("/");
-                    }}
+                    onClick={goHome}
                     tooltip="New mission"
                   >
                     <PenSquareIcon className="size-4" />

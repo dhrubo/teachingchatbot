@@ -4,11 +4,14 @@ import { PanelLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { memo } from "react";
+import { SaraMascot } from "@/components/brand/sara-mascot";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { guestRegex } from "@/lib/constants";
+import { HomeLogo } from "./home-logo";
 import { ProgressPill } from "./progress-indicator";
 import { SoundToggle } from "./sound-toggle";
+import { TopicPicker } from "./topic-picker";
 import { TopicsMenuButton } from "./topics-menu";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
 
@@ -74,6 +77,17 @@ function PureChatHeader({
         </Button>
       )}
 
+      {/* Logo → Return Home (resets the mission UI, keeps progress/messages). */}
+      <HomeLogo className="flex items-center gap-1.5">
+        <SaraMascot animated={false} size={22} />
+        <span className="text-sm font-semibold tracking-tight text-foreground">
+          SARA
+        </span>
+      </HomeLogo>
+
+      {/* Primary topic discovery for everyone. */}
+      <TopicPicker />
+
       {!isReadonly && !isGuest && (
         <VisibilitySelector
           chatId={chatId}
@@ -82,12 +96,6 @@ function PureChatHeader({
       )}
 
       {!isGuest && <TopicsMenuButton />}
-
-      {isGuest && (
-        <span className="text-sm font-semibold tracking-tight text-white/90">
-          SARA
-        </span>
-      )}
 
       <div className="ml-auto flex items-center gap-2">
         <ProgressPill />

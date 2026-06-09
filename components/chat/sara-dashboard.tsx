@@ -8,6 +8,7 @@ import { PlayerStats } from "@/components/brand/player-stats";
 import { SaraMascot } from "@/components/brand/sara-mascot";
 import { MissionMap } from "@/components/chat/mission-map";
 import { useActiveChat } from "@/hooks/use-active-chat";
+import { useStartTopic } from "@/hooks/use-start-topic";
 import { pickGuestMission } from "@/lib/ai/guest-mission";
 import { getMissionsByYear, type MissionDefinition } from "@/lib/ai/missions";
 import { guestRegex } from "@/lib/constants";
@@ -53,11 +54,10 @@ const TOPIC_EMOJIS: Record<string, string> = {
 };
 
 export function SaraDashboard() {
-  const { sendMessage, xpStreak, topicProgress, topicList, completedTopics } =
-    useActiveChat();
+  const { xpStreak, topicProgress, completedTopics } = useActiveChat();
+  const startTopic = useStartTopic();
   const { data, status } = useSession();
   const isGuest = guestRegex.test(data?.user?.email ?? "");
-  const isLoading = status === "loading";
   const isLoggedIn = status === "authenticated" && !isGuest;
 
   const [year, setYear] = useState<"8" | "9">("8");
@@ -102,7 +102,9 @@ export function SaraDashboard() {
   const guestMission = useMemo(() => pickGuestMission(), []);
 
   const continueMission = useMemo(() => {
-    if (!topicProgress) return null;
+    if (!topicProgress) {
+      return null;
+    }
     return missions.find((m) => m.topics.includes(topicProgress.topic)) ?? null;
   }, [missions, topicProgress]);
 
@@ -119,23 +121,20 @@ export function SaraDashboard() {
   );
 
   const currentMissionId = useMemo(() => {
-    if (!topicProgress) return undefined;
+    if (!topicProgress) {
+      return;
+    }
     const match = missions.find((m) => m.topics.includes(topicProgress.topic));
     return match?.id;
   }, [missions, topicProgress]);
 
-  const hasProgressData = xpStreak !== null && xpStreak.xp > 0;
+  const stats = xpStreak;
+  const hasProgressData = stats !== null && stats.xp > 0;
 
+  // Start a topic through the mission orchestrator (concept cards → footer →
+  // explicit Start Challenge Mode). NO LLM call, NO auto-challenge.
   function startMission(mission: MissionDefinition) {
-    sendMessage({
-      role: "user",
-      parts: [
-        {
-          type: "text",
-          text: `I want to learn about ${mission.title}. Start me off easy.`,
-        },
-      ],
-    });
+    startTopic({ id: mission.id, title: mission.title, emoji: mission.emoji });
   }
 
   return (
@@ -159,12 +158,12 @@ export function SaraDashboard() {
         </section>
 
         {/* ---- PlayerStats (logged-in only) ---- */}
-        {isLoggedIn && hasProgressData && (
+        {isLoggedIn && hasProgressData && stats && (
           <PlayerStats
-            badges={xpStreak!.badges.length}
-            level={Math.floor(xpStreak!.xp / 100) + 1}
-            streak={xpStreak!.streak}
-            xp={xpStreak!.xp}
+            badges={stats.badges.length}
+            level={Math.floor(stats.xp / 100) + 1}
+            streak={stats.streak}
+            xp={stats.xp}
           />
         )}
 
@@ -218,6 +217,7 @@ export function SaraDashboard() {
                   : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setYear("8")}
+              type="button"
             >
               Year 8
             </button>
@@ -229,6 +229,7 @@ export function SaraDashboard() {
                   : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setYear("9")}
+              type="button"
             >
               Year 9
             </button>
@@ -259,6 +260,7 @@ export function SaraDashboard() {
               <button
                 className="shrink-0 rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-4 py-1.5 text-xs font-semibold text-white shadow-lg shadow-orange-500/20 transition-transform duration-200 hover:scale-[1.03] active:scale-[0.97]"
                 onClick={() => startMission(todayMission)}
+                type="button"
               >
                 {continueMission ? "Continue →" : "Start →"}
               </button>
@@ -304,27 +306,33 @@ export function SaraDashboard() {
           </div>
         </section>
 
-        {/* ---- What You'll Learn ---- */}
+        {/* ---- What You'll Learn (informational) ----
+            Primary topic selection is the "Choose a Topic" nav dropdown; this
+            section is an at-a-glance overview of the curriculum, not a picker. */}
         <section>
-          <h2 className="mb-3 text-sm font-semibold text-foreground/80">
+          <h2 className="mb-1 text-sm font-semibold text-foreground/80">
             What You&apos;ll Learn
           </h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Year {year} maths, broken into bite-sized topics. Pick one from{" "}
+            <strong className="text-foreground">Choose a Topic</strong> at the
+            top to start.
+          </p>
           <div className="flex flex-col gap-2">
             {missions.map((mission) => {
               const isCompleted = completedMissionIds.includes(mission.id);
               const isCurrent = mission.id === currentMissionId;
               return (
-                <button
+                <div
                   className={cn(
-                    "flex items-center gap-3 rounded-2xl border bg-card/20 p-3 text-left backdrop-blur-sm transition-all duration-200",
+                    "flex items-center gap-3 rounded-2xl border bg-card/20 p-3 text-left backdrop-blur-sm",
                     isCompleted
-                      ? "border-green-500/30 hover:border-green-500/60"
+                      ? "border-green-500/30"
                       : isCurrent
-                        ? "border-orange-500/30 bg-card/40 hover:border-orange-500/60"
-                        : "border-border/30 hover:border-border/60 hover:bg-card/40"
+                        ? "border-orange-500/30 bg-card/40"
+                        : "border-border/30"
                   )}
                   key={mission.id}
-                  onClick={() => startMission(mission)}
                 >
                   <span
                     className={cn(
@@ -354,7 +362,7 @@ export function SaraDashboard() {
                   <span className="shrink-0 text-xs text-muted-foreground/60">
                     {mission.estimatedMinutes} min
                   </span>
-                </button>
+                </div>
               );
             })}
           </div>
