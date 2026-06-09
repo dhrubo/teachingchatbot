@@ -45,3 +45,9 @@ export {
   createGoal,
   updateGoal,
 } from "./student";
+
+export {
+  getMissionProgress,
+  getStudentMissionProgress,
+  upsertMissionProgress,
+} from "./mission";

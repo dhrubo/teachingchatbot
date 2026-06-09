@@ -237,3 +237,35 @@ export const studentGoal = pgTable("StudentGoal", {
 });
 
 export type StudentGoal = InferSelectModel<typeof studentGoal>;
+
+export const missionProgress = pgTable(
+  "MissionProgress",
+  {
+    studentId: uuid("studentId")
+      .notNull()
+      .references(() => studentProfile.id, { onDelete: "cascade" }),
+    missionId: text("missionId").notNull(),
+    status: varchar("status", {
+      enum: ["not_started", "in_progress", "completed", "mastered"],
+    })
+      .notNull()
+      .default("not_started"),
+    phase: varchar("phase", {
+      enum: ["intro", "lesson", "cards", "challenge", "results"],
+    })
+      .notNull()
+      .default("intro"),
+    score: integer("score").notNull().default(0),
+    challengesDone: integer("challengesDone").notNull().default(0),
+    challengesTotal: integer("challengesTotal").notNull().default(0),
+    conceptCardsViewed: integer("conceptCardsViewed").notNull().default(0),
+    lastLessonAt: timestamp("lastLessonAt"),
+    completedAt: timestamp("completedAt"),
+    updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.studentId, table.missionId] }),
+  })
+);
+
+export type MissionProgress = InferSelectModel<typeof missionProgress>;
