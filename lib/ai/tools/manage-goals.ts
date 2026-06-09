@@ -1,11 +1,7 @@
 import { tool } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
-import {
-  createGoal,
-  getStudentsByUserId,
-  updateGoal,
-} from "@/lib/db/queries";
+import { createGoal, getStudentsByUserId, updateGoal } from "@/lib/db/queries";
 
 type Props = { session: Session };
 

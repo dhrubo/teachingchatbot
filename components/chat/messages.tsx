@@ -68,7 +68,7 @@ function PureMessages({
     <div className="relative flex-1 bg-background">
       <div
         className={cn(
-          "absolute inset-0 touch-pan-y overflow-y-auto bg-background",
+          "absolute inset-0 touch-pan-y overflow-y-auto bg-background"
         )}
         ref={messagesContainerRef}
         style={isArtifactVisible ? { scrollbarWidth: "none" } : undefined}

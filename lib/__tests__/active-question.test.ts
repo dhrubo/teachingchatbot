@@ -1,13 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { ChatMessage } from "@/lib/types";
 
 // We import from the source file; the function signatures are our contract.
 import {
+  type ActiveQuestion,
+  countAnsweredQuestions,
   getActiveQuestion,
   isAnswerCorrect,
   isGraded,
-  countAnsweredQuestions,
-  type ActiveQuestion,
 } from "../active-question";
 
 function makeAssistantMsg(parts: ChatMessage["parts"]): ChatMessage {
@@ -137,9 +137,7 @@ describe("countAnsweredQuestions", () => {
   });
 
   it("returns 0 for a question without a following user message", () => {
-    const msgs = [
-      makeAssistantMsg([makeAskQuestionPart("Q?", "a")]),
-    ];
+    const msgs = [makeAssistantMsg([makeAskQuestionPart("Q?", "a")])];
     expect(countAnsweredQuestions(msgs)).toBe(0);
   });
 

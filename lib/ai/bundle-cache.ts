@@ -12,7 +12,7 @@ type CacheEntry = {
   createdAt: number;
 };
 
-let store = new Map<string, CacheEntry>();
+const store = new Map<string, CacheEntry>();
 
 export function getBundle(
   studentYear: number,

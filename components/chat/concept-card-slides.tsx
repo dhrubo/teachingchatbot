@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { ConceptCard } from "@/lib/ai/missions";
 import { cn } from "@/lib/utils";
@@ -9,24 +9,42 @@ import { cn } from "@/lib/utils";
 type ConceptCardSlidesProps = {
   cards: ConceptCard[];
   onComplete: () => void;
+  // Fired once per distinct card the student actually reaches — feeds the
+  // MIN_CONCEPT_CARDS_BEFORE_CHALLENGE gate.
+  onCardSeen?: () => void;
   onBack?: () => void;
   onHelp?: () => void;
 };
 
-export function ConceptCardSlides({ cards, onComplete, onBack, onHelp }: ConceptCardSlidesProps) {
+export function ConceptCardSlides({
+  cards,
+  onComplete,
+  onCardSeen,
+  onHelp,
+}: ConceptCardSlidesProps) {
   const [index, setIndex] = useState(0);
   const card = cards[index];
   const isLast = index >= cards.length - 1;
 
-  if (!card) return null;
+  // Report each newly-reached card exactly once.
+  const seenRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    if (cards.length > 0 && !seenRef.current.has(index)) {
+      seenRef.current.add(index);
+      onCardSeen?.();
+    }
+  }, [index, cards.length, onCardSeen]);
+
+  if (!card) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-4 py-4">
       {/* Progress dots */}
       <div className="flex items-center justify-center gap-2">
-        {cards.map((_, i) => (
+        {cards.map((dot, i) => (
           <div
-            key={i}
             className={cn(
               "h-2 rounded-full transition-all duration-300",
               i === index
@@ -35,6 +53,7 @@ export function ConceptCardSlides({ cards, onComplete, onBack, onHelp }: Concept
                   ? "w-2 bg-primary/40"
                   : "w-2 bg-muted-foreground/20"
             )}
+            key={dot.id}
           />
         ))}
       </div>
@@ -42,11 +61,11 @@ export function ConceptCardSlides({ cards, onComplete, onBack, onHelp }: Concept
       {/* Card */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={card.id}
           animate={{ opacity: 1, x: 0 }}
           className="rounded-2xl border border-border/50 bg-card p-6"
           exit={{ opacity: 0, x: -20 }}
           initial={{ opacity: 0, x: 20 }}
+          key={card.id}
           transition={{ duration: 0.25 }}
         >
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -57,7 +76,9 @@ export function ConceptCardSlides({ cards, onComplete, onBack, onHelp }: Concept
           </div>
           {card.example && (
             <div className="mb-3 rounded-lg border border-border/30 bg-muted/30 px-3 py-2 text-sm text-foreground/80">
-              <span className="font-medium text-muted-foreground">Example: </span>
+              <span className="font-medium text-muted-foreground">
+                Example:{" "}
+              </span>
               {card.example}
             </div>
           )}

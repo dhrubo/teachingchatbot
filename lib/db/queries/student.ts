@@ -5,12 +5,10 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { ChatbotError } from "@/lib/errors";
 import {
-  studentGoal,
   type StudentGoal,
   type StudentProfile,
+  studentGoal,
   studentProfile,
-  topicProgress,
-  type TopicProgress,
 } from "../schema";
 
 const client = postgres(process.env.POSTGRES_URL ?? "");
@@ -32,6 +30,18 @@ export async function getStudentsByUserId({
   } catch (_error) {
     throw new ChatbotError("bad_request:database", "Failed to get students");
   }
+}
+
+/**
+ * Gets the first student profile associated with a user.
+ * In the future, this should handle multiple profiles, but for now
+ * we assume one student per user for the adaptive engine.
+ */
+export async function getStudentProfile(
+  userId: string
+): Promise<StudentProfile | null> {
+  const students = await getStudentsByUserId({ userId });
+  return students[0] ?? null;
 }
 
 export async function createStudent({
@@ -89,65 +99,6 @@ export async function updateStudentProfile({
     throw new ChatbotError(
       "bad_request:database",
       "Failed to update student profile"
-    );
-  }
-}
-
-// --- Topic progress ---
-
-export async function getTopicProgressByStudentId({
-  studentId,
-}: {
-  studentId: string;
-}): Promise<TopicProgress[]> {
-  try {
-    return await db
-      .select()
-      .from(topicProgress)
-      .where(eq(topicProgress.studentId, studentId))
-      .orderBy(asc(topicProgress.topic));
-  } catch (_error) {
-    throw new ChatbotError(
-      "bad_request:database",
-      "Failed to get topic progress"
-    );
-  }
-}
-
-export async function upsertTopicProgress({
-  studentId,
-  topic,
-  data,
-}: {
-  studentId: string;
-  topic: string;
-  data: Partial<
-    Pick<
-      TopicProgress,
-      | "gcseDomain"
-      | "status"
-      | "confidence"
-      | "score"
-      | "successfulAttempts"
-      | "supportNeededAttempts"
-      | "lastPractisedAt"
-    >
-  >;
-}): Promise<TopicProgress> {
-  try {
-    const [row] = await db
-      .insert(topicProgress)
-      .values({ studentId, topic, ...data, updatedAt: new Date() })
-      .onConflictDoUpdate({
-        target: [topicProgress.studentId, topicProgress.topic],
-        set: { ...data, updatedAt: new Date() },
-      })
-      .returning();
-    return row;
-  } catch (_error) {
-    throw new ChatbotError(
-      "bad_request:database",
-      "Failed to update topic progress"
     );
   }
 }

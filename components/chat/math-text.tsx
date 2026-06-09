@@ -13,7 +13,8 @@ type Segment = { type: "text" | "math"; value: string; display: boolean };
 
 // Known LaTeX command patterns — catch common ones used by the tutor. If the
 // string contains any of these without a $ wrapper, auto-render as inline math.
-const LATEX_CMD = /\\(?:frac|sqrt|cdot|times|div|pm|int|sum|prod|lim|log|ln|sin|cos|tan|theta|alpha|beta|gamma|delta|pi|infty|rightarrow|leftarrow|binom|text|mathrm|mathbf|underline|overline|overrightarrow|vec|hat|tilde)\s*[\{\[]/;
+const LATEX_CMD =
+  /\\(?:frac|sqrt|cdot|times|div|pm|int|sum|prod|lim|log|ln|sin|cos|tan|theta|alpha|beta|gamma|delta|pi|infty|rightarrow|leftarrow|binom|text|mathrm|mathbf|underline|overline|overrightarrow|vec|hat|tilde)\s*[{[]/;
 
 function hasBareLatex(input: string): boolean {
   return LATEX_CMD.test(input) && !input.includes("$");

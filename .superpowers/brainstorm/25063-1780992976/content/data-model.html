@@ -1,0 +1,104 @@
+<h2>Data Model</h2>
+<p class="subtitle">
+  Mission definitions, concept cards, and progress tracking
+</p>
+
+<h3>
+  1. Mission Definitions (static data, in <code>lib/ai/missions.ts</code>)
+</h3>
+<div class="mockup" style="margin-top:8px;">
+  <div
+    class="mockup-body"
+    style="font-family:monospace;font-size:12px;line-height:1.6;padding:12px;white-space:pre-wrap;"
+  >
+    { id: "missions/percentages", title: "Percentages", yearGroup: "8", emoji:
+    "💯", description: "Master percentages — from basics to real-world
+    problems.", estimatedMinutes: 15, topics: ["percentages"], // links to
+    existing curriculum topics conceptCards: [ { id: "pc-1", title: "Percent
+    means out of 100", visual: "25% = 25/100 = 0.25", example: "75% = 75 out of
+    every 100", explanation: "Percent is a way of showing a part of a whole,
+    split into 100 equal pieces." }, { id: "pc-2", title: "Useful benchmark
+    percentages", visual: "50% = ½ 25% = ¼ 10% = ⅒ 1% = 1/100", example: "75% =
+    ¾ = three quarters", explanation: "Knowing these makes mental maths much
+    faster." }, { id: "pc-3", title: "Finding 50% of a number", visual: "50% of
+    80 → 80 × ½ = 40", example: "50% of 200 = 100", explanation: "50% is just
+    half. Halving is the fastest percentage calculation." } ],
+    prerequisiteMissionIds: ["missions/ number-skills"], gcseDomain: "number" }
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">2. MissionProgress (new DB table)</h3>
+<div class="mockup" style="margin-top:8px;">
+  <div
+    class="mockup-body"
+    style="font-family:monospace;font-size:12px;line-height:1.6;padding:12px;white-space:pre-wrap;"
+  >
+    // COMPOSITE KEY: (studentId, missionId) studentId uuid FK →
+    StudentProfile.id missionId text "missions/percentages" status enum
+    not_started | in_progress | completed | mastered phase enum intro | lesson |
+    cards | challenge | results score int 0-5 challengesDone int 0-N
+    challengesTotal int N conceptCardsViewed int 0-3+ lastLessonAt timestamp
+    completedAt timestamp
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">3. what changes vs what stays</h3>
+<table style="width:100%;border-collapse:collapse;margin-top:8px;">
+  <tr style="border-bottom:1px solid #333;">
+    <th style="text-align:left;padding:4px 8px;">Table</th>
+    <th style="text-align:left;padding:4px 8px;">Action</th>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>MissionProgress</code></td>
+    <td style="padding:4px 8px;">
+      🆕 New table — tracks mission-level progress
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>TopicProgress</code></td>
+    <td style="padding:4px 8px;">
+      ♻️ Kept unchanged. Missions reference topics; topic-level tracking still
+      works under the hood.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>StudentProfile</code></td>
+    <td style="padding:4px 8px;">
+      ♻️ XP/streak/badges stay for logged-in users. Guest: skip XP/streak/badges
+      at UI layer.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>StudentGoal</code></td>
+    <td style="padding:4px 8px;">
+      ♻️ Kept. Goals can reference mission IDs instead of topic names.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>curriculum.ts</code></td>
+    <td style="padding:4px 8px;">
+      🆕 New <code>missions.ts</code> for mission definitions + concept cards.
+    </td>
+  </tr>
+</table>
+
+<h3 style="margin-top:24px;">4. Lesson Summary (new DB table, optional)</h3>
+<p>
+  Stores the LLM-generated lesson explanation text per mission+student so repeat
+  visits show the cached version instead of calling the LLM again.
+</p>
+<div class="mockup" style="margin-top:8px;">
+  <div
+    class="mockup-body"
+    style="font-family:monospace;font-size:12px;line-height:1.6;padding:12px;white-space:pre-wrap;"
+  >
+    studentId uuid missionId text lessonText text — last LLM explanation for
+    this mission createdAt timestamp updatedAt timestamp PK: (studentId,
+    missionId)
+  </div>
+</div>
+<p>
+  <strong>Note:</strong>
+  Could skip this in v1 and just let the LLM regenerate. Chat history also
+  preserves lesson text. Marking as "planned" not "v1".
+</p>

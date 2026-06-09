@@ -76,7 +76,6 @@ describe("detectAnswerPatterns", () => {
     expect(p?.kind).toBe("repeat-wrong");
   });
 
-
   it("does not flag slipping when overall accuracy stays high", () => {
     const p = detectAnswerPatterns([
       attempt("5/6", true),

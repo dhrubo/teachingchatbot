@@ -11,7 +11,12 @@ type MissionMapProps = {
   onSelect?: (mission: MissionDefinition) => void;
 };
 
-export function MissionMap({ year, completedMissions = [], currentMissionId, onSelect }: MissionMapProps) {
+export function MissionMap({
+  year,
+  completedMissions = [],
+  currentMissionId,
+  onSelect,
+}: MissionMapProps) {
   const missions = getMissionsByYear(year);
 
   return (
@@ -22,9 +27,10 @@ export function MissionMap({ year, completedMissions = [], currentMissionId, onS
           style={{
             width: `${
               missions.length > 0
-                ? ((missions.findIndex((m) => m.id === currentMissionId) + 1) /
-                    missions.length) *
-                  100
+                ? (
+                    (missions.findIndex((m) => m.id === currentMissionId) + 1) /
+                      missions.length
+                  ) * 100
                 : 0
             }%`,
           }}
@@ -35,30 +41,35 @@ export function MissionMap({ year, completedMissions = [], currentMissionId, onS
           const isCompleted = completedMissions.includes(mission.id);
           const isCurrent = mission.id === currentMissionId;
           const prevCompleted =
-            index === 0 || completedMissions.includes(missions[index - 1]?.id ?? "");
+            index === 0 ||
+            completedMissions.includes(missions[index - 1]?.id ?? "");
           const isLocked = !isCompleted && !isCurrent && !prevCompleted;
 
           return (
             <motion.button
-              key={mission.id}
               className={cn(
                 "flex flex-col items-center gap-1.5 transition-all",
                 isLocked && "cursor-not-allowed opacity-40",
                 !isLocked && "cursor-pointer hover:scale-105"
               )}
               disabled={isLocked}
+              key={mission.id}
               onClick={() => onSelect?.(mission)}
-              whileHover={!isLocked ? { y: -2 } : undefined}
+              whileHover={isLocked ? undefined : { y: -2 }}
             >
               <div
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-full border-2 text-base transition-all duration-300",
-                  isCompleted && "border-green-500 bg-green-500/20 text-green-400",
-                  isCurrent && "border-primary bg-primary/20 text-primary shadow-[0_0_16px] shadow-primary/40",
-                  !isCompleted && !isCurrent && "border-border/30 bg-muted/10 text-muted-foreground/40"
+                  isCompleted &&
+                    "border-green-500 bg-green-500/20 text-green-400",
+                  isCurrent &&
+                    "border-primary bg-primary/20 text-primary shadow-[0_0_16px] shadow-primary/40",
+                  !isCompleted &&
+                    !isCurrent &&
+                    "border-border/30 bg-muted/10 text-muted-foreground/40"
                 )}
               >
-                {isCompleted ? "✓" : mission.emoji ?? index + 1}
+                {isCompleted ? "✓" : (mission.emoji ?? index + 1)}
               </div>
               <span
                 className={cn(

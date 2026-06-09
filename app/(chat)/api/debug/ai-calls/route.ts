@@ -3,7 +3,10 @@ import { isProductionEnvironment } from "@/lib/constants";
 
 export async function GET() {
   if (isProductionEnvironment) {
-    return Response.json({ error: "Not available in production" }, { status: 404 });
+    return Response.json(
+      { error: "Not available in production" },
+      { status: 404 }
+    );
   }
 
   const calls = getRecentAiCalls(100);

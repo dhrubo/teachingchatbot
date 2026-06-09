@@ -30,19 +30,19 @@ export function RegistrationPrompt() {
           You&apos;ve used today&apos;s free questions
         </p>
         <p className="mb-4 text-xs text-amber-700 dark:text-amber-300/80">
-          Come back tomorrow, or register to unlock saved progress and
-          continued learning.
+          Come back tomorrow, or register to unlock saved progress and continued
+          learning.
         </p>
         <div className="flex items-center justify-center gap-3">
           <Link
-            href="/register"
             className="rounded-full bg-[image:var(--gradient-sunset)] px-4 py-1.5 text-sm font-semibold text-white shadow-[var(--shadow-card)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
+            href="/register"
           >
             Sign up free ✨
           </Link>
           <Link
-            href="/login"
             className="rounded-full px-4 py-1.5 text-sm text-amber-700 underline underline-offset-2 hover:text-amber-600 dark:text-amber-300/70"
+            href="/login"
           >
             Sign in
           </Link>
@@ -58,8 +58,8 @@ export function RegistrationPrompt() {
         <p className="text-xs text-amber-700 dark:text-amber-300/70">
           You&apos;re doing well.{" "}
           <Link
-            href="/register"
             className="font-medium underline underline-offset-2 hover:text-amber-600"
+            href="/register"
           >
             Create a free account
           </Link>{" "}

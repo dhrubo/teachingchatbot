@@ -23,7 +23,8 @@ export type ChatModel = {
   reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high";
 };
 
-export const DEFAULT_GEMINI_MODEL = process.env.GOOGLE_GENERATIVE_AI_MODEL ?? "gemini-3.1-flash-lite";
+export const DEFAULT_GEMINI_MODEL =
+  process.env.GOOGLE_GENERATIVE_AI_MODEL ?? "gemini-3.1-flash-lite";
 
 export const chatModels: ChatModel[] = [
   {
@@ -101,7 +102,11 @@ const STATIC_CAPABILITIES: Record<string, ModelCapabilities> = {
   "moonshotai/kimi-k2.5": { tools: true, vision: false, reasoning: false },
   "openai/gpt-oss-20b": { tools: true, vision: false, reasoning: true },
   "openai/gpt-oss-120b": { tools: true, vision: false, reasoning: true },
-  "xai/grok-4.1-fast-non-reasoning": { tools: true, vision: false, reasoning: false },
+  "xai/grok-4.1-fast-non-reasoning": {
+    tools: true,
+    vision: false,
+    reasoning: false,
+  },
 };
 
 let _isUsingGateway: (() => boolean) | null = null;

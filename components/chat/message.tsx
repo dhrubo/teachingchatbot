@@ -1,5 +1,6 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
+import { logSuppressedQuestion } from "@/lib/challenge-gate";
 import type { Vote } from "@/lib/db/schema";
 import { isGateOptions } from "@/lib/topic-threads";
 import type { ChatMessage } from "@/lib/types";
@@ -12,7 +13,6 @@ import { MathText } from "./math-text";
 import { MessageActions } from "./message-actions";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
-
 
 const PurePreviewMessage = ({
   addToolApprovalResponse: _addToolApprovalResponse,
@@ -184,7 +184,12 @@ const PurePreviewMessage = ({
       const output =
         "output" in part
           ? (part.output as
-              | { prompt?: string; type?: string; options?: string[] }
+              | {
+                  prompt?: string;
+                  type?: string;
+                  options?: string[];
+                  correctAnswer?: string;
+                }
               | undefined)
           : undefined;
       if (!output?.prompt) {
@@ -193,6 +198,14 @@ const PurePreviewMessage = ({
       // Legacy control gates (older chats from before the gateless flow) are
       // never shown as Challenge cards.
       if (isGateOptions(output.options ?? [])) {
+        return null;
+      }
+      // CHALLENGE GATE: a graded quiz question (has a correctAnswer) must NEVER
+      // render inline in the chat thread. Real challenge questions only appear
+      // inside full-screen Challenge Mode after the student accepts. Non-graded
+      // prompts (name, topic choice, "continue or switch?") are still allowed.
+      if (output.correctAnswer && output.correctAnswer.trim() !== "") {
+        logSuppressedQuestion("message.tool-askQuestion");
         return null;
       }
       return (
@@ -215,8 +228,6 @@ const PurePreviewMessage = ({
         </div>
       );
     }
-
-
 
     return null;
   });

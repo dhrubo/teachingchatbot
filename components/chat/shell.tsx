@@ -11,12 +11,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { useActiveChat } from "@/hooks/use-active-chat";
 import {
   initialArtifactData,
   useArtifact,
   useArtifactSelector,
 } from "@/hooks/use-artifact";
+import { conceptCardsForLesson } from "@/lib/ai/missions";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AchievementToast } from "./achievement-toast";
@@ -61,13 +63,18 @@ export function ChatShell() {
   const {
     mission,
     phase,
+    activeLessonId,
+    consentState,
+    recordCardSeen,
     completeCards,
+    startChallengeMode,
     finishChallenge,
     exitMission,
-    isInMission,
-    challengeQuestions,
     challengeResults,
   } = useMission();
+
+  // Mission ids look like "missions/percentages"; archetypes key off the bare slug.
+  const missionSlug = mission?.id.replace(/^missions\//, "") ?? "";
 
   const handleMissionContinue = useCallback(() => {
     exitMission();
@@ -77,7 +84,9 @@ export function ChatShell() {
     exitMission();
     sendMessage({
       role: "user",
-      parts: [{ type: "text", text: "I'd like to review my mistakes, please." }],
+      parts: [
+        { type: "text", text: "I'd like to review my mistakes, please." },
+      ],
     });
   }, [exitMission, sendMessage]);
 
@@ -148,7 +157,7 @@ export function ChatShell() {
                 votes={votes}
               />
 
-              {phase === "cards" && mission && (
+              {phase === "cards" && mission && activeLessonId && (
                 <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-8 backdrop-blur-sm">
                   <div className="w-full max-w-lg px-4">
                     <div className="mb-3 text-center">
@@ -161,7 +170,8 @@ export function ChatShell() {
                       </p>
                     </div>
                     <ConceptCardSlides
-                      cards={mission.conceptCards}
+                      cards={conceptCardsForLesson(mission, activeLessonId)}
+                      onCardSeen={recordCardSeen}
                       onComplete={completeCards}
                       onHelp={() => {
                         exitMission();
@@ -180,13 +190,68 @@ export function ChatShell() {
                 </div>
               )}
 
+              {/* CHALLENGE GATE — explicit consent before any question is fetched
+                  or rendered. Reached only after the concept cards are complete. */}
+              {phase === "gate" && mission && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 px-4 backdrop-blur-sm">
+                  <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-card p-6 text-center">
+                    <span className="text-3xl">{mission.emoji}</span>
+                    <h3 className="mt-2 text-lg font-bold text-foreground">
+                      Ready for Challenge Mode?
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      You've reviewed the concepts. Try {mission.title} with 5
+                      adaptive questions — or keep learning first.
+                    </p>
+                    <div className="mt-5 flex flex-col gap-2">
+                      <Button
+                        className="rounded-full bg-[image:var(--gradient-sunset)] px-6 font-semibold text-white shadow-lg"
+                        onClick={startChallengeMode}
+                        size="sm"
+                      >
+                        Start Challenge Mode
+                      </Button>
+                      <Button
+                        className="rounded-full"
+                        onClick={exitMission}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        Keep Learning
+                      </Button>
+                      <Button
+                        className="rounded-full"
+                        onClick={() => {
+                          exitMission();
+                          sendMessage({
+                            role: "user",
+                            parts: [
+                              {
+                                type: "text",
+                                text: "Can you explain this concept differently?",
+                              },
+                            ],
+                          });
+                        }}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        Explain Differently
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {phase === "results" && challengeResults && mission && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 backdrop-blur-sm">
                   <ChallengeResultsScreen
                     missionTitle={mission.title}
                     onContinue={handleMissionContinue}
                     onReview={
-                      challengeResults.wrong > 0
+                      challengeResults.questionCount -
+                        challengeResults.finalScore >
+                      0
                         ? handleMissionReview
                         : undefined
                     }
@@ -241,33 +306,33 @@ export function ChatShell() {
         </div>
 
         <Artifact
-        addToolApprovalResponse={addToolApprovalResponse}
-        attachments={attachments}
-        chatId={chatId}
-        input={input}
-        isReadonly={isReadonly}
-        messages={messages}
-        regenerate={regenerate}
-        selectedModelId={currentModelId}
-        selectedVisibilityType={visibilityType}
-        sendMessage={sendMessage}
-        setAttachments={setAttachments}
-        setInput={setInput}
-        setMessages={setMessages}
-        status={status}
-        stop={stop}
-        votes={votes}
-      />
+          addToolApprovalResponse={addToolApprovalResponse}
+          attachments={attachments}
+          chatId={chatId}
+          input={input}
+          isReadonly={isReadonly}
+          messages={messages}
+          regenerate={regenerate}
+          selectedModelId={currentModelId}
+          selectedVisibilityType={visibilityType}
+          sendMessage={sendMessage}
+          setAttachments={setAttachments}
+          setInput={setInput}
+          setMessages={setMessages}
+          status={status}
+          stop={stop}
+          votes={votes}
+        />
       </div>
 
       <DataStreamHandler />
 
-      {phase === "challenge" && challengeQuestions.length > 0 && mission && (
+      {phase === "challenge" && mission && (
         <ChallengeMode
+          consentState={consentState}
+          missionSlug={missionSlug}
           missionTitle={mission.title}
-          onComplete={(results: ChallengeResults) =>
-            finishChallenge(results)
-          }
+          onComplete={(results: ChallengeResults) => finishChallenge(results)}
           onExit={exitMission}
           onHelp={() => {
             exitMission();
@@ -281,7 +346,6 @@ export function ChatShell() {
               ],
             });
           }}
-          questions={challengeQuestions}
         />
       )}
 

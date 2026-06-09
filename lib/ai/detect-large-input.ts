@@ -74,7 +74,10 @@ export function detectLargeInput(input: string): LargeInputResult {
   }
 
   // Trigger when it clearly reads as a list/syllabus with several items.
-  if ((isMostlyList && topicsCount >= 5) || (hasSyllabusMarker && topicsCount >= 3)) {
+  if (
+    (isMostlyList && topicsCount >= 5) ||
+    (hasSyllabusMarker && topicsCount >= 3)
+  ) {
     return {
       triggered: true,
       reason: hasSyllabusMarker ? "list_or_syllabus" : "many_topics",

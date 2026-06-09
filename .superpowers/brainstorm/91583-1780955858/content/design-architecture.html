@@ -1,12 +1,22 @@
 <h2>🏗️ Design overview — SARA rebrand</h2>
-<p class="subtitle">Here's the full plan. I'll go section by section — tell me if each part looks right.</p>
+<p class="subtitle">
+  Here's the full plan. I'll go section by section — tell me if each part looks
+  right.
+</p>
 
 <div class="section" style="margin-top:16px">
   <h3>1. Architecture: Dashboard replaces greeting</h3>
-  <p><strong>No routing changes.</strong> The SARA dashboard renders at <code>/</code> instead of the current <code>Greeting</code> component (only when no chat is active).</p>
+  <p>
+    <strong>No routing changes.</strong>
+    The SARA dashboard renders at <code>/</code> instead of the current
+    <code>Greeting</code>
+    component (only when no chat is active).
+  </p>
   <ul>
     <li><code>/</code> → SARA dashboard (hero + stats + missions + coach)</li>
-    <li>Pick a mission → dashboard slides out, chat slides in (no URL change)</li>
+    <li>
+      Pick a mission → dashboard slides out, chat slides in (no URL change)
+    </li>
     <li><code>/chat/[id]</code> → existing chat (unchanged)</li>
     <li>Logged-in redirect to last chat still works</li>
   </ul>
@@ -17,11 +27,16 @@
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
     <div style="background:var(--bg-secondary);border-radius:8px;padding:10px">
       <strong>sara-mascot.tsx</strong><br>
-      <small>Inline SVG: geometric figure, glowing aura, stylus, math symbols. Props: size, animated, mood</small>
+      <small
+        >Inline SVG: geometric figure, glowing aura, stylus, math symbols.
+        Props: size, animated, mood</small
+      >
     </div>
     <div style="background:var(--bg-secondary);border-radius:8px;padding:10px">
       <strong>mission-card.tsx</strong><br>
-      <small>Card with topic, progress, emoji. Hover lift, glow. Links to /chat</small>
+      <small
+        >Card with topic, progress, emoji. Hover lift, glow. Links to /chat</small
+      >
     </div>
     <div style="background:var(--bg-secondary);border-radius:8px;padding:10px">
       <strong>player-stats.tsx</strong><br>
@@ -41,7 +56,10 @@
 <div class="section">
   <h3>3. Sidebar (FREE mode)</h3>
   <ul>
-    <li>Guests: show "Current mission" panel (sara mini icon + topic) + "Free mode: 5/day"</li>
+    <li>
+      Guests: show "Current mission" panel (sara mini icon + topic) + "Free
+      mode: 5/day"
+    </li>
     <li>No history list for guests</li>
     <li>Premium/logged-in: keep existing history sidebar</li>
   </ul>
@@ -53,7 +71,10 @@
     <li>Title: "SARA — Smart AI Reasoning Assistant"</li>
     <li>Tagline: "Learn bright. Level up."</li>
     <li>Greeting → "Meet SARA, your AI maths coach"</li>
-    <li>Subtitle → "Build confidence with tiny lessons, smart hints, and one challenge at a time."</li>
+    <li>
+      Subtitle → "Build confidence with tiny lessons, smart hints, and one
+      challenge at a time."
+    </li>
     <li>topics → missions, challenges → boss checks</li>
   </ul>
 </div>

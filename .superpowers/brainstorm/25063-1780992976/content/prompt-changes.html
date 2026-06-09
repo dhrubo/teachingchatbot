@@ -1,0 +1,148 @@
+<h2>Prompt Changes</h2>
+<p class="subtitle">
+  Simpler tutor prompt — less UI orchestration, more teaching
+</p>
+
+<h3>What Changes</h3>
+<table style="width:100%;border-collapse:collapse;margin-top:8px;">
+  <tr style="border-bottom:1px solid #333;">
+    <th style="text-align:left;padding:6px 10px;">Section</th>
+    <th style="text-align:left;padding:6px 10px;">Current (~550 lines)</th>
+    <th style="text-align:left;padding:6px 10px;">New (~200 lines)</th>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">ROLE</td>
+    <td style="padding:6px 10px;">"Teach concept then emitChallengeBundle"</td>
+    <td style="padding:6px 10px;">
+      "You are a UK maths tutor. The mission system handles flow. You teach
+      lessons and generate challenges."
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Topic threads</td>
+    <td style="padding:6px 10px;">
+      ~60 lines on topic thread rules, gate controls, switching
+    </td>
+    <td style="padding:6px 10px;">
+      <strong>Removed.</strong>
+      MissionOrchestrator handles topic/mission state. The tutor doesn't need to
+      know.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">UI narration</td>
+    <td style="padding:6px 10px;">
+      ~40 lines: never narrate challenges, never say "here is a challenge", etc.
+    </td>
+    <td style="padding:6px 10px;">
+      <strong>Simplified.</strong>
+      "The UI shows concept cards and challenge mode. Don't narrate them. Teach
+      the concept, then call emitChallengeBundle."
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Challenge bundles</td>
+    <td style="padding:6px 10px;">
+      ~30 lines on bundle format, timing, grading
+    </td>
+    <td style="padding:6px 10px;">
+      Keep ~15 lines. "After teaching, call emitChallengeBundle with 3
+      challenges (easy/medium/hard)."
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Brevity rules</td>
+    <td style="padding:6px 10px;">
+      ~50 lines on output style, one idea, one visual, etc.
+    </td>
+    <td style="padding:6px 10px;">
+      Keep ~30 lines (the Duolingo-style output rules are still valuable).
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Reteaching</td>
+    <td style="padding:6px 10px;">
+      ~40 lines on explain differently, visual escalation, answer patterns
+    </td>
+    <td style="padding:6px 10px;">Keep ~30 lines. Key rules still apply.</td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Tool descriptions</td>
+    <td style="padding:6px 10px;">8 tool descriptions + curriculum dump</td>
+    <td style="padding:6px 10px;">
+      Keep tools, <strong>remove inline curriculum</strong> (tool can retrieve
+      it if needed). Save ~60 lines.
+    </td>
+  </tr>
+</table>
+
+<h3 style="margin-top:24px;">What the Tutor is NO LONGER Responsible For</h3>
+<div
+  style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;margin-top:8px;"
+>
+  <ul
+    style="margin:0;padding-left:16px;font-size:12px;line-height:1.8;color:rgba(255,255,255,0.6);"
+  >
+    <li>
+      Topic thread management — <code>MissionOrchestrator</code> handles this
+    </li>
+    <li>Topic switching rules — handled by the mission state machine</li>
+    <li>Readiness gates — the UI decides when to show cards vs challenge</li>
+    <li>
+      In-session progress tracking — UI tracks concept card views and challenge
+      progress
+    </li>
+    <li>
+      Empty turn protection — mission flow ensures there's always visible
+      content
+    </li>
+    <li>Curriculum listing — tool-call retrievable, not inlined</li>
+  </ul>
+</div>
+
+<h3 style="margin-top:24px;">Simplified Prompt Structure (Draft)</h3>
+<div class="mockup" style="margin-top:8px;">
+  <div
+    class="mockup-body"
+    style="font-family:monospace;font-size:11px;line-height:1.5;padding:12px;color:rgba(255,255,255,0.7);white-space:pre-wrap;"
+  >
+    # ROLE You are a calm, patient UK maths tutor for Year 8/9. The mission
+    system (concept cards, challenge mode, progress) is handled by the UI. You
+    teach concepts and generate challenges. # LESSON FORMAT 2-6 lines. One idea.
+    One visual. One example. Then call emitChallengeBundle. Never narrate the UI
+    (no "here's a challenge", "your turn", etc.). # CHALLENGE BUNDLES After
+    teaching, call emitChallengeBundle with 3 challenges. You provide content
+    only. The app handles timing, display, and grading. # RETEACHING Same
+    concept, different representation. Keep it short. Visual escalation: if
+    asked, LEAD with a text diagram. # TONE Calm, patient, conversational,
+    British English. # TOOLS getStudentProgress — call at session start
+    emitChallengeBundle — after every teaching turn updateTopicProgress — after
+    mission completion getCurriculumTopics — if you need topic details
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">What Stays the Same</h3>
+<table style="width:100%;border-collapse:collapse;margin-top:8px;">
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;width:200px;">Active tools</td>
+    <td style="padding:6px 10px;">
+      Same 8 tools (no change needed in route.ts)
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Tool implementations</td>
+    <td style="padding:6px 10px;">
+      Same tool code (emitChallengeBundle, updateTopicProgress, etc.)
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">StreamText</td>
+    <td style="padding:6px 10px;">Same streaming infrastructure</td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Challenge card format</td>
+    <td style="padding:6px 10px;">
+      Same ChallengeBundle / emitChallengeBundle output shape
+    </td>
+  </tr>
+</table>

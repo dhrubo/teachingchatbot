@@ -362,6 +362,25 @@ Core logic covered (54 tests). Next priorities: `countAnsweredQuestions` edge ca
 
 ---
 
+## Phase 31 Log: DB-Backed Missions Infrastructure
+
+- **Status:** Completed
+- **Actions Taken:**
+    1.  **Removed dead `TopicContent` files:** Deleted `lib/ai/tools/get-pre-authored-content.ts` and `lib/db/seed-topic-content.ts` — replaced by the new structured `Mission`/`Lesson`/`ConceptCard`/`Question` tables.
+    2.  **Cleaned up imports:** Removed `getPreAuthoredContent` imports from `app/(chat)/api/chat/route.ts` and `lib/ai/prompts-tutor.ts`; removed `seedTopicContent` from `lib/db/migrate.ts`.
+    3.  **Created `data/year8-missions.seed.ts`:** Compact seed data file with 13 missions (10 Year 8 + 3 Year 9), each with 1 lesson, 3-5 concept cards, and 10 hand-crafted questions across all difficulty levels (easy/medium/hard/boss). Uses helper functions (`mc`, `st`, `card`, `lesson`, `mission`) for compact definitions.
+    4.  **Seeded DB:** Ran `scripts/seed-missions.ts` (idempotent upsert) — populates Mission, Lesson, ConceptCard, Question tables with 13 missions, 13 lessons, 47 concept cards, 130 questions.
+    5.  **Updated SaraDashboard:** Changed from local `getMissionsByYear()` to fetching missions from `/api/lessons?year=8` with SWR. Falls back to local data when API unavailable.
+    6.  **Verified:** `pnpm build` clean, 63/63 unit tests pass.
+
+### Key Decisions
+- Pre-authored content is now served from structured DB tables instead of LLM-based `getPreAuthoredContent` tool.
+- `/api/lessons` REST endpoint serves missions, lessons, concept cards, and randomized questions independently of the chat API.
+- Seed data uses compact helper functions to keep the file manageable while maintaining per-question quality.
+- SaraDashboard fetches from the DB API on the client side (due to `cacheComponents` enabled in next.config).
+
+---
+
 ## Open Issues & Concerns (as of this debugging session)
 
 A run of UI/flow bugs were fixed across Phases 21–30. Several were caused or *exposed* by the topic-thread + overlay interactions; the fixes are sound but a few rely on model behaviour or are defensive rather than root-cause. Honest open items:
@@ -378,7 +397,7 @@ A run of UI/flow bugs were fixed across Phases 21–30. Several were caused or *
 
 The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for maths"):
 
-- **Teaching:** short, visual, Socratic micro-lessons; one interactive question at a time; content shown first, then a deterministic readiness gate before any bundle challenge.
+- **DB-backed missions:** 13 pre-authored Year 8/9 missions (Number Skills, Percentages, Fractions, etc.) with 130 hand-crafted questions served from Postgres via `/api/lessons`. SaraDashboard fetches from the DB with local fallback.
 - **Topic threads:** one chat holds many per-topic sub-conversations; a full-screen start gate opens each topic; "Your Topics" header menu switches between them; a topic can't be closed (without confirming) until its challenges are done.
 - **Interactive answers:** challenges answered via a form panel (radio/select/text) above the chat — not typed into chat — one at a time ("Challenge N of M"), with instant gamified ✅/❌ feedback + sound. Bundle challenges advance locally with **zero LLM calls** (correct, wrong, or next-challenge — only "Explain differently" hits the LLM).
 - **Persistence:** per-student profiles, topic mastery (0–5), XP / streaks / badges, short-term goals and exam dates, GCSE-domain rollups — all saved across sessions (multiple children per account). Topic threads/phases are rederived from saved messages, so they survive reload.
@@ -386,4 +405,71 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 - **Model routing:** Vercel AI Gateway with a transparent **Gemini fallback** (and a `USE_GEMINI_ONLY` local-dev switch) when the gateway errors / is rate limited.
 - **Diagnostics:** each AI call has a unique `requestId` logged with `[ai] provider=... reason=... requestId=...`. Dev-only `/api/debug/ai-calls` endpoint and `/api/debug/ai-provider` for troubleshooting without live logs.
 - **UX:** sunset theme, sound effects, live progress badges + achievement toast, large-input chunking, in-chat topic switching.
-- **Tools:** `getCurriculumTopics`, `getStudentProgress`, `updateStudentProfile`, `updateTopicProgress`, `manageGoals`, `startNewTopicSession` (in-chat topic thread + marker), `emitChallengeBundle` (pre-generated 3–5 challenge bundles, locally graded), `askQuestion` (no legacy weather/document tools).
+- **Tools:** `getCurriculumTopics`, `updateStudentProfile`, `manageGoals`, `startNewTopicSession` (in-chat topic thread + marker), `askQuestion`. Dead tools removed: `emitChallengeBundle`, `getStudentProgress`, `updateTopicProgress`, and `getPreAuthoredContent`.
+
+---
+
+## Phase 32 Log: Adaptive GCSE-Style Question Archetype Engine
+
+- **Status:** Completed
+- **Actions Taken:**
+    1.  **Replaced Static Question Banks:** Retired the old pre-authored static questions. Added new database tables: `Skill`, `LessonSkill`, `QuestionArchetype`, and `StudentSkillMastery` (tracking 0-100 mastery scores mapping to `must`, `should`, `could`, and `gcse_bridge` difficulty bands).
+    2.  **Created Archetype Seeding:** Added JSON schema and seed file `data/question-archetypes/algebra.json` representing core Year 8/9 algebra skills. Wrote idempotent seeding script `scripts/seed-question-archetypes.ts` and wired it to `pnpm seed`.
+    3.  **Built Adaptive Mastery Engine:** Created `lib/adaptive/engine.ts` with pure deterministic question generators, mastery adjustment functions (+4 * weight for correct, -3 * weight for incorrect), and dynamic selection logic (targeting 70% current band, 20% repair, 10% stretch).
+    4.  **Rebuilt Student Experience:** Overhauled `ChallengeMode` to be a fullscreen, 5-question adaptive challenge. Connected it to a new backend endpoint `/api/adaptive-challenge` to fetch questions and submit scores dynamically with **zero LLM calls**.
+    5.  **Decommissioned Obsolete Infrastructure:** Completely removed legacy UI/logic components (`AnswerPanel`, `HarderChallengePrompt`, `ChallengeProgress`), deleted unused AI tools (`emitChallengeBundle`, `getStudentProgress`, `updateTopicProgress`), and cleaned up `useActiveChat` / `shell.tsx` hooks.
+    6.  **Upgraded Parent Dashboard:** Refactored `app/(parent)/dashboard/page.tsx` and its api to fetch the new database mastery table, displaying a visual breakdown of "Strong Skills" (>=75) and "Weak Skills" (<50) alongside detailed mastery bars.
+    7.  **Verified:** Clean build with `pnpm build`, green unit tests with `pnpm test:unit` (63/63 passing), and resolved all type and linter errors.
+
+### Key Decisions
+- Question generation is 100% template-based and graded locally, completely freeing the core learning loop from any LLM dependency.
+- Challenge mode now manages an incremental fetch cycle fetching one question at a time from `/api/adaptive-challenge` instead of loading a static bank.
+- Parent dashboard focus shifted from gamification (XP/streaks) to pure curriculum mastery (GCSE skill coverage).
+
+---
+
+## Open Issues & Concerns (as of this debugging session)
+
+1. **Weakest Skill database fetch in engine.ts is mock-driven.** While the DB tables are present and schema-accurate, `selectNextQuestion` currently uses mock mastery scores to select the weakest skill and generate placeholder/algebraic questions. Database query integration for dynamic skill checking can be expanded in Phase 33.
+2. **Topic-thread slicing remains defensive.** Deduplication on id at the render boundary remains in place to handle edge case overlap.
+3. **botid local warnings.** Developer warnings regarding botid in local dev can be bypassed by setting `bypass` option.
+
+## Current Feature Summary
+
+The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for maths"):
+
+- **Adaptive GCSE Archetype Engine:** Questions are dynamically generated from JSON-defined archetypes (e.g., standard, 2-step equations) and graded locally with **zero LLM calls** in the primary learning loop.
+- **Progressive Difficulty Bands:** Dynamic GCSE progression across four bands (`must` for basic fluency, `should` for secure understanding, `could` for stretch, and `gcse_bridge` for multi-step reasoning).
+- **Socrates Mastery Scoring:** Real-time database tracking of student skill progress on a 0-100 scale, dynamically choosing repair or stretch questions based on streaks and mastery levels.
+- **Fullscreen Challenges:** Overhauled `ChallengeMode` running a 5-question adaptive assessment session with interactive fullscreen controls, progress bar, and instant pop feedback with sound.
+- **Parent Learning Dashboard:** Dashboard visualizing actual curriculum mastery, dividing student skills into "Strong Skills" (>= 75) and "Weak Skills" (< 50) using real-time database queries instead of abstract XP metrics.
+- **Topic threads:** One chat holds many per-topic sub-conversations; a full-screen start gate opens each topic; "Your Topics" header menu switches between them.
+- **Fallbacks & Resilience:** Robust Next.js App Router routing with transparent Gemini fallback when AI gateways are quota-limited or offline.
+- **Tools:** `getCurriculumTopics`, `updateStudentProfile`, `manageGoals`, `startNewTopicSession` (in-chat topic thread + marker), and `askQuestion`. All legacy tools have been successfully deleted.
+
+---
+
+## Phase 33 Log: Real Archetype Engine + Global Challenge Consent Gate
+
+- **Status:** Completed
+- **Context:** Phase 32 shipped a first-pass archetype engine, but (a) `selectNextQuestion` was mock-driven with per-slug hand-written answer maths and (b) there was no code-level guarantee that a challenge/question never appears before the student accepts. This phase adopts the richer starter-pack schema, builds the real DB-backed engine, and enforces the consent gate **in code** (not just the prompt).
+- **Actions Taken:**
+    1.  **Richer archetype schema (`lib/db/schema.ts`, migration `0008_question_archetype_engine.sql`):** Replaced the Phase-32 `QuestionArchetype`/`StudentSkillMastery` shape with the scalable design — `variableSchemaJson` + `answerExpression` (a JS expression/template literal evaluated generically, so **no per-slug code**), `acceptableAnswerRulesJson`, full GCSE metadata (`subject`, `yearGroup`, `missionSlug`, `lessonSlug`, `skillSlug`, `gcseDomain`, `questionType`). Added `GeneratedQuestion` (cache) and `QuestionAttempt` (logs both logged-in `studentId` and guest `guestSessionId`). The old archetype/mastery tables held no production data, so the migration drops/recreates them.
+    2.  **Question generation + grading (`lib/questions/`):** `generate-from-archetype.ts` resolves the variable schema (scalar pools, tuple pools, derived expressions, reserved-word aliasing) and evaluates `answerExpression` against whitelisted helpers in `answer-helpers.ts` (`simplifyFraction`, `simplifyRatio`, `round2`, …). `grade-answer.ts` grades locally — numeric/tolerance, fraction & ratio equivalence, algebra normalisation, currency/percent symbol stripping. **Zero LLM calls.**
+    3.  **Adaptive modules (`lib/adaptive/`):** `update-mastery.ts` (+4·weight correct / −3·weight wrong, band up after 2 correct / down after 2 wrong, **never skips a band**), `select-next-question.ts` (weakest-skill pick, 70% current / 20% repair / 10% stretch, avoid recent archetypes), `detect-misconception.ts` (sign-error / inverse-op slips / declared tags). `engine.ts` rewritten as the DB-backed orchestrator (`selectNextQuestionForLesson`/`ForMission`, `recordAnswer`) using real queries in `lib/db/queries/questions.ts`.
+    4.  **Global challenge gate (`lib/challenge-gate.ts`) — single source of truth:** `canShowChallengeQuestion(state)` is true **only** when `state === "active"`; `canOfferChallenge` requires `MIN_CONCEPT_CARDS_BEFORE_CHALLENGE = 3`; `consentStateForPhase` maps the mission phase + cards-seen to a consent state; `logSuppressedQuestion` emits `[challenge-gate] suppressed premature question render` in dev. No component re-implements gate logic.
+    5.  **Wired the gate into the UI:** `mission-orchestrator.tsx` tracks `conceptCardsSeen`, exposes `consentState`, and makes `startChallengeMode()` the **only** action that activates the challenge (topic selection / lesson start / LLM tool calls / message reloads / auto-send never can). `shell.tsx` now renders the previously-dead `"gate"` phase as an explicit CTA (**Start Challenge Mode / Keep Learning / Explain Differently**). `concept-card-slides.tsx` reports each card seen; `missions.ts` guarantees ≥3 cards (deterministic fallback). `challenge-mode.tsx` hard-gates on `consentState`, grades locally, shows a guest-limit screen, and supports multiple-choice. `message.tsx` suppresses any **graded** inline `tool-askQuestion` (non-graded name/topic prompts still allowed).
+    6.  **Route + guest limit (`/api/adaptive-challenge`):** resolves caller to `studentId` or `guestSessionId`, enforces the **5-questions/day guest limit** (counts `QuestionAttempt` rows in the last 24h, returns a friendly `limitReached` with no further question fetch and no LLM call), logs every attempt, and updates mastery for logged-in students.
+    7.  **Prompt + tool tightening (`prompts-tutor.ts`, `ask-question.ts`):** added a TOP-PRIORITY "no questions before Challenge Mode" rule with the forbidden phrases ("Try this", "Your turn", "What is…", …); removed the non-existent `emitChallengeBundle` instructions; `askQuestion` is now non-graded prompts only (any `correctAnswer` is treated as premature and suppressed).
+    8.  **Seeding:** `scripts/seed-question-archetypes.ts` rewritten for the new schema (validates required fields, upserts by slug, prints counts by topic + band). `pnpm seed:question-archetypes` added. **39 archetypes** across algebra (solve/substitute/simplify/expand/factorise), percentages, ratio, probability, pie charts, distance-time graphs and angle reasoning, full band coverage (must 9 / should 10 / could 12 / gcse_bridge 8).
+    9.  **Tests:** added `lib/__tests__/{challenge-gate,update-mastery,select-next-question,grade-answer,generate-from-archetype,detect-misconception}.test.ts`. `generate-from-archetype` self-grades all 39 real archetypes (×8 random instances). **102/102 unit tests pass.**
+    10. **Verified:** `pnpm test:unit` green, `next build` clean (type-check + 26 routes incl. `/api/adaptive-challenge`), all newly-authored/changed files lint-clean under `ultracite`. Removed the integrated `data/gcse-question-engine/` starter source dir; `docs/gcse-question-engine.md` documents the engine.
+
+### Key Decisions
+- **Consent is enforced in code, everywhere.** The prompt is defence-in-depth only; the gate (`lib/challenge-gate.ts`) is the authority and is the single thing every question-rendering path consults.
+- **Generic `answerExpression` over per-slug maths** — one archetype produces hundreds of questions with no bespoke code, so the engine scales to every topic.
+- Migration `0008` is **not auto-applied** (it drops/recreates pre-seed tables); run `pnpm db:migrate` then `pnpm seed:question-archetypes` to populate.
+
+### Open Items
+- **Mission-slug ↔ archetype-slug mismatch.** Mission ids (`missions/ratio`) are mapped to archetype `missionSlug` by stripping `missions/`; a few don't line up (e.g. `ratio` vs `ratio-and-proportion`) and hit the graceful "no questions available" path until aligned.
+- **Drizzle snapshot not regenerated for `0008`** — the migration applies at runtime, but a future `pnpm db:generate` will prompt about the diff.

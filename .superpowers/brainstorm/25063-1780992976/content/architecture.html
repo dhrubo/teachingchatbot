@@ -1,0 +1,150 @@
+<h2>Architecture Overview</h2>
+<p class="subtitle">How MissionOrchestrator wraps the existing chat engine</p>
+
+<div class="mockup" style="margin-top:16px;">
+  <div class="mockup-header">Component Tree</div>
+  <div
+    class="mockup-body"
+    style="font-family:monospace;font-size:13px;line-height:1.7;padding:16px;"
+  >
+    <div style="padding-left:0">
+      <strong>App Layout</strong><br>
+      ├── Sidebar (unchanged)<br>
+      ├── ChatShell<br>
+      │&nbsp;&nbsp; ├── <strong>MissionOrchestrator</strong> ←
+      <span style="color:#60a5fa;">NEW</span><br>
+      │&nbsp;&nbsp; │&nbsp;&nbsp; ├── <strong>MissionHeader</strong> (progress
+      bar, mission name, exit)<br>
+      │&nbsp;&nbsp; │&nbsp;&nbsp; ├── <strong>LessonPhase</strong> (LLM teaching
+      + cards)<br>
+      │&nbsp;&nbsp; │&nbsp;&nbsp; │&nbsp;&nbsp; ├── Chat messages (hidden when
+      not in lesson)<br>
+      │&nbsp;&nbsp; │&nbsp;&nbsp; │&nbsp;&nbsp; └──
+      <strong>ConceptCardSlides</strong>
+      ← NEW<br>
+      │&nbsp;&nbsp; │&nbsp;&nbsp; ├── <strong>ChallengeGate</strong> ("Ready for
+      Challenge Mode?")<br>
+      │&nbsp;&nbsp; │&nbsp;&nbsp; └──
+      <strong>ChallengeMode</strong>
+      (full-screen overlay) ← NEW<br>
+      │&nbsp;&nbsp; └── MultimodalInput (hidden during ChallengeMode)<br>
+      │&nbsp;&nbsp; ├── <strong>HomePage</strong> (hero + mission map + how it
+      works) → redesigned<br>
+      │&nbsp;&nbsp; └── TopicSelectScreen / TopicEntryOverlay →
+      simplified/removed<br>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">Mission State Machine</h3>
+<div style="font-family:monospace;font-size:13px;line-height:2;padding:8px 0;">
+  HOME → SELECT MISSION → INTRO → LESSON → CARDS → READY_GATE → CHALLENGE →
+  RESULTS → COMPLETE<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↕&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;HELP_CHAT&nbsp;&nbsp;←&nbsp;tap
+  "Ask Tutor"<br>
+</div>
+
+<h3 style="margin-top:24px;">Flow Detail</h3>
+<div class="section">
+  <p>
+    <strong>1. HOME</strong>
+    — Hero + mission map. Guest: random "Today's Mission". Logged-in: "Continue
+    Mission" with progress.
+  </p>
+  <p>
+    <strong>2. SELECT MISSION</strong>
+    — Tap a mission node on the map. Mission loads its pre-authored concept
+    cards and intro.
+  </p>
+  <p>
+    <strong>3. INTRO</strong>
+    — Short mission intro screen (title, goals, estimated time). "Start →"
+    button.
+  </p>
+  <p>
+    <strong>4. LESSON</strong>
+    — LLM teaches the first concept. Uses existing <code>useChat</code> stream.
+    Chat messages visible.
+  </p>
+  <p>
+    <strong>5. CARDS</strong>
+    — 3+ pre-authored concept cards shown as a slide deck. "Next →" to advance.
+    No LLM call.
+  </p>
+  <p>
+    <strong>6. GATE</strong>
+    — "Ready for Challenge Mode?" prompt (same as current readiness gate UI).
+  </p>
+  <p>
+    <strong>7. CHALLENGE</strong>
+    — Full-screen overlay. Questions 1/5, 2/5, etc. LLM generates via
+    emitChallengeBundle.
+  </p>
+  <p>
+    <strong>8. RESULTS</strong>
+    — Score screen: "Mission Complete! 4/5 ⭐⭐⭐⭐☆". Review / Continue / Next
+    mission buttons.
+  </p>
+  <p>
+    <strong>9. COMPLETE</strong>
+    — Mission marked done in DB. Student returns to mission map.
+  </p>
+  <p>
+    <strong>HELP_CHAT</strong>
+    — At any CARDS/GATE/CHALLENGE step, "Ask Tutor" opens a chat overlay.
+    Student types questions, gets LLM response, then returns to the mission
+    flow.
+  </p>
+</div>
+
+<h3 style="margin-top:24px;">How the Existing Code Changes</h3>
+<table style="width:100%;border-collapse:collapse;margin-top:8px;">
+  <tr style="border-bottom:1px solid #333;">
+    <th style="text-align:left;padding:4px 8px;">Component</th>
+    <th style="text-align:left;padding:4px 8px;">Change</th>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>sara-dashboard.tsx</code></td>
+    <td style="padding:4px 8px;">
+      Rewritten as landing page with hero + mission map + how it works
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>shell.tsx</code></td>
+    <td style="padding:4px 8px;">
+      Add <code>MissionOrchestrator</code> wrapper. Chat input hidden during
+      challenge mode.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>answer-panel.tsx</code></td>
+    <td style="padding:4px 8px;">
+      Replaced by <code>ChallengeMode</code> overlay. Logic preserved, UI
+      different.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>topic-entry-overlay.tsx</code></td>
+    <td style="padding:4px 8px;">Removed — replaced by mission INTRO screen</td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>use-active-chat.tsx</code></td>
+    <td style="padding:4px 8px;">
+      Mission state added alongside chat state. Topic-thread code simplified
+      (not removed, but mission takes priority).
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>lib/ai/prompts-tutor.ts</code></td>
+    <td style="padding:4px 8px;">
+      Prompt simplified — no more topic-thread or UI-narration rules needed.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;"><code>lib/db/schema.ts</code></td>
+    <td style="padding:4px 8px;">
+      New <code>missionProgress</code> table; concept cards in curriculum data.
+    </td>
+  </tr>
+</table>

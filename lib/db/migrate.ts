@@ -23,6 +23,9 @@ const runMigrate = async () => {
   const end = Date.now();
 
   console.log("Migrations completed in", end - start, "ms");
+
+  // Topic seeding now handled by scripts/seed-missions.ts
+
   process.exit(0);
 };
 

@@ -1,53 +1,50 @@
 export {
-  getUser,
-  createUser,
   createGuestUser,
+  createUser,
+  getUser,
 } from "./auth";
 
 export {
-  saveChat,
-  deleteChatById,
-  deleteAllChatsByUserId,
-  deleteExpiredGuestChats,
-  getChatsByUserId,
-  getChatById,
-  saveMessages,
-  updateMessage,
-  getMessagesByChatId,
-  getMessageById,
-  deleteMessagesByChatIdAfterTimestamp,
-  voteMessage,
-  getVotesByChatId,
-  updateChatVisibilityById,
-  updateChatTitleById,
-  getMessageCountByUserId,
   createStreamId,
+  deleteAllChatsByUserId,
+  deleteChatById,
+  deleteExpiredGuestChats,
+  deleteMessagesByChatIdAfterTimestamp,
+  getChatById,
+  getChatsByUserId,
+  getMessageById,
+  getMessageCountByUserId,
+  getMessagesByChatId,
   getStreamIdsByChatId,
+  getVotesByChatId,
+  saveChat,
+  saveMessages,
+  updateChatTitleById,
+  updateChatVisibilityById,
+  updateMessage,
+  voteMessage,
 } from "./chat";
 
 export {
-  saveDocument,
-  updateDocumentContent,
-  getDocumentsById,
-  getDocumentById,
   deleteDocumentsByIdAfterTimestamp,
-  saveSuggestions,
+  getDocumentById,
+  getDocumentsById,
   getSuggestionsByDocumentId,
+  saveDocument,
+  saveSuggestions,
+  updateDocumentContent,
 } from "./document";
-
-export {
-  getStudentsByUserId,
-  createStudent,
-  updateStudentProfile,
-  getTopicProgressByStudentId,
-  upsertTopicProgress,
-  getGoalsByStudentId,
-  createGoal,
-  updateGoal,
-} from "./student";
-
 export {
   getMissionProgress,
   getStudentMissionProgress,
   upsertMissionProgress,
 } from "./mission";
+export {
+  createGoal,
+  createStudent,
+  getGoalsByStudentId,
+  getStudentsByUserId,
+  getStudentProfile,
+  updateGoal,
+  updateStudentProfile,
+} from "./student";

@@ -1,29 +1,30 @@
 <h2>🏠 Home screen layout — where should the new SARA landing appear?</h2>
-<p class="subtitle">The current app is a single-page chat. The "home" is just the empty greeting state. Let's decide where the new hero/stats/mission/topic-map layout lives.</p>
+<p class="subtitle">
+  The current app is a single-page chat. The "home" is just the empty greeting
+  state. Let's decide where the new hero/stats/mission/topic-map layout lives.
+</p>
 
 <div class="options">
   <div class="option" data-choice="a" onclick="toggleSelect(this)">
     <div class="letter">A</div>
     <div class="content">
       <h3>Replace the greeting</h3>
-      <p>The SARA landing (hero + stats + mission + topic map + coach bubble) replaces the current "Hey! Ready for some maths?" greeting. Shows when no chat has started; disappears once the student picks a topic.</p>
-      <div style="margin-top:8px;background:#1a1a2e;border-radius:8px;padding:12px;color:#e0e0e0;font-family:monospace;font-size:11px;line-height:1.6">
-┌────────────────────────────┐
-│ 🧠 SARA Mascot             │
-│ "Meet SARA, your AI coach" │
-│ [Start today's mission 🚀] │
-├────────────────────────────┤
-│ XP: 120  🔥3  🏆Level 2   │
-├────────────────────────────┤
-│ 🎯 Today's mission: 60%    │
-│ Percentages — Continue     │
-├────────────────────────────┤
-│ Missions: Percentages ✓    │
-│           Ratio 🔒         │
-│           Algebra ▶️        │
-├────────────────────────────┤
-│ 💬 "Start small. Win one." │
-└────────────────────────────┘</div>
+      <p>
+        The SARA landing (hero + stats + mission + topic map + coach bubble)
+        replaces the current "Hey! Ready for some maths?" greeting. Shows when
+        no chat has started; disappears once the student picks a topic.
+      </p>
+      <div
+        style="margin-top:8px;background:#1a1a2e;border-radius:8px;padding:12px;color:#e0e0e0;font-family:monospace;font-size:11px;line-height:1.6"
+      >
+        ┌────────────────────────────┐ │ 🧠 SARA Mascot │ │ "Meet SARA, your AI
+        coach" │ │ [Start today's mission 🚀] │ ├────────────────────────────┤ │
+        XP: 120 🔥3 🏆Level 2 │ ├────────────────────────────┤ │ 🎯 Today's
+        mission: 60% │ │ Percentages — Continue │ ├────────────────────────────┤
+        │ Missions: Percentages ✓ │ │ Ratio 🔒 │ │ Algebra ▶️ │
+        ├────────────────────────────┤ │ 💬 "Start small. Win one." │
+        └────────────────────────────┘
+      </div>
     </div>
   </div>
 
@@ -31,23 +32,23 @@
     <div class="letter">B</div>
     <div class="content">
       <h3>Always-visible dashboard</h3>
-      <p>A left-side dashboard panel (alongside the chat) that shows stats, today's mission, and topic map. The mascot lives in the dashboard. The chat is always open on the right. Think <strong>Duolingo sidebar + chat</strong>.</p>
-      <div style="margin-top:8px;background:#1a1a2e;border-radius:8px;padding:12px;color:#e0e0e0;font-family:monospace;font-size:11px;line-height:1.6">
-┌──────────────┬──────────────────────┐
-│  🧠 SARA     │  Chat area           │
-│  XP   🔥3    │                      │
-│  Level 2     │  ┌────────────────┐  │
-│              │  │ Assistant msg  │  │
-│  🎯 Today's  │  ├────────────────┤  │
-│  mission     │  │ User msg       │  │
-│  Percentages │  ├────────────────┤  │
-│  ██████░░ 60%│  │ New response…  │  │
-│              │  └────────────────┘  │
-│  Missions:   │  ┌────────────────┐  │
-│  % ✓  R 🔒   │  │ Input box      │  │
-│  A ▶️  G 🔒   │  └────────────────┘  │
-│              │                      │
-└──────────────┴──────────────────────┘</div>
+      <p>
+        A left-side dashboard panel (alongside the chat) that shows stats,
+        today's mission, and topic map. The mascot lives in the dashboard. The
+        chat is always open on the right. Think
+        <strong>Duolingo sidebar + chat</strong>.
+      </p>
+      <div
+        style="margin-top:8px;background:#1a1a2e;border-radius:8px;padding:12px;color:#e0e0e0;font-family:monospace;font-size:11px;line-height:1.6"
+      >
+        ┌──────────────┬──────────────────────┐ │ 🧠 SARA │ Chat area │ │ XP 🔥3
+        │ │ │ Level 2 │ ┌────────────────┐ │ │ │ │ Assistant msg │ │ │ 🎯
+        Today's │ ├────────────────┤ │ │ mission │ │ User msg │ │ │ Percentages
+        │ ├────────────────┤ │ │ ██████░░ 60%│ │ New response… │ │ │ │
+        └────────────────┘ │ │ Missions: │ ┌────────────────┐ │ │ % ✓ R 🔒 │ │
+        Input box │ │ │ A ▶️ G 🔒 │ └────────────────┘ │ │ │ │
+        └──────────────┴──────────────────────┘
+      </div>
     </div>
   </div>
 
@@ -55,25 +56,28 @@
     <div class="letter">C</div>
     <div class="content">
       <h3>Separate landing page</h3>
-      <p>A full separate <code>/home</code> or <code>/dashboard</code> page with the hero layout. Chat is at <code>/chat</code>. The user navigates between them. More like a traditional app with a "dashboard" and a separate "study" view.</p>
-      <div style="margin-top:8px;background:#1a1a2e;border-radius:8px;padding:12px;color:#e0e0e0;font-family:monospace;font-size:11px;line-height:1.6">
- [Home] [Chat] [Progress] ← nav bar
-
-┌────────────────────────────────┐
-│       🧠 SARA Mascot (large)   │
-│  "Meet SARA, your AI coach"    │
-│  [Start today's mission 🚀]    │
-├────────────────────────────────┤
-│ XP: 120  🔥3  🏆Level 2        │
-├────────────────────────────────┤
-│ 🎯 Today's mission: 60%        │
-├────────────────────────────────┤
-│ Missions grid (6 cards)        │
-├────────────────────────────────┤
-│ 💬 Coach bubble                 │
-└────────────────────────────────┘</div>
+      <p>
+        A full separate <code>/home</code> or <code>/dashboard</code> page with
+        the hero layout. Chat is at <code>/chat</code>. The user navigates
+        between them. More like a traditional app with a "dashboard" and a
+        separate "study" view.
+      </p>
+      <div
+        style="margin-top:8px;background:#1a1a2e;border-radius:8px;padding:12px;color:#e0e0e0;font-family:monospace;font-size:11px;line-height:1.6"
+      >
+        [Home] [Chat] [Progress] ← nav bar ┌────────────────────────────────┐ │
+        🧠 SARA Mascot (large) │ │ "Meet SARA, your AI coach" │ │ [Start today's
+        mission 🚀] │ ├────────────────────────────────┤ │ XP: 120 🔥3 🏆Level 2
+        │ ├────────────────────────────────┤ │ 🎯 Today's mission: 60% │
+        ├────────────────────────────────┤ │ Missions grid (6 cards) │
+        ├────────────────────────────────┤ │ 💬 Coach bubble │
+        └────────────────────────────────┘
+      </div>
     </div>
   </div>
 </div>
 
-<p style="margin-top:16px;color:var(--text-secondary)">Open http://localhost:62934 in your browser, click an option, and tell me what you think!</p>
+<p style="margin-top:16px;color:var(--text-secondary)">
+  Open http://localhost:62934 in your browser, click an option, and tell me what
+  you think!
+</p>

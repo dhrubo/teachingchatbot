@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { ChatMessage } from "@/lib/types";
 import {
-  deriveTopicThreads,
   deriveTopicState,
+  deriveTopicThreads,
+  isGateOptions,
   summariseTopics,
   topicSlug,
-  isGateOptions,
 } from "../topic-threads";
 
 function msg(
@@ -65,7 +65,11 @@ describe("topicSlug", () => {
 describe("isGateOptions", () => {
   it("returns true for accept-the-challenge options", () => {
     expect(
-      isGateOptions(["Accept the challenge", "Read next topic", "Explain differently"])
+      isGateOptions([
+        "Accept the challenge",
+        "Read next topic",
+        "Explain differently",
+      ])
     ).toBe(true);
   });
 

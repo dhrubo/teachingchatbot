@@ -43,6 +43,27 @@
       "when": 1780995137661,
       "tag": "0005_flat_mission",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781005736642,
+      "tag": "0006_burly_beyonder",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781005860331,
+      "tag": "0007_wise_random",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781100000000,
+      "tag": "0008_question_archetype_engine",
+      "breakpoints": true
     }
   ]
 }

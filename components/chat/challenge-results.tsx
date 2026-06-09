@@ -13,9 +13,7 @@ type ChallengeResultsScreenProps = {
 
 function starRating(score: number, total: number): string {
   const filled = Math.round((score / total) * 5);
-  return (
-    "⭐".repeat(Math.max(0, filled)) + "☆".repeat(Math.max(0, 5 - filled))
-  );
+  return "⭐".repeat(Math.max(0, filled)) + "☆".repeat(Math.max(0, 5 - filled));
 }
 
 export function ChallengeResultsScreen({
@@ -25,9 +23,8 @@ export function ChallengeResultsScreen({
   onReview,
 }: ChallengeResultsScreenProps) {
   const pct =
-    results.total > 0
-      ? Math.round((results.correct / results.total) * 100)
-      : 0;
+    results.questionCount > 0 ? Math.round((results.finalScore / results.questionCount) * 100) : 0;
+  const wrongCount = results.questionCount - results.finalScore;
 
   return (
     <motion.div
@@ -38,22 +35,25 @@ export function ChallengeResultsScreen({
     >
       <div className="mb-4 text-5xl">🏆</div>
       <h2 className="mb-1 text-2xl font-bold text-foreground">
-        Mission Complete!
+        Challenge Complete!
       </h2>
       <p className="mb-4 text-sm text-muted-foreground">
-        {missionTitle} • Challenge Mode
+        {missionTitle}
       </p>
       <div className="mb-4 text-3xl tracking-widest">
-        {starRating(results.correct, results.total)}
+        {starRating(results.finalScore, results.questionCount)}
       </div>
       <p className="mb-1 text-lg text-foreground">
-        Score: <strong>{results.correct} / {results.total}</strong>
+        Score:{" "}
+        <strong>
+          {results.finalScore} / {results.questionCount}
+        </strong>
       </p>
       <p className="mb-6 text-xs text-muted-foreground">
-        Correct: {results.correct} • Wrong: {results.wrong} • Accuracy: {pct}%
+        Correct: {results.finalScore} • Wrong: {wrongCount} • Accuracy: {pct}%
       </p>
       <div className="flex gap-3">
-        {onReview && results.wrong > 0 && (
+        {onReview && wrongCount > 0 && (
           <Button
             className="rounded-full border border-border/60 bg-card px-5 text-sm text-foreground shadow-sm"
             onClick={onReview}

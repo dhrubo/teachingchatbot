@@ -1,0 +1,249 @@
+<h2>Mission Flow: Concept Cards + Challenge Mode</h2>
+<p class="subtitle">
+  The core learning loop — cards then full-screen challenge
+</p>
+
+<h3>Phase A: Concept Card Slides</h3>
+<p class="subtitle">
+  Appears after the LLM lesson. Three pre-authored cards, one at a time.
+</p>
+<div class="mockup" style="margin-top:8px;">
+  <div class="mockup-header">Concept Card Slide (step 2 of 3)</div>
+  <div class="mockup-body" style="padding:20px;min-height:260px;">
+    <!-- Progress dots -->
+    <div
+      style="display:flex;gap:6px;justify-content:center;margin-bottom:16px;"
+    >
+      <span
+        style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);"
+      ></span>
+      <span
+        style="width:24px;height:8px;border-radius:4px;background:linear-gradient(90deg,#f97316,#a855f7);"
+      ></span>
+      <span
+        style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);"
+      ></span>
+    </div>
+
+    <!-- Card content -->
+    <div
+      style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:20px;"
+    >
+      <div
+        style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;"
+      >
+        Useful benchmark percentages
+      </div>
+      <div
+        style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);border-radius:8px;padding:14px;font-size:18px;text-align:center;font-weight:600;color:#f97316;margin-bottom:14px;font-family:monospace;"
+      >
+        50% = ½ &nbsp;&nbsp; 25% = ¼ &nbsp;&nbsp; 10% = ⅒ &nbsp;&nbsp; 1% =
+        1/100
+      </div>
+      <p
+        style="font-size:13px;color:rgba(255,255,255,0.7);margin:0;line-height:1.6;"
+      >
+        Knowing these benchmark percentages makes mental maths much faster. If
+        you know 25% is a quarter, you can find 25% of any number by dividing by
+        4.
+      </p>
+    </div>
+
+    <!-- Navigation -->
+    <div
+      style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;"
+    >
+      <span style="color:rgba(255,255,255,0.3);font-size:11px;">← Back</span>
+      <span
+        style="background:linear-gradient(135deg,#f97316,#a855f7);border-radius:999px;padding:6px 18px;font-size:12px;font-weight:600;"
+        >Next →</span
+      >
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:20px;">
+  After the last card, show the readiness gate (same existing UI):
+</p>
+<div
+  style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:space-between;"
+>
+  <div>
+    <p style="font-size:13px;font-weight:600;color:white;margin:0;">
+      Ready for Challenge Mode?
+    </p>
+    <p style="font-size:11px;color:rgba(255,255,255,0.4);margin:2px 0 0 0;">
+      5 questions to test what you've learned
+    </p>
+  </div>
+  <div style="display:flex;gap:6px;">
+    <span
+      style="border:1px solid rgba(255,255,255,0.2);border-radius:999px;padding:4px 12px;font-size:11px;color:rgba(255,255,255,0.5);"
+      >Explain more 🔄</span
+    >
+    <span
+      style="background:linear-gradient(135deg,#f97316,#a855f7);border-radius:999px;padding:4px 14px;font-size:11px;font-weight:600;"
+      >I'm ready 🚀</span
+    >
+  </div>
+</div>
+
+<h3 style="margin-top:28px;">Phase B: Challenge Mode (full-screen overlay)</h3>
+<p class="subtitle">Takes over the entire viewport. Chat hidden behind.</p>
+<div class="mockup" style="margin-top:8px;">
+  <div class="mockup-header">Challenge Mode — Question 2 of 5</div>
+  <div
+    class="mockup-body"
+    style="padding:24px;min-height:360px;background:linear-gradient(180deg,#0f0c29,#1E1B4B);display:flex;flex-direction:column;"
+  >
+    <!-- Top bar -->
+    <div
+      style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"
+    >
+      <span style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;"
+        >Question 2 of 5</span
+      >
+      <span style="font-size:11px;color:rgba(255,255,255,0.4);"
+        >Score: 1/1 ✅</span
+      >
+      <span style="font-size:11px;color:rgba(255,255,255,0.3);">Exit ✕</span>
+    </div>
+
+    <!-- Progress bar -->
+    <div
+      style="height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-bottom:24px;overflow:hidden;"
+    >
+      <div
+        style="width:40%;height:100%;background:linear-gradient(90deg,#f97316,#a855f7);border-radius:2px;"
+      ></div>
+    </div>
+
+    <!-- Question -->
+    <div style="flex:1;">
+      <div
+        style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:20px;margin-bottom:16px;"
+      >
+        <p
+          style="font-size:15px;font-weight:600;color:white;margin:0;text-align:center;"
+        >
+          What is 15% of 80?
+        </p>
+      </div>
+
+      <!-- Answers -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div
+          style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;text-align:center;font-size:14px;color:white;"
+        >
+          4
+        </div>
+        <div
+          style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;text-align:center;font-size:14px;color:white;"
+        >
+          8
+        </div>
+        <div
+          style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;text-align:center;font-size:14px;color:white;"
+        >
+          12
+        </div>
+        <div
+          style="background:rgba(249,115,22,0.15);border:2px solid #f97316;border-radius:12px;padding:14px;text-align:center;font-size:14px;color:#f97316;font-weight:600;"
+        >
+          15
+        </div>
+      </div>
+    </div>
+
+    <!-- Help button (always visible) -->
+    <div style="text-align:center;margin-top:16px;">
+      <span style="color:rgba(255,255,255,0.3);font-size:11px;"
+        >Ask Tutor 💬</span
+      >
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:28px;">Phase C: Results Screen</h3>
+<div class="mockup" style="margin-top:8px;">
+  <div class="mockup-header">Mission Complete</div>
+  <div
+    class="mockup-body"
+    style="padding:24px;text-align:center;background:linear-gradient(180deg,#0f0c29,#1E1B4B);"
+  >
+    <div style="font-size:48px;margin-bottom:12px;">🏆</div>
+    <h2 style="font-size:22px;font-weight:700;color:white;margin:0;">
+      Mission Complete!
+    </h2>
+    <p style="font-size:13px;color:rgba(255,255,255,0.5);margin:6px 0 16px 0;">
+      Percentages • Challenge Mode
+    </p>
+    <div style="font-size:36px;letter-spacing:6px;margin-bottom:16px;">
+      ⭐⭐⭐⭐☆
+    </div>
+    <p style="font-size:14px;color:white;margin:0 0 4px 0;">
+      Score: <strong>4 / 5</strong>
+    </p>
+    <p style="font-size:11px;color:rgba(255,255,255,0.4);margin:0 0 20px 0;">
+      Correct: 4 • Wrong: 1 • Accuracy: 80%
+    </p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <span
+        style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:999px;padding:6px 16px;font-size:12px;color:rgba(255,255,255,0.6);"
+        >Review mistakes</span
+      >
+      <span
+        style="background:linear-gradient(135deg,#f97316,#a855f7);border-radius:999px;padding:6px 16px;font-size:12px;font-weight:600;"
+        >Continue learning →</span
+      >
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:28px;">Key Design Rules</h3>
+<table style="width:100%;border-collapse:collapse;margin-top:8px;">
+  <tr style="border-bottom:1px solid #333;">
+    <th style="text-align:left;padding:4px 8px;">Rule</th>
+    <th style="text-align:left;padding:4px 8px;">Detail</th>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;">3+ concept cards minimum</td>
+    <td style="padding:4px 8px;">
+      LLM may add more, but never fewer. Pre-authored cards are always shown
+      first.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;">No LLM for cards</td>
+    <td style="padding:4px 8px;">
+      Zero LLM calls during concept card phase. All pre-authored.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;">Challenge mode = overlay</td>
+    <td style="padding:4px 8px;">
+      Full viewport takeover. Chat input hidden. Exit button returns to mission
+      map.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;">Help chat always available</td>
+    <td style="padding:4px 8px;">
+      "Ask Tutor" button during challenge mode opens a chat panel overlay.
+      Student returns to challenge after.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;">Scoring is local</td>
+    <td style="padding:4px 8px;">
+      No LLM call for grading, scoring, or results. Pure client-side.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:4px 8px;">Results show what matters</td>
+    <td style="padding:4px 8px;">
+      Score, accuracy %, mistakes. NOT XP/streak (those come after, on the
+      mission map).
+    </td>
+  </tr>
+</table>

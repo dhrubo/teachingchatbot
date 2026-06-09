@@ -10,7 +10,7 @@ import { z } from "zod";
 // the answer).
 export const askQuestion = tool({
   description:
-    "Ask the student ANY question that needs an answer — a quiz question OR a non-graded prompt (their name, their year, which topic to start, continue-or-switch, etc.). The app shows the answer controls (multiple choice / dropdown / text box) above the chat input and the student answers THERE, never by typing in the main chat box. So do NOT write the options as text, and do NOT ask the student to 'type' an answer in chat — always use this tool. Include correctAnswer ONLY for graded quiz questions (gives instant ✅/❌ feedback); omit it for open prompts like names or topic choices.",
+    "Ask the student a NON-GRADED prompt only — their name, their year, which topic to start, or continue-or-switch. NEVER ask a maths/quiz/challenge/test question with this tool: graded questions are handled exclusively by the app's full-screen Challenge Mode after the student explicitly accepts. The app shows the answer controls (multiple choice / dropdown / text box) above the chat input and the student answers THERE, never in the main chat box. Do NOT include correctAnswer — any question carrying a correctAnswer is treated as a premature challenge and will be suppressed by the app.",
   inputSchema: z.object({
     prompt: z.string().describe("The question text shown to the student."),
     type: z

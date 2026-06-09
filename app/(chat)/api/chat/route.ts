@@ -5,13 +5,11 @@ import {
   createUIMessageStreamResponse,
   generateId,
   stepCountIs,
-  streamText,
 } from "ai";
 import { checkBotId } from "botid/server";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
 import { auth, type UserType } from "@/app/(auth)/auth";
-import { askQuestion } from "@/lib/ai/tools/ask-question";
 import {
   CHUNKING_MESSAGE,
   detectLargeInput,
@@ -25,19 +23,14 @@ import {
   getModelCapabilities,
 } from "@/lib/ai/models";
 import { TUTOR_SYSTEM_PROMPT } from "@/lib/ai/prompts-tutor";
-import {
-  getTutorProviderCandidates,
-  isUsingGateway,
-} from "@/lib/ai/providers";
-import { getCurriculumTopics } from "@/lib/ai/tools/get-curriculum-topics";
-import { getStudentProgress } from "@/lib/ai/tools/get-student-progress";
-import { manageGoals } from "@/lib/ai/tools/manage-goals";
+import { getTutorProviderCandidates, isUsingGateway } from "@/lib/ai/providers";
 import { streamTextWithFallback } from "@/lib/ai/stream-with-provider-fallback";
-import { emitChallengeBundle } from "@/lib/ai/tools/emit-challenge-bundle";
+import { createChatTitle, isLLMTitleEnabled } from "@/lib/ai/title";
+import { askQuestion } from "@/lib/ai/tools/ask-question";
+import { getCurriculumTopics } from "@/lib/ai/tools/get-curriculum-topics";
+import { manageGoals } from "@/lib/ai/tools/manage-goals";
 import { startNewTopicSession } from "@/lib/ai/tools/start-new-topic-session";
 import { updateStudentProfile } from "@/lib/ai/tools/update-student-profile";
-import { updateTopicProgress } from "@/lib/ai/tools/update-topic-progress";
-
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -55,8 +48,6 @@ import { ChatbotError } from "@/lib/errors";
 import { checkIpRateLimit } from "@/lib/ratelimit";
 import type { ChatMessage } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
-import { isLLMTitleEnabled } from "@/lib/ai/title";
-import { createChatTitle } from "@/lib/ai/title";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
@@ -78,7 +69,6 @@ export { getStreamContext };
 // persistence tools (updateTopicProgress, manageGoals, …) render nothing.
 const VISIBLE_TOOL_TYPES = new Set([
   "tool-askQuestion",
-  "tool-emitChallengeBundle",
 ]);
 
 // True if a message carries something the STUDENT can see: non-empty text, or
@@ -329,22 +319,16 @@ export async function POST(request: Request) {
         ? []
         : [
             "getCurriculumTopics",
-            "getStudentProgress",
             "updateStudentProfile",
-            "updateTopicProgress",
             "manageGoals",
             "startNewTopicSession",
-            "emitChallengeBundle",
             "askQuestion",
           ]
     ) as (
       | "getCurriculumTopics"
-      | "getStudentProgress"
       | "updateStudentProfile"
-      | "updateTopicProgress"
       | "manageGoals"
       | "startNewTopicSession"
-      | "emitChallengeBundle"
       | "askQuestion"
     )[];
 
@@ -355,7 +339,6 @@ export async function POST(request: Request) {
         // multiple calls in a single generation, flooding the UI with
         // challenges the student can't answer. The guard skips duplicates.
         let questionAsked = false;
-        let bundleEmitted = false;
 
         const candidates = getTutorProviderCandidates(
           session.user.type !== "guest"
@@ -374,36 +357,23 @@ export async function POST(request: Request) {
             stopWhen: stepCountIs(8),
             experimental_activeTools: activeTools,
             providerOptions: {
-              ...(isUsingGateway() && modelConfig?.gatewayOrder && {
-                gateway: { order: modelConfig.gatewayOrder },
-              }),
-              ...(isUsingGateway() && modelConfig?.reasoningEffort && {
-                openai: { reasoningEffort: modelConfig.reasoningEffort },
-              }),
+              ...(isUsingGateway() &&
+                modelConfig?.gatewayOrder && {
+                  gateway: { order: modelConfig.gatewayOrder },
+                }),
+              ...(isUsingGateway() &&
+                modelConfig?.reasoningEffort && {
+                  openai: { reasoningEffort: modelConfig.reasoningEffort },
+                }),
             },
             tools: {
               getCurriculumTopics,
-              getStudentProgress: getStudentProgress({ session }),
               updateStudentProfile: updateStudentProfile({
-                session,
-                dataStream,
-              }),
-              updateTopicProgress: updateTopicProgress({
                 session,
                 dataStream,
               }),
               manageGoals: manageGoals({ session }),
               startNewTopicSession: startNewTopicSession({ dataStream }),
-              emitChallengeBundle: {
-                ...emitChallengeBundle,
-                execute: async (...args: any[]) => {
-                  if (bundleEmitted) {
-                    return { skipped: true };
-                  }
-                  bundleEmitted = true;
-                  return emitChallengeBundle.execute!(args[0], args[1]);
-                },
-              },
               askQuestion: {
                 ...askQuestion,
                 execute: async (...args: any[]) => {

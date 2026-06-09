@@ -38,7 +38,8 @@ export const topicSuggestions: Record<"8" | "9", TopicSuggestion[]> = {
     {
       label: "Algebra basics",
       emoji: "🔤",
-      prompt: "Let's do some algebra — expanding brackets and solving equations.",
+      prompt:
+        "Let's do some algebra — expanding brackets and solving equations.",
     },
     {
       label: "Straight-line graphs",
@@ -60,7 +61,8 @@ export const topicSuggestions: Record<"8" | "9", TopicSuggestion[]> = {
     {
       label: "Simultaneous equations",
       emoji: "➗",
-      prompt: "Can you teach me how to solve simultaneous equations, step by step?",
+      prompt:
+        "Can you teach me how to solve simultaneous equations, step by step?",
     },
     {
       label: "Pythagoras",
@@ -70,7 +72,8 @@ export const topicSuggestions: Record<"8" | "9", TopicSuggestion[]> = {
     {
       label: "Quadratic graphs",
       emoji: "📊",
-      prompt: "Help me with completing tables of values and drawing quadratic graphs.",
+      prompt:
+        "Help me with completing tables of values and drawing quadratic graphs.",
     },
     {
       label: "Indices",
@@ -85,7 +88,8 @@ export const topicSuggestions: Record<"8" | "9", TopicSuggestion[]> = {
     {
       label: "Tree diagrams",
       emoji: "🌳",
-      prompt: "I'd like to practise probability tree diagrams for combined events.",
+      prompt:
+        "I'd like to practise probability tree diagrams for combined events.",
     },
   ],
 };

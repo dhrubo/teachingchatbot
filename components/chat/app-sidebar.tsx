@@ -1,10 +1,10 @@
 "use client";
 
 import {
+  LogInIcon,
   PanelLeftIcon,
   PenSquareIcon,
   TrashIcon,
-  LogInIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
+import { SaraMascot } from "@/components/brand/sara-mascot";
 import {
   getChatHistoryPaginationKey,
   SidebarHistory,
@@ -43,7 +44,6 @@ import {
   AlertDialogTitle,
 } from "../ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { SaraMascot } from "@/components/brand/sara-mascot";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -80,7 +80,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   tooltip="SARA"
                 >
                   <Link href="/" onClick={() => setOpenMobile(false)}>
-                    <SaraMascot size={24} animated={false} />
+                    <SaraMascot animated={false} size={24} />
                   </Link>
                 </SidebarMenuButton>
                 <Tooltip>
@@ -139,7 +139,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
             <SidebarGroup>
               <SidebarGroupContent>
                 <div className="flex flex-col items-center gap-3 px-3 py-6 text-center">
-                  <SaraMascot size={40} animated={false} />
+                  <SaraMascot animated={false} size={40} />
                   <div>
                     <p className="text-xs font-medium text-sidebar-foreground/80">
                       Free mode
@@ -149,8 +149,8 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     </p>
                   </div>
                   <Link
-                    href="/login"
                     className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-4 py-1.5 text-xs font-medium text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                    href="/login"
                     onClick={() => setOpenMobile(false)}
                   >
                     <LogInIcon className="size-3" />

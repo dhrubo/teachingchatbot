@@ -21,11 +21,11 @@ export function PlayerStats({ xp, streak, level, badges }: PlayerStatsProps) {
     <div className="flex gap-2">
       {items.map((item, i) => (
         <motion.div
-          key={item.label}
-          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 + i * 0.05, duration: 0.3 }}
           className="flex flex-1 flex-col items-center rounded-2xl border border-white/10 bg-white/5 p-3 text-center backdrop-blur-lg"
+          initial={{ opacity: 0, y: 8 }}
+          key={item.label}
+          transition={{ delay: 0.1 + i * 0.05, duration: 0.3 }}
         >
           {item.icon && (
             <span className="text-lg leading-none">{item.icon}</span>

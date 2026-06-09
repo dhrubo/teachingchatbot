@@ -1,5 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { detectLargeInput, extractTopics, CHUNKING_MESSAGE } from "./detect-large-input";
+import { describe, expect, it } from "vitest";
+import {
+  CHUNKING_MESSAGE,
+  detectLargeInput,
+  extractTopics,
+} from "./detect-large-input";
 
 describe("detectLargeInput", () => {
   it("returns triggered=false for a short question", () => {
@@ -8,7 +12,8 @@ describe("detectLargeInput", () => {
   });
 
   it("returns triggered=false for a long word problem", () => {
-    const input = "Sally has 42 apples and gives 17 to her friend Tom. Then she buys 3 more and shares them equally among 5 baskets. How many apples are in each basket?";
+    const input =
+      "Sally has 42 apples and gives 17 to her friend Tom. Then she buys 3 more and shares them equally among 5 baskets. How many apples are in each basket?";
     const result = detectLargeInput(input);
     expect(result.triggered).toBe(false);
   });
@@ -60,7 +65,8 @@ describe("detectLargeInput", () => {
   });
 
   it("returns triggered=false for a line with sentence punctuation", () => {
-    const input = "Can you explain how to add fractions with different denominators? I keep getting stuck on finding the common multiple.";
+    const input =
+      "Can you explain how to add fractions with different denominators? I keep getting stuck on finding the common multiple.";
     const result = detectLargeInput(input);
     expect(result.triggered).toBe(false);
   });
@@ -101,7 +107,9 @@ describe("extractTopics", () => {
   });
 
   it("limits to 40 topics", () => {
-    const input = Array.from({ length: 50 }, (_, i) => `Topic ${i + 1}`).join(", ");
+    const input = Array.from({ length: 50 }, (_, i) => `Topic ${i + 1}`).join(
+      ", "
+    );
     const topics = extractTopics(input);
     expect(topics.length).toBe(40);
   });

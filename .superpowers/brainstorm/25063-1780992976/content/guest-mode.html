@@ -1,0 +1,125 @@
+<h2>Guest Mode Changes</h2>
+<p class="subtitle">Evaluation-first experience, no gamification</p>
+
+<h3>Current vs New</h3>
+<table style="width:100%;border-collapse:collapse;margin-top:8px;">
+  <tr style="border-bottom:1px solid #333;">
+    <th style="text-align:left;padding:6px 10px;">Feature</th>
+    <th style="text-align:left;padding:6px 10px;">Current</th>
+    <th style="text-align:left;padding:6px 10px;">New</th>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Home screen</td>
+    <td style="padding:6px 10px;">Full overlay with stats + chips</td>
+    <td style="padding:6px 10px;">
+      Welcome page with <strong>"Today's Mission"</strong> (random) + mission
+      map
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">XP display</td>
+    <td style="padding:6px 10px;">Shown (but not persistent)</td>
+    <td style="padding:6px 10px;">
+      🚫 Hidden entirely. No XP, no streak, no badges.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Mission selection</td>
+    <td style="padding:6px 10px;">Pick any topic chip</td>
+    <td style="padding:6px 10px;">
+      <strong>Random mission</strong>
+      each day from Year 8/9 pool. Fresh feel every visit.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Message limit</td>
+    <td style="padding:6px 10px;">Rate-limited per hour</td>
+    <td style="padding:6px 10px;">
+      <strong>5 answered questions per day</strong>
+      (across all missions). Shows wall after limit. No LLM call after.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Conversation limit</td>
+    <td style="padding:6px 10px;">Unlimited</td>
+    <td style="padding:6px 10px;">
+      <strong>1 conversation</strong>
+      per session. No history list shown.
+    </td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Retention</td>
+    <td style="padding:6px 10px;">24h (already done)</td>
+    <td style="padding:6px 10px;">24h (same — no change needed)</td>
+  </tr>
+  <tr style="border-bottom:1px solid #222;">
+    <td style="padding:6px 10px;">Progress display</td>
+    <td style="padding:6px 10px;">Topic progress shown</td>
+    <td style="padding:6px 10px;">
+      Mission progress shown (session-only, not persisted). "Your Progress: 3/5
+      questions answered this session"
+    </td>
+  </tr>
+</table>
+
+<h3 style="margin-top:24px;">Random Mission Logic</h3>
+<div class="mockup" style="margin-top:8px;">
+  <div
+    class="mockup-body"
+    style="font-family:monospace;font-size:12px;line-height:1.6;padding:12px;white-space:pre-wrap;"
+  >
+    // lib/ai/guest-mission.ts // Picks a random mission for guest users each
+    day. // Deterministic per date so refreshing gives the same mission. const
+    GUEST_MISSIONS = [ { year: "8", missionId: "missions/percentages" }, { year:
+    "8", missionId: "missions/ratio" }, { year: "8", missionId:
+    "missions/algebra-basics" }, { year: "8", missionId: "missions/graphs" }, {
+    year: "8", missionId: "missions/angles" }, { year: "9", missionId:
+    "missions/simultaneous-equations" }, { year: "9", missionId:
+    "missions/pythagoras" }, { year: "9", missionId: "missions/indices" }, {
+    year: "9", missionId: "missions/probability" }, { year: "8", missionId:
+    "missions/fractions" }, ]; function pickRandomMission(): MissionDef { const
+    seed = dateSeed(new Date()); // e.g. "2026-06-09" const idx = hash(seed) %
+    GUEST_MISSIONS.length; return loadMission(GUEST_MISSIONS[idx].missionId); }
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">5-Question Limit UI</h3>
+<div class="mockup" style="margin-top:8px;">
+  <div class="mockup-header">After Limit Reached</div>
+  <div class="mockup-body" style="padding:24px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px;">⏰</div>
+    <h3 style="font-size:16px;font-weight:600;color:white;margin:0;">
+      You've used today's free questions
+    </h3>
+    <p
+      style="font-size:12px;color:rgba(255,255,255,0.5);margin:6px 0 4px 0;line-height:1.5;"
+    >
+      Come back tomorrow, or create an account to save<br>
+      your progress and continue learning.
+    </p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;">
+      <span
+        style="border:1px solid rgba(255,255,255,0.2);border-radius:999px;padding:6px 16px;font-size:12px;color:rgba(255,255,255,0.5);"
+        >Not now</span
+      >
+      <span
+        style="background:linear-gradient(135deg,#f97316,#a855f7);border-radius:999px;padding:6px 16px;font-size:12px;font-weight:600;"
+        >Create account ✨</span
+      >
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">Implementation Notes</h3>
+<div
+  style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;font-size:11px;line-height:1.6;color:rgba(255,255,255,0.6);"
+>
+  • Guest rate-limit check: count challenge answers per session (not all
+  messages)<br>
+  • No XP/streak/badges in guest UI → skip <code>PlayerStats</code> component,
+  skip <code>ProgressPill</code> in header<br>
+  • Guest mission = "Today's Mission" card, not "Continue Mission"<br>
+  • Mission progress tracked in memory only, not persisted to DB<br>
+  • Guest email regex <code>/^guest-\d+$/</code> used to detect guest sessions
+  (already existing)
+</div>

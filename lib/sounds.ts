@@ -66,25 +66,27 @@ function playNotes(notes: { freq: number; start: number; dur: number }[]) {
   }
 }
 
-const RECIPES: Record<SoundName, { freq: number; start: number; dur: number }[]> =
-  {
-    pop: [{ freq: 520, start: 0, dur: 0.09 }],
-    send: [{ freq: 660, start: 0, dur: 0.1 }],
-    receive: [
-      { freq: 587, start: 0, dur: 0.12 },
-      { freq: 784, start: 0.08, dur: 0.14 },
-    ],
-    success: [
-      { freq: 523, start: 0, dur: 0.1 },
-      { freq: 659, start: 0.08, dur: 0.1 },
-      { freq: 784, start: 0.16, dur: 0.16 },
-    ],
-    // Gentle "not quite" — soft descending two-note, never harsh.
-    wrong: [
-      { freq: 392, start: 0, dur: 0.12 },
-      { freq: 311, start: 0.1, dur: 0.18 },
-    ],
-  };
+const RECIPES: Record<
+  SoundName,
+  { freq: number; start: number; dur: number }[]
+> = {
+  pop: [{ freq: 520, start: 0, dur: 0.09 }],
+  send: [{ freq: 660, start: 0, dur: 0.1 }],
+  receive: [
+    { freq: 587, start: 0, dur: 0.12 },
+    { freq: 784, start: 0.08, dur: 0.14 },
+  ],
+  success: [
+    { freq: 523, start: 0, dur: 0.1 },
+    { freq: 659, start: 0.08, dur: 0.1 },
+    { freq: 784, start: 0.16, dur: 0.16 },
+  ],
+  // Gentle "not quite" — soft descending two-note, never harsh.
+  wrong: [
+    { freq: 392, start: 0, dur: 0.12 },
+    { freq: 311, start: 0.1, dur: 0.18 },
+  ],
+};
 
 export function playSound(name: SoundName) {
   if (isMuted()) {

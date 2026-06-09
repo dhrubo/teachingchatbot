@@ -5,7 +5,10 @@ Plain-language answers for students and parents.
 ## Do I need an account?
 You can try the tutor as a guest and ask a few questions for free. To keep going and to **save your progress and goals**, you'll need to create an account — it's quick and free.
 
-> Heads-up: the "5 free questions then sign up" experience is being rolled out. Right now guests and members share a fair-use limit of about **10 messages per hour**. Your progress and goals are only saved once you register.
+> Heads-up: as a guest you get **5 challenge questions a day** in Challenge Mode — after that it asks you to come back tomorrow or create a free account. Chatting with the tutor shares a fair-use limit of about **10 messages per hour**. Your progress and goals are only saved once you register.
+
+## How do lessons and challenges work?
+Every lesson starts with a few **concept cards** that explain the idea — no questions yet. When you've looked through them, you'll see a **"Start Challenge Mode"** button. Nothing is tested until you tap it: you're always in control. (You can also tap **Keep Learning** or **Explain Differently** instead.) Challenge Mode is a quick **5-question** round that marks your answers instantly and adjusts the difficulty as you go — getting harder when you're flying, easier if you're stuck.
 
 ## How do topics work?
 Each chat is built around one maths topic — like Fractions, Decimals or Algebra. This keeps your learning focused and makes progress easy to see.

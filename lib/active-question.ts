@@ -28,11 +28,7 @@ export function getActiveQuestion(
 
   messages.forEach((message, index) => {
     for (const part of message.parts ?? []) {
-      if (
-        part.type === "tool-askQuestion" &&
-        "output" in part &&
-        part.output
-      ) {
+      if (part.type === "tool-askQuestion" && "output" in part && part.output) {
         const out = part.output as AskQuestionOutput;
         const toolCallId = (part as { toolCallId?: string }).toolCallId ?? "";
         lastQuestion = {
@@ -40,7 +36,7 @@ export function getActiveQuestion(
           prompt: out.prompt,
           type: out.type,
           options: out.options ?? [],
-          correctAnswer: out.correctAnswer,
+          correctAnswer: out.correctAnswer ?? "",
           explanation: out.explanation ?? "",
         };
         lastQuestionIndex = index;

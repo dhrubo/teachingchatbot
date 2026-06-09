@@ -1,10 +1,7 @@
 // Deterministic chat title generation — no LLM call by default.
 // Set ENABLE_LLM_TITLE_GENERATION=1 to use the LLM for titles.
 
-export function createChatTitle(
-  messageText?: string,
-  topic?: string
-): string {
+export function createChatTitle(messageText?: string, topic?: string): string {
   if (topic) return `${topic} practice`;
   if (messageText) {
     const trimmed = messageText.trim().slice(0, 60);

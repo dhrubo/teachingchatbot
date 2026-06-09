@@ -1,9 +1,9 @@
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
 import type { ArtifactKind } from "@/components/chat/artifact";
-import type { Suggestion } from "./db/schema";
 import type { askQuestion } from "./ai/tools/ask-question";
 import type { startNewTopicSession } from "./ai/tools/start-new-topic-session";
+import type { Suggestion } from "./db/schema";
 
 export const messageMetadataSchema = z.object({
   createdAt: z.string(),

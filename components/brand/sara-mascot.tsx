@@ -23,37 +23,37 @@ export function SaraMascot({
 
   return (
     <div
+      aria-label="SARA mascot"
       className={cn(
         "relative flex items-center justify-center",
         animated && "motion-safe:animate-float",
-        className,
+        className
       )}
       style={{ width: s, height: s }}
-      aria-label="SARA mascot"
     >
       <svg
-        width={s}
+        fill="none"
         height={s}
         viewBox="0 0 100 100"
-        fill="none"
+        width={s}
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <radialGradient cx="50%" cy="50%" id="glow" r="50%">
             <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.25" />
             <stop offset="60%" stopColor="#F97316" stopOpacity="0.1" />
             <stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
           </radialGradient>
-          <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id="body" x1="0" x2="1" y1="0" y2="1">
             <stop offset="0%" stopColor="#F97316" />
             <stop offset="100%" stopColor="#7C3AED" />
           </linearGradient>
-          <linearGradient id="halo" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="halo" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.8" />
             <stop offset="100%" stopColor="#7C3AED" stopOpacity="0.2" />
           </linearGradient>
           <filter id="glowFilter">
-            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feGaussianBlur result="blur" stdDeviation="3" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -61,98 +61,90 @@ export function SaraMascot({
           </filter>
         </defs>
 
-        <circle cx="50" cy="50" r="48" fill="url(#glow)" />
+        <circle cx="50" cy="50" fill="url(#glow)" r="48" />
 
         <circle
           cx="50"
           cy="38"
+          fill="none"
           r="14"
           stroke="url(#body)"
           strokeWidth="2"
-          fill="none"
         />
 
         <path
           d="M36 52 Q50 44 64 52 L62 78 Q50 85 38 78 Z"
+          fill="none"
           stroke="url(#body)"
           strokeWidth="2"
-          fill="none"
         />
 
         <line
-          x1="36"
-          y1="60"
-          x2="24"
-          y2="48"
-          stroke="url(#halo)"
-          strokeWidth="2"
-          strokeLinecap="round"
           filter={mood === "thinking" ? "url(#glowFilter)" : undefined}
+          stroke="url(#halo)"
+          strokeLinecap="round"
+          strokeWidth="2"
+          x1="36"
+          x2="24"
+          y1="60"
+          y2="48"
         />
         <line
-          x1="24"
-          y1="48"
-          x2="20"
-          y2="44"
           stroke="#A78BFA"
-          strokeWidth="1.5"
           strokeLinecap="round"
+          strokeWidth="1.5"
+          x1="24"
+          x2="20"
+          y1="48"
+          y2="44"
         />
 
         <path
           d="M32 36 Q34 33 37 35"
-          stroke="#A78BFA"
-          strokeWidth="1.5"
-          strokeLinecap="round"
           fill="none"
           opacity="0.6"
+          stroke="#A78BFA"
+          strokeLinecap="round"
+          strokeWidth="1.5"
         />
-        <circle cx="37" cy="34" r="1" fill="#A78BFA" opacity="0.6" />
+        <circle cx="37" cy="34" fill="#A78BFA" opacity="0.6" r="1" />
 
         {mood === "celebrating" && (
           <>
-            <text x="68" y="28" fontSize="8" fill="#FBBF24">★</text>
-            <text x="72" y="40" fontSize="6" fill="#A78BFA">✦</text>
+            <text fill="#FBBF24" fontSize="8" x="68" y="28">
+              ★
+            </text>
+            <text fill="#A78BFA" fontSize="6" x="72" y="40">
+              ✦
+            </text>
           </>
         )}
 
         <text
+          fill="#A78BFA"
+          fontSize="7"
+          opacity="0.7"
           x={mood === "thinking" ? "72" : "68"}
           y="32"
-          fontSize="7"
-          fill="#A78BFA"
-          opacity="0.7"
         >
           π
         </text>
-        <text
-          x="22"
-          y="28"
-          fontSize="6"
-          fill="#FBBF24"
-          opacity="0.6"
-        >
+        <text fill="#FBBF24" fontSize="6" opacity="0.6" x="22" y="28">
           ∑
         </text>
-        <text
-          x="70"
-          y="50"
-          fontSize="6"
-          fill="#A78BFA"
-          opacity="0.5"
-        >
+        <text fill="#A78BFA" fontSize="6" opacity="0.5" x="70" y="50">
           √
         </text>
 
         <path
           d="M50 36 Q55 38 53 42"
-          stroke="#F97316"
-          strokeWidth="1.5"
-          strokeLinecap="round"
           fill="none"
           opacity="0.5"
+          stroke="#F97316"
+          strokeLinecap="round"
+          strokeWidth="1.5"
         />
-        <circle cx="53" cy="41.5" r="1" fill="#F97316" opacity="0.5" />
+        <circle cx="53" cy="41.5" fill="#F97316" opacity="0.5" r="1" />
       </svg>
     </div>
   );

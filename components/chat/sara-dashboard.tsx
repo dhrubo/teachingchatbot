@@ -1,16 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { useActiveChat } from "@/hooks/use-active-chat";
-import { guestRegex } from "@/lib/constants";
-import { SaraMascot } from "@/components/brand/sara-mascot";
+import { useSession } from "next-auth/react";
+import { useMemo, useState } from "react";
+import useSWR from "swr";
 import { PlayerStats } from "@/components/brand/player-stats";
+import { SaraMascot } from "@/components/brand/sara-mascot";
 import { MissionMap } from "@/components/chat/mission-map";
-import { getMissionsByYear, type MissionDefinition } from "@/lib/ai/missions";
+import { useActiveChat } from "@/hooks/use-active-chat";
 import { pickGuestMission } from "@/lib/ai/guest-mission";
-import { cn } from "@/lib/utils";
+import { getMissionsByYear, type MissionDefinition } from "@/lib/ai/missions";
+import { guestRegex } from "@/lib/constants";
+import { cn, fetcher } from "@/lib/utils";
 
 const HOW_IT_WORKS = [
   {
@@ -35,6 +36,22 @@ const HOW_IT_WORKS = [
   },
 ];
 
+const TOPIC_EMOJIS: Record<string, string> = {
+  "number-skills": "🔢",
+  percentages: "💯",
+  fractions: "🧮",
+  "ratio-proportion": "⚖️",
+  "algebra-basics": "🔤",
+  "straight-line-graphs": "📈",
+  "angles-geometry": "📐",
+  probability: "🎲",
+  "area-perimeter": "📏",
+  "volume-surface-area": "📦",
+  "simultaneous-equations": "➗",
+  pythagoras: "📏",
+  "indices-standard-form": "🔢",
+};
+
 export function SaraDashboard() {
   const { sendMessage, xpStreak, topicProgress, topicList, completedTopics } =
     useActiveChat();
@@ -45,17 +62,48 @@ export function SaraDashboard() {
 
   const [year, setYear] = useState<"8" | "9">("8");
 
-  const missions = useMemo(() => getMissionsByYear(year), [year]);
+  const { data: apiData } = useSWR(
+    `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/lessons?year=${year}`,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
+  const missions = useMemo(() => {
+    if (apiData?.missions?.length) {
+      return apiData.missions.map(
+        (m: {
+          slug: string;
+          title: string;
+          description: string;
+          estimatedMinutes: number;
+          gcseDomain: string;
+        }) => ({
+          id: m.slug,
+          title: m.title,
+          emoji: TOPIC_EMOJIS[m.slug] ?? "📖",
+          description: m.description,
+          estimatedMinutes: m.estimatedMinutes,
+          gcseDomain: m.gcseDomain,
+          topics: [m.title],
+          prerequisiteMissionIds: [] as string[],
+          conceptCards: [] as {
+            id: string;
+            title: string;
+            visual: string;
+            example: string;
+            explanation: string;
+          }[],
+        })
+      ) as MissionDefinition[];
+    }
+    return getMissionsByYear(year);
+  }, [apiData, year]);
 
   const guestMission = useMemo(() => pickGuestMission(), []);
 
   const continueMission = useMemo(() => {
     if (!topicProgress) return null;
-    return (
-      missions.find((m) =>
-        m.topics.includes(topicProgress.topic),
-      ) ?? null
-    );
+    return missions.find((m) => m.topics.includes(topicProgress.topic)) ?? null;
   }, [missions, topicProgress]);
 
   const todayMission = continueMission ?? guestMission;
@@ -64,17 +112,15 @@ export function SaraDashboard() {
     () =>
       missions
         .filter((m) =>
-          completedTopics.some((t: string) => m.topics.includes(t)),
+          completedTopics.some((t: string) => m.topics.includes(t))
         )
         .map((m) => m.id),
-    [missions, completedTopics],
+    [missions, completedTopics]
   );
 
   const currentMissionId = useMemo(() => {
     if (!topicProgress) return undefined;
-    const match = missions.find((m) =>
-      m.topics.includes(topicProgress.topic),
-    );
+    const match = missions.find((m) => m.topics.includes(topicProgress.topic));
     return match?.id;
   }, [missions, topicProgress]);
 
@@ -95,14 +141,14 @@ export function SaraDashboard() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <motion.div
-        initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
         className="flex flex-col gap-8"
+        initial={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
       >
         {/* ---- Hero ---- */}
         <section className="relative flex flex-col items-center pt-8 text-center">
-          <SaraMascot size={96} mood="happy" animated />
+          <SaraMascot animated mood="happy" size={96} />
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
             Learn Maths Without Feeling Stuck
           </h1>
@@ -115,10 +161,10 @@ export function SaraDashboard() {
         {/* ---- PlayerStats (logged-in only) ---- */}
         {isLoggedIn && hasProgressData && (
           <PlayerStats
-            xp={xpStreak!.xp}
-            streak={xpStreak!.streak}
-            level={Math.floor(xpStreak!.xp / 100) + 1}
             badges={xpStreak!.badges.length}
+            level={Math.floor(xpStreak!.xp / 100) + 1}
+            streak={xpStreak!.streak}
+            xp={xpStreak!.xp}
           />
         )}
 
@@ -131,29 +177,31 @@ export function SaraDashboard() {
             <li className="flex items-start gap-2">
               <span className="mt-0.5 shrink-0">📖</span>
               <span>
-                <strong className="text-foreground">Short visual lessons</strong>
-                {" "}— one concept at a time, with diagrams and examples.
+                <strong className="text-foreground">
+                  Short visual lessons
+                </strong>{" "}
+                — one concept at a time, with diagrams and examples.
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 shrink-0">🎯</span>
               <span>
-                <strong className="text-foreground">Concept cards</strong>
-                {" "}— key ideas you can always come back to.
+                <strong className="text-foreground">Concept cards</strong> — key
+                ideas you can always come back to.
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 shrink-0">⚡</span>
               <span>
-                <strong className="text-foreground">Challenge mode</strong>
-                {" "}— answer questions, earn XP, unlock the next topic.
+                <strong className="text-foreground">Challenge mode</strong> —
+                answer questions, earn XP, unlock the next topic.
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 shrink-0">📊</span>
               <span>
-                <strong className="text-foreground">Progress tracking</strong>
-                {" "}— see how far you've come and what's next.
+                <strong className="text-foreground">Progress tracking</strong> —
+                see how far you've come and what's next.
               </span>
             </li>
           </ul>
@@ -163,24 +211,24 @@ export function SaraDashboard() {
         <div className="flex items-center justify-center">
           <div className="flex gap-1 rounded-full border border-border/40 bg-muted/30 p-0.5">
             <button
-              onClick={() => setYear("8")}
               className={cn(
                 "rounded-full px-4 py-1 text-sm font-medium transition-colors",
                 year === "8"
                   ? "bg-gradient-to-r from-orange-500 to-violet-500 text-white"
-                  : "text-muted-foreground hover:text-foreground",
+                  : "text-muted-foreground hover:text-foreground"
               )}
+              onClick={() => setYear("8")}
             >
               Year 8
             </button>
             <button
-              onClick={() => setYear("9")}
               className={cn(
                 "rounded-full px-4 py-1 text-sm font-medium transition-colors",
                 year === "9"
                   ? "bg-gradient-to-r from-orange-500 to-violet-500 text-white"
-                  : "text-muted-foreground hover:text-foreground",
+                  : "text-muted-foreground hover:text-foreground"
               )}
+              onClick={() => setYear("9")}
             >
               Year 9
             </button>
@@ -209,8 +257,8 @@ export function SaraDashboard() {
                 </span>
               </div>
               <button
-                onClick={() => startMission(todayMission)}
                 className="shrink-0 rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-4 py-1.5 text-xs font-semibold text-white shadow-lg shadow-orange-500/20 transition-transform duration-200 hover:scale-[1.03] active:scale-[0.97]"
+                onClick={() => startMission(todayMission)}
               >
                 {continueMission ? "Continue →" : "Start →"}
               </button>
@@ -225,10 +273,10 @@ export function SaraDashboard() {
           </h2>
           <div className="rounded-2xl border border-border/40 bg-card/20 p-4 backdrop-blur-sm">
             <MissionMap
-              year={year}
               completedMissions={completedMissionIds}
               currentMissionId={currentMissionId}
               onSelect={(mission) => startMission(mission)}
+              year={year}
             />
           </div>
         </section>
@@ -241,8 +289,8 @@ export function SaraDashboard() {
           <div className="grid grid-cols-2 gap-3">
             {HOW_IT_WORKS.map((item) => (
               <div
-                key={item.title}
                 className="rounded-2xl border border-border/40 bg-card/30 p-4 backdrop-blur-sm"
+                key={item.title}
               >
                 <span className="text-2xl">{item.icon}</span>
                 <h3 className="mt-2 text-sm font-semibold text-foreground">
@@ -267,21 +315,21 @@ export function SaraDashboard() {
               const isCurrent = mission.id === currentMissionId;
               return (
                 <button
-                  key={mission.id}
-                  onClick={() => startMission(mission)}
                   className={cn(
                     "flex items-center gap-3 rounded-2xl border bg-card/20 p-3 text-left backdrop-blur-sm transition-all duration-200",
                     isCompleted
                       ? "border-green-500/30 hover:border-green-500/60"
                       : isCurrent
                         ? "border-orange-500/30 bg-card/40 hover:border-orange-500/60"
-                        : "border-border/30 hover:border-border/60 hover:bg-card/40",
+                        : "border-border/30 hover:border-border/60 hover:bg-card/40"
                   )}
+                  key={mission.id}
+                  onClick={() => startMission(mission)}
                 >
                   <span
                     className={cn(
                       "flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500/15 to-violet-500/15 text-base",
-                      isCompleted && "from-green-500/20 to-green-500/10",
+                      isCompleted && "from-green-500/20 to-green-500/10"
                     )}
                   >
                     {isCompleted ? "✓" : mission.emoji}
@@ -294,7 +342,7 @@ export function SaraDashboard() {
                           ? "text-green-400"
                           : isCurrent
                             ? "text-orange-300"
-                            : "text-foreground",
+                            : "text-foreground"
                       )}
                     >
                       {mission.title}

@@ -7,6 +7,7 @@
     "build": "tsx lib/db/migrate && next build",
     "start": "next start",
     "check": "ultracite check",
+    "lint": "ultracite check",
     "fix": "ultracite fix",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx lib/db/migrate.ts",
@@ -15,6 +16,8 @@
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
+    "seed": "npx tsx scripts/seed-question-archetypes.ts",
+    "seed:question-archetypes": "npx tsx scripts/seed-question-archetypes.ts",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"

@@ -13,12 +13,12 @@ Powered by:
 ## Features
 
 - **Year 8/9 maths tutoring** — full UK curriculum coverage
-- **Interactive quizzes** — one question at a time with instant feedback
+- **Adaptive GCSE-style Archetype Engine** — generates thousands of unique questions from JSON-defined archetypes with deterministic local grading
+- **Deterministic Question Selection** — selects the next question dynamically based on the student's weakest skills and current difficulty band
+- **Socrates Mastery Scoring** — updates student skill mastery on a 0-100 scale mapping to must/should/could/gcse_bridge bands
+- **Interactive fullscreen quizzes** — 5-question fullscreen adaptive challenges with zero LLM calls
+- **Parent dashboard** — detailed learning insights showing strong and weak skills based on real-time mastery data
 - **XP and streaks** — gamified motivation (Duolingo-style)
-- **Topic mastery tracking** — score 0–5 per topic, GCSE domain rollups
-- **Short-term goals** — plan-based learning with progress tracking
-- **Multiple student profiles** — one account, several children
-- **Parent reports** — confidence notes and progress summaries
 - **Socratic teaching style** — patient, encouraging, visual micro-lessons
 
 ## Free Mode Limitations
@@ -157,35 +157,43 @@ See [docs/opencode.md](docs/opencode.md) for the full OpenCode development workf
 - [Provider setup guide](docs/providers.md) — switching models, enabling Gateway
 - Curriculum and topics are configured in `lib/ai/curriculum.ts`
 - System prompt lives in `lib/ai/prompts-tutor.ts`
+- Mission and lesson content is configured in `lib/ai/missions.ts`
+- Question archetypes are seeded into Postgres via `scripts/seed-question-archetypes.ts` from `data/question-archetypes/`
+- REST endpoint at `/api/adaptive-challenge` serves dynamic adaptive questions from archetypes
 
 ## Running locally (full setup)
 
 ```bash
 pnpm install
 pnpm db:migrate
+pnpm seed
 pnpm dev
 ```
 
 Your app template should now be running on [localhost:3000](http://localhost:3000).
 
+> **Note:** `pnpm seed` populates the database with GCSE-style question archetypes and discrete skills. Without it, challenge modes and adaptive features will have no templates to generate questions from.
+
 ## Reducing Free AI Usage
 
 This app is designed to minimise API calls so it works comfortably on free-tier AI providers.
 
-A normal lesson uses:
+A normal lesson, challenge, and grading flow uses:
 
-- **1 AI call** for the lesson and challenge bundle
-- **0 AI calls** for multiple-choice grading (graded locally)
-- **0 AI calls** for correct/wrong feedback (static templates)
-- **0 AI calls** for XP/streak/progress updates (computed in code)
+- **0 AI calls** for lesson navigation, concept cards, and challenges
+- **0 AI calls** for adaptive question selection (deterministic engine)
+- **0 AI calls** for question generation (pure template-based substitution)
+- **0 AI calls** for answer grading (deterministic string matching)
+- **0 AI calls** for mastery scoring, streaks, and progress updates (computed in code)
 - **0 AI calls** for chat titles (deterministic by default)
 
 To keep usage low:
 
-- The LLM generates 3-5 challenges at once via `emitChallengeBundle` — not one at a time via `askQuestion`
-- Objective answers (multiple-choice, short-text with answer key) are graded locally
-- Feedback uses pre-generated hints and explanations from the bundle — no LLM call per answer
-- XP, streaks, badges, topic progress, challenge counts, and progress bars are computed in code
+- Dynamic question selection is powered entirely by the deterministic Adaptive Mastery Engine (`lib/adaptive/engine.ts`)
+- Questions are dynamically generated from JSON-defined question archetypes instead of querying an LLM
+- Answers are graded locally via simple string comparison or algebraic solvers
+- XP, streaks, badges, skill masteries, and progress are computed purely in code
+- The LLM is **only** used for advanced tutoring features: explaining concepts differently, visual illustrations, open-ended dialogues, or when generating parent summaries.
 - Chat titles are deterministic by default (first 40 characters of the first message)
 - Set `ENABLE_LLM_TITLE_GENERATION=1` to restore LLM-generated titles
 

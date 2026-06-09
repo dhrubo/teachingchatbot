@@ -198,7 +198,7 @@ export function deriveTopicState(thread: TopicThread): {
 
   // An open graded challenge (no user reply after it) means challenge phase.
   const active = getActiveQuestion(thread.messages);
-  const hasOpenChallenge = Boolean(active?.correctAnswer.trim());
+  const hasOpenChallenge = Boolean((active?.correctAnswer ?? "").trim());
 
   let phase: TopicPhase;
   if (hasOpenChallenge) {

@@ -1,0 +1,109 @@
+<h2>Choose the Architecture Approach</h2>
+<p class="subtitle">
+  How should the mission system relate to the existing chat engine?
+</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>A: Chat-First Mission Orchestration</h3>
+      <p class="subtitle">Recommended ★</p>
+      <p>
+        Keep the existing <code>useChat</code>/<code>streamText</code>
+        engine as the base. Build a
+        <strong>MissionOrchestrator</strong>
+        component that wraps the chat in a mission flow. Chat is hidden during
+        cards/challenge mode; surfaced when student asks for help.
+      </p>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Leverages all existing infra (DB, auth, streaming)</li>
+            <li>LLM teaches lessons & generates challenges</li>
+            <li>Least code to delete</li>
+            <li>Mission wrapper is a new component, not a rewrite</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>Still fundamentally chat-driven underneath</li>
+            <li>Chat session persists even when hidden</li>
+            <li>Mission progress is derived from chat messages</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>B: Separate Mission Engine</h3>
+      <p>
+        New <strong>MissionEngine</strong> state machine. Missions have a
+        deterministic lifecycle: INTRO → CARDS → GATE → CHALLENGE → RESULTS.
+        Chat engine is only mounted when student asks for help. LLM called only
+        for lesson generation and reteaching.
+      </p>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>
+              Clean separation — mission engine and chat don't share state
+            </li>
+            <li>Snappiest UX — cards are instant (pre-authored)</li>
+            <li>No streaming latency for core flow</li>
+            <li>Most Duolingo-like feel</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>Two independent state systems to maintain</li>
+            <li>More upfront build work</li>
+            <li>Chat help feels disconnected from mission</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>C: Unified Hybrid</h3>
+      <p>
+        Single <strong>MissionProvider</strong> context wraps the entire app.
+        Mission state and chat state live together. The mission controls what's
+        visible; the chat fires lesson/challenge requests. Mission progress is
+        saved directly to DB (not derived from messages).
+      </p>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Single source of truth for progress</li>
+            <li>Mission journey is first-class</li>
+            <li>Progress saved independently of chat history</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>New context provider changes the entire app tree</li>
+            <li>Refactor of most client components</li>
+            <li>Friction with existing ActiveChatProvider</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:16px;">
+  Tap to select your preferred approach. My recommendation is
+  <strong>A</strong>
+  — it maximises reuse, is the safest path, and the mission feel comes from the
+  UI layer, not the engine.
+</p>

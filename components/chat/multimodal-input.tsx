@@ -52,16 +52,16 @@ import {
   PromptInputTools,
 } from "../ai-elements/prompt-input";
 import { Button } from "../ui/button";
+
+
 import { PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
+import { RegistrationPrompt } from "./registration-prompt";
 import {
   type SlashCommand,
   SlashCommandMenu,
   slashCommands,
 } from "./slash-commands";
-import { AnswerPanel } from "./answer-panel";
-import { HarderChallengePrompt } from "./harder-challenge-prompt";
-import { RegistrationPrompt } from "./registration-prompt";
 import { SuggestedActions } from "./suggested-actions";
 import type { VisibilityType } from "./visibility-selector";
 
@@ -418,9 +418,9 @@ function PureMultimodalInput({
         )}
       </div>
 
-      {!editingMessage && <AnswerPanel />}
 
-      <HarderChallengePrompt />
+
+
       <RegistrationPrompt />
 
       <PromptInput

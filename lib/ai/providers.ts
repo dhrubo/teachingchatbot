@@ -26,13 +26,23 @@ const useGateway =
 
 const GEMINI_MODEL =
   process.env.GOOGLE_GENERATIVE_AI_MODEL ?? "gemini-3.1-flash-lite";
-const GROQ_MODEL =
-  process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
 const OPENROUTER_MODEL =
   process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-chat-v3-0324:free";
 
 console.info("[ai-config] model=" + GEMINI_MODEL);
-console.info("[ai-config] keys: free=" + (hasGeminiKey ? "SET ✓" : "unset") + " premium=" + (hasPremiumGeminiKey ? "SET ✓" : "unset") + " groq=" + (hasGroqKey ? "SET ✓" : "unset") + " openrouter=" + (hasOpenRouterKey ? "SET ✓" : "unset") + " gateway=" + (useGateway ? "SET ✓" : "unset"));
+console.info(
+  "[ai-config] keys: free=" +
+    (hasGeminiKey ? "SET ✓" : "unset") +
+    " premium=" +
+    (hasPremiumGeminiKey ? "SET ✓" : "unset") +
+    " groq=" +
+    (hasGroqKey ? "SET ✓" : "unset") +
+    " openrouter=" +
+    (hasOpenRouterKey ? "SET ✓" : "unset") +
+    " gateway=" +
+    (useGateway ? "SET ✓" : "unset")
+);
 
 export function isUsingGateway(): boolean {
   return useGateway;

@@ -30,9 +30,7 @@ import {
   isAnswerCorrect,
   isGraded,
 } from "@/lib/active-question";
-import {
-  type ChallengeBundle,
-} from "@/lib/ai/challenge-bundle";
+import type { ChallengeBundle } from "@/lib/ai/challenge-bundle";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import type { Vote } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
@@ -90,38 +88,26 @@ type ActiveChatContextValue = {
   dismissTopicEntry: (openMenu?: boolean) => void;
   topicsMenuOpen: boolean;
   setTopicsMenuOpen: Dispatch<SetStateAction<boolean>>;
-  topicPhase: TopicPhase;
   visibleMessages: ChatMessage[];
   resumeTopic: (topicId: string) => void;
   pickTopic: (title: string) => void;
   activeChallenge: ActiveQuestion | null;
-  // A stable key for the concept being practised, surviving reteach/new-bundle
-  // (bundle topic > selected topic > challenge prompt). Used for deterministic
-  // answer-pattern detection.
-  currentConcept: string;
-  challengeIndex: number;
-  challengeCount: number;
-  bundleActive: boolean;
-  hasIncompleteChallenges: (topicId: string | null) => boolean;
   requestLeave: (targetId: string | null) => void;
   leaveTopicTarget: string | null;
   confirmLeave: () => void;
   cancelLeave: () => void;
-  canRequestHarder: boolean;
   requestHarderChallenge: () => void;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
 
 // Tools whose output is actually shown to the student (askQuestion renders a
-// challenge card; emitChallengeBundle drives the answer panel). Other tools
-// (updateTopicProgress, updateStudentProfile, manageGoals, getStudentProgress,
+// challenge card). Other tools (updateStudentProfile, manageGoals,
 // startNewTopicSession, getCurriculumTopics) persist data or steer state but
 // render NOTHING in the thread — a turn made up only of those is invisible to
 // the student, which looks like "nothing happened / old explanations remain".
 const VISIBLE_TOOL_TYPES = new Set([
   "tool-askQuestion",
-  "tool-emitChallengeBundle",
 ]);
 
 // True if a message has something the STUDENT can see: non-empty text or a
@@ -172,16 +158,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const [topicList, setTopicList] = useState<string[]>([]);
   const [completedTopics, setCompletedTopics] = useState<string[]>([]);
 
-  // Local bundle index — tracks which challenge in the current bundle is active.
-  // Separate from messages to avoid sending a user message (and hitting the LLM)
-  // for every correct answer.
-  const [bundleIndex, setBundleIndex] = useState(0);
-  const prevBundleIdRef = useRef<string | null>(null);
-  // Tracks correctness per challenge id in the current bundle.
-  // Reset when a new bundle arrives.
-  const bundleResultsRef = useRef<Map<string, boolean>>(new Map());
-  // Whether to offer a "Challenge me harder" option after an all-correct bundle.
-  const [canRequestHarder, setCanRequestHarder] = useState(false);
+
 
   // ---- Topic threads (per-topic sub-conversations within one chat) ----
   // The currently open topic thread (null = show the whole chat / intro).
@@ -198,9 +175,10 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const [leaveTopicTarget, setLeaveTopicTarget] = useState<string | null>(null);
   // A topic-start whose full-screen gate is held until the turn finishes — so a
   // clarifying question in the same turn isn't buried behind the overlay.
-  const pendingTopicEntryRef = useRef<{ topicId: string; title: string } | null>(
-    null
-  );
+  const pendingTopicEntryRef = useRef<{
+    topicId: string;
+    title: string;
+  } | null>(null);
   // The message id we last auto-sent for, to stop sendAutomaticallyWhen from
   // re-firing in a loop when the triggering message stays at the end.
   const autoSentForRef = useRef<string | null>(null);
@@ -386,19 +364,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         // challenge bundle. Either means the answer panel / readiness gate must
         // be visible, so we must NOT open the full-screen topic overlay on top
         // of it (that buries the controls and the student is stuck).
-        const emittedBundle =
-          message.role === "assistant" &&
-          (message.parts ?? []).some((p) => {
-            const part = p as { type?: string; output?: unknown };
-            return (
-              part.type === "tool-emitChallengeBundle" &&
-              part.output != null
-            );
-          });
         const posesQuestion =
-          message.role === "assistant" &&
-          getActiveQuestion([message]) !== null;
-        if (!posesQuestion && !emittedBundle) {
+          message.role === "assistant" && getActiveQuestion([message]) !== null;
+        if (!posesQuestion) {
           setTopicEntry(pending);
         }
       }
@@ -528,69 +496,12 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     [selectedThread]
   );
 
-  // Derive the challenge bundle from messages. Just the raw bundle data —
-  // no index tracking (that's managed by local bundleIndex state to avoid
-  // sending a user message per answer).
-  const computedBundle = useMemo<ChallengeBundle | null>(() => {
-    const msgs = selectedThread?.messages ?? messages;
-    for (let i = msgs.length - 1; i >= 0; i--) {
-      for (const part of msgs[i].parts ?? []) {
-        const p = part as { type?: string; output?: unknown };
-        if (
-          p.type === "tool-emitChallengeBundle" &&
-          "output" in p &&
-          p.output
-        ) {
-          const out = p.output as ChallengeBundle;
-          if (out?.challenges?.length) {
-            return out;
-          }
-          break;
-        }
-      }
-    }
-    return null;
-  }, [selectedThread, messages]);
-
-  // Reset bundleIndex when a new bundle arrives (detected by first challenge id).
-  const bundleKey = computedBundle?.challenges[0]?.id ?? null;
-  useEffect(() => {
-    if (bundleKey !== prevBundleIdRef.current) {
-      prevBundleIdRef.current = bundleKey;
-      setBundleIndex(0);
-      bundleResultsRef.current = new Map();
-      setCanRequestHarder(false);
-    }
-  }, [bundleKey]);
-
-  // The open challenge that the student should answer in the form.
-  // Priority: pending bundle challenge > regular askQuestion > null.
   const activeChallenge = useMemo(() => {
-    if (computedBundle && bundleIndex < computedBundle.challenges.length) {
-      const bch = computedBundle.challenges[bundleIndex];
-      if (bch) {
-        return {
-          id: bch.id,
-          prompt: bch.prompt,
-          type:
-            bch.type === "short_text"
-              ? ("text" as const)
-              : ("multiple_choice" as const),
-          options: bch.options ?? [],
-          correctAnswer: bch.correctAnswer,
-          explanation: bch.explanation,
-        };
-      }
-    }
-    if (!selectedThread) {
-      return null;
-    }
+    if (!selectedThread) return null;
     const q = getActiveQuestion(selectedThread.messages);
-    if (!q || isGateOptions(q.options)) {
-      return null;
-    }
+    if (!q || isGateOptions(q.options)) return null;
     return q;
-  }, [selectedThread, computedBundle, bundleIndex]);
+  }, [selectedThread]);
 
   const submitAnswer = useCallback(
     (answer: string) => {
@@ -610,44 +521,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Bundle challenge: advance locally — no sendMessage, no LLM call.
-      // The next pre-generated challenge appears immediately. When the
-      // LAST challenge is answered (bundle complete), send a message to
-      // the AI so it can respond with results / next-steps / a question.
-      if (
-        computedBundle &&
-        computedBundle.challenges.some((c) => c.id === q.id)
-      ) {
-        // Grade and track the result.
-        const wasCorrect = isAnswerCorrect(q as ActiveQuestion, answer);
-        bundleResultsRef.current.set(q.id, wasCorrect);
-
-        const nextIndex = bundleIndex + 1;
-        const isLast = nextIndex >= computedBundle.challenges.length;
-        setBundleIndex((i) => Math.min(i + 1, computedBundle.challenges.length));
-        if (isLast) {
-          // Check if every challenge was correct.
-          const allCorrect = computedBundle.challenges.every(
-            (c) => bundleResultsRef.current.get(c.id) === true
-          );
-          if (allCorrect) {
-            // Offer a harder challenge instead of moving on immediately.
-            setCanRequestHarder(true);
-          } else {
-            sendMessage({
-              role: "user",
-              parts: [
-                {
-                  type: "text",
-                  text: `I answered all ${computedBundle.challenges.length} challenges on "${computedBundle.topic}". Give a brief summary of what was covered, then ask what I'd like to learn next.`,
-                },
-              ],
-            });
-          }
-        }
-        return;
-      }
-
       // Non-graded prompt (name, topic choice…) — send plainly to the LLM.
       if (!isGraded(q as ActiveQuestion)) {
         sendMessage({
@@ -663,25 +536,23 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       } — the right answer is ${(q as ActiveQuestion).correctAnswer}. Confirm briefly and continue with the next tiny step.]`;
       sendMessage({
         role: "user",
-        parts: [{ type: "text", text }],
+        parts: [{ type: "text", text: text }],
       });
     },
-    [activeChallenge, activeQuestion, computedBundle, sendMessage, bundleIndex]
+    [activeChallenge, activeQuestion, sendMessage]
   );
 
   const requestHarderChallenge = useCallback(() => {
-    if (!computedBundle) return;
-    setCanRequestHarder(false);
     sendMessage({
       role: "user",
       parts: [
         {
           type: "text",
-          text: `I got every challenge right on "${computedBundle.topic}" — give me harder questions on the same topic to really challenge me.`,
+          text: `I got every challenge right - give me harder questions on the same topic to really challenge me.`,
         },
       ],
     });
-  }, [computedBundle, sendMessage]);
+  }, [sendMessage]);
 
   const clearAchievement = useCallback(() => setAchievement(null), []);
 
@@ -712,57 +583,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     return deduped.length === combined.length ? combined : deduped;
   }, [messages, selectedThread, introEndIndex]);
 
-  // Challenge progress: for bundle-based lessons use local bundleIndex
-  // (which doesn't send messages per answer). For askQuestion-based lessons
-  // use the message-derived state.
-  const challengeCount = computedBundle
-    ? computedBundle.challenges.length
-    : (topicState?.challengeTotal ?? 0);
-  const challengeIndex = computedBundle
-    ? bundleIndex
-    : (topicState?.challengeDone ?? 0);
 
-  // Whether a bundle is currently active (has uncompleted challenges).
-  const bundleActive = computedBundle !== null && bundleIndex < computedBundle.challenges.length;
-
-  // Stable concept key for pattern detection: the bundle topic survives a
-  // reteach (which swaps in a new bundle with new challenge ids), the selected
-  // topic title is the next-best anchor, then the raw challenge prompt.
-  const currentConcept =
-    computedBundle?.topic ??
-    selectedThread?.title ??
-    activeChallenge?.prompt ??
-    "";
-
-  // Topic phase: account for local bundle progress when computing state.
-  const topicPhase: TopicPhase = computedBundle
-    ? bundleIndex >= computedBundle.challenges.length
-      ? "done"
-      : "challenge"
-    : (topicState?.phase ?? "content");
-
-  const hasIncompleteChallenges = useCallback(
-    (topicId: string | null): boolean => {
-      if (!topicId) {
-        return false;
-      }
-      const thread = threads.find((t) => t.id === topicId);
-      if (!thread) {
-        return false;
-      }
-      const { challengeTotal, challengeDone, phase } = deriveTopicState(thread);
-      if (phase === "challenge" || challengeDone < challengeTotal) return true;
-      // Also check bundle progress for the currently visible bundle.
-      if (computedBundle && bundleIndex < computedBundle.challenges.length) {
-        // Check if this bundle belongs to the given topicId
-        const bundleForThread =
-          selectedThread && topicSlug(computedBundle.topic) === topicId;
-        if (bundleForThread) return true;
-      }
-      return false;
-    },
-    [threads, computedBundle, bundleIndex, selectedThread]
-  );
 
   // ---- Topic-thread actions ----
   const selectTopic = useCallback((topicId: string | null) => {
@@ -832,13 +653,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   // challenges asks for confirmation first.
   const requestLeave = useCallback(
     (targetId: string | null) => {
-      if (hasIncompleteChallenges(selectedTopicId)) {
-        setLeaveTopicTarget(targetId ?? "__none__");
-      } else {
-        setSelectedTopicId(targetId);
-      }
+      setSelectedTopicId(targetId);
     },
-    [hasIncompleteChallenges, selectedTopicId]
+    []
   );
 
   const confirmLeave = useCallback(() => {
@@ -897,21 +714,14 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       dismissTopicEntry,
       topicsMenuOpen,
       setTopicsMenuOpen,
-      topicPhase,
       visibleMessages,
       resumeTopic,
       pickTopic,
       activeChallenge,
-      currentConcept,
-      challengeIndex,
-      challengeCount,
-      bundleActive,
-      hasIncompleteChallenges,
       requestLeave,
       leaveTopicTarget,
       confirmLeave,
       cancelLeave,
-      canRequestHarder,
       requestHarderChallenge,
     }),
     [
@@ -947,21 +757,14 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       startTopic,
       dismissTopicEntry,
       topicsMenuOpen,
-      topicPhase,
       visibleMessages,
       resumeTopic,
       pickTopic,
       activeChallenge,
-      currentConcept,
-      challengeIndex,
-      challengeCount,
-      bundleActive,
-      hasIncompleteChallenges,
       requestLeave,
       leaveTopicTarget,
       confirmLeave,
       cancelLeave,
-      canRequestHarder,
       requestHarderChallenge,
     ]
   );

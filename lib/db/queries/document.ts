@@ -5,7 +5,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import type { ArtifactKind } from "@/components/chat/artifact";
 import { ChatbotError } from "@/lib/errors";
-import { document, suggestion, type Suggestion } from "../schema";
+import { document, type Suggestion, suggestion } from "../schema";
 
 const client = postgres(process.env.POSTGRES_URL ?? "");
 const db = drizzle(client);

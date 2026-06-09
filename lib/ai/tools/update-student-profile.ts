@@ -25,7 +25,10 @@ export const updateStudentProfile = ({ session, dataStream }: Props) =>
         .string()
         .optional()
         .describe("Existing student's id. Omit to create a new student."),
-      name: z.string().optional().describe("Student's name (required to create)."),
+      name: z
+        .string()
+        .optional()
+        .describe("Student's name (required to create)."),
       schoolYear: z.enum(["8", "9"]).optional(),
       examDate: z
         .string()

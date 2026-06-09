@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { ChatbotError } from "@/lib/errors";
-import { missionProgress, type MissionProgress } from "../schema";
+import { type MissionProgress, missionProgress } from "../schema";
 
 const client = postgres(process.env.POSTGRES_URL ?? "");
 const db = drizzle(client);
@@ -18,7 +18,10 @@ export async function getMissionProgress(
       .select()
       .from(missionProgress)
       .where(
-        and(eq(missionProgress.studentId, studentId), eq(missionProgress.missionId, missionId))
+        and(
+          eq(missionProgress.studentId, studentId),
+          eq(missionProgress.missionId, missionId)
+        )
       )
       .limit(1);
     return rows[0] ?? null;
@@ -46,7 +49,17 @@ export async function upsertMissionProgress(
   studentId: string,
   missionId: string,
   data: Partial<
-    Pick<MissionProgress, "status" | "phase" | "score" | "challengesDone" | "challengesTotal" | "conceptCardsViewed" | "lastLessonAt" | "completedAt">
+    Pick<
+      MissionProgress,
+      | "status"
+      | "phase"
+      | "score"
+      | "challengesDone"
+      | "challengesTotal"
+      | "conceptCardsViewed"
+      | "lastLessonAt"
+      | "completedAt"
+    >
   >
 ): Promise<MissionProgress> {
   try {

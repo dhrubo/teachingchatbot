@@ -9,8 +9,9 @@ See the [status legend](README.md#-status-legend) for what ✅ / 📝 / 🚧 mea
 ### Guest (not signed in) — conversational onboarding
 - 📝 **Start learning immediately.** The tutor does *not* ask for a full profile upfront and does *not* open with limits or a feature tour — it answers the maths question first.
 - 📝 **Gradual, benefit-framed data collection:** level (Year 8/9) is asked only after some engagement (to pitch difficulty); name is asked only when introducing progress-tracking benefits.
-- 🚧 **Guest question limit: 5 free questions, counted silently.** The tutor introduces the *soft value* of an account around question 4 and politely stops at question 5, leading with benefits (save progress, track %, continue topics, set goals).
-  - ✅ *Enforced today instead:* a rate limit of **10 user messages per hour** per user (guests included). The silent 5-question count and hard stop are NOT yet implemented in code — currently the Q4/Q5 behaviour is tutor-prompted only.
+- **Guest question limit: 5 free questions.**
+  - ✅ *Challenge Mode:* hard-enforced — a guest gets **5 challenge questions per day** (last-24h `QuestionAttempt` count vs `GUEST_DAILY_QUESTION_LIMIT`, default 5). On the limit, Challenge Mode shows "You've used today's free questions. Come back tomorrow, or create an account…" and fetches no more questions (no LLM call).
+  - 🚧 *Free-chat questions:* the silent 5-question count + hard stop in the chat flow is still tutor-prompted only; in code, guests share the **10 user messages per hour** rate limit.
 - 📝 **Session continuity:** registering or logging in mid-conversation preserves the current chat and resumes topic/progress without a reset.
 - ✅ Registered and guest conversations are both persisted as chats; logging in restores prior conversation state.
 
@@ -22,8 +23,14 @@ See the [status legend](README.md#-status-legend) for what ✅ / 📝 / 🚧 mea
 - 📝 Conversations are organised by maths topic (e.g. Fractions, Decimals, Algebra), under the subject "Maths".
 - 🚧 **Maximum 5 active topics.** When exceeded, the student is prompted to archive or complete an existing topic. There is currently no `archived`/`active` topic state in the data model, so this limit is communicated by the tutor but not enforced.
 
+## Learning flow: cards first, challenge only after consent
+- ✅ **No question or challenge appears until the student explicitly accepts Challenge Mode.** A mission/lesson opens with **concept cards** (≥3); only after they're reviewed does a **"Start Challenge Mode"** CTA appear (alongside *Keep Learning* and *Explain Differently*). Clicking it is the only thing that starts questions. Enforced in code via [`lib/challenge-gate.ts`](../lib/challenge-gate.ts) — see [developer.md](developer.md) and [gcse-question-engine.md](gcse-question-engine.md).
+- ✅ **Challenge Mode** is a full-screen, 5-question adaptive run: questions are generated from DB **archetypes** and **graded locally** with zero LLM calls; difficulty adapts (up after 2 correct, down/reteach after 2 wrong). Results screen offers *Review mistakes / Keep learning / Next mission*.
+- ✅ Normal teaching (and *Explain Differently*) only explains — the tutor never asks a maths/quiz question outside Challenge Mode.
+
 ## Progress tracking
 - ✅ Per-topic mastery is stored on a **0–5 scale** (`TopicProgress.score`) with a status (`not_started` → `mastered`), confidence, and attempt counts. See [developer.md](developer.md).
+- ✅ **Per-skill mastery** for adaptive challenges is stored on a **0–100 scale** (`StudentSkillMastery`) with a difficulty band (must/should/could/gcse_bridge), for logged-in students.
 - 🚧 **0–100% completion per topic**, derived from questions answered / concepts covered / demonstrated understanding, shown as e.g. "Decimals – 45% complete". This percentage view is 📝 tutor-presented only; it is not yet a stored field.
 
 ## Goals & exam prep

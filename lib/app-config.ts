@@ -17,7 +17,8 @@ export function getAppConfig(): AppConfig {
   cached = {
     mode: (process.env.APP_MODE as AppMode) ?? "FREE",
     freeChatRetentionHours: Number(process.env.FREE_CHAT_RETENTION_HOURS) || 24,
-    guestDailyQuestionLimit: Number(process.env.GUEST_DAILY_QUESTION_LIMIT) || 5,
+    guestDailyQuestionLimit:
+      Number(process.env.GUEST_DAILY_QUESTION_LIMIT) || 5,
   };
   return cached;
 }

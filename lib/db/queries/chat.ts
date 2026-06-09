@@ -23,7 +23,6 @@ import {
   type DBMessage,
   message,
   stream,
-  type User,
   user,
   vote,
 } from "../schema";

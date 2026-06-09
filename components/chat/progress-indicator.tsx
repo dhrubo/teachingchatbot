@@ -81,9 +81,7 @@ export function ProgressBar({ className }: { className?: string }) {
             — {percent}% complete
           </span>
         </span>
-        <span className="text-muted-foreground">
-          {answeredCount} answered
-        </span>
+        <span className="text-muted-foreground">{answeredCount} answered</span>
       </div>
       <span className="block h-2 w-full overflow-hidden rounded-full bg-muted">
         <motion.span

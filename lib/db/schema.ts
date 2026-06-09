@@ -4,8 +4,10 @@ import {
   foreignKey,
   integer,
   json,
+  pgEnum,
   pgTable,
   primaryKey,
+  serial,
   text,
   timestamp,
   uuid,
@@ -159,54 +161,6 @@ export const studentProfile = pgTable("StudentProfile", {
 
 export type StudentProfile = InferSelectModel<typeof studentProfile>;
 
-// Per-topic progress for a single student.
-export const topicProgress = pgTable(
-  "TopicProgress",
-  {
-    studentId: uuid("studentId")
-      .notNull()
-      .references(() => studentProfile.id, { onDelete: "cascade" }),
-    topic: text("topic").notNull(),
-    // Which AQA GCSE Maths content domain this topic rolls up to.
-    gcseDomain: varchar("gcseDomain", {
-      enum: [
-        "number",
-        "algebra",
-        "ratio_proportion_rates",
-        "geometry_measures",
-        "probability",
-        "statistics",
-      ],
-    }),
-    status: varchar("status", {
-      enum: [
-        "not_started",
-        "introduced",
-        "practising",
-        "secure",
-        "mastered",
-      ],
-    })
-      .notNull()
-      .default("not_started"),
-    confidence: varchar("confidence", { enum: ["low", "medium", "high"] })
-      .notNull()
-      .default("low"),
-    score: integer("score").notNull().default(0),
-    successfulAttempts: integer("successfulAttempts").notNull().default(0),
-    supportNeededAttempts: integer("supportNeededAttempts")
-      .notNull()
-      .default(0),
-    lastPractisedAt: timestamp("lastPractisedAt"),
-    updatedAt: timestamp("updatedAt").notNull().defaultNow(),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.studentId, table.topic] }),
-  })
-);
-
-export type TopicProgress = InferSelectModel<typeof topicProgress>;
-
 // Short-term, agreed learning goals for a student (e.g. "Practise
 // percentages by 20 June"). Separate from the long-term GCSE pathway.
 export const studentGoal = pgTable("StudentGoal", {
@@ -269,3 +223,221 @@ export const missionProgress = pgTable(
 );
 
 export type MissionProgress = InferSelectModel<typeof missionProgress>;
+
+// ---- Mission: a curriculum unit (e.g. "Percentages") ----
+export const mission = pgTable("Mission", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  yearGroup: integer("yearGroup").notNull(),
+  subject: text("subject").notNull().default("maths"),
+  gcseDomain: varchar("gcseDomain", { length: 32 }).notNull(),
+  order: integer("order").notNull(),
+  estimatedMinutes: integer("estimatedMinutes").notNull(),
+  isActive: boolean("isActive").notNull().default(true),
+});
+
+export type Mission = InferSelectModel<typeof mission>;
+
+// ---- Lesson: a discrete teachable chunk within a mission ----
+export const lesson = pgTable("Lesson", {
+  id: serial("id").primaryKey(),
+  missionId: integer("missionId")
+    .notNull()
+    .references(() => mission.id),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  order: integer("order").notNull(),
+  difficultyBand: varchar("difficultyBand", {
+    enum: ["foundation", "core", "stretch", "gcse_bridge"],
+  })
+    .notNull()
+    .default("core"),
+  estimatedMinutes: integer("estimatedMinutes").notNull(),
+});
+
+export type Lesson = InferSelectModel<typeof lesson>;
+
+// ---- ConceptCard: a flash-card sized teaching point within a lesson ----
+export const conceptCard = pgTable("ConceptCard", {
+  id: serial("id").primaryKey(),
+  lessonId: integer("lessonId")
+    .notNull()
+    .references(() => lesson.id),
+  order: integer("order").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  visual: text("visual"),
+  example: text("example"),
+  misconception: text("misconception"),
+});
+
+export type ConceptCard = InferSelectModel<typeof conceptCard>;
+
+// =================================================================
+// Adaptive Learning Engine Schema
+// =================================================================
+
+export const difficultyBandEnum = pgEnum("difficultyBand", [
+  "must",
+  "should",
+  "could",
+  "gcse_bridge",
+]);
+
+export const questionTypeEnum = pgEnum("questionType", [
+  "short_text",
+  "multiple_choice",
+  "numeric",
+  "algebraic",
+]);
+
+// ---- Skill: a discrete, trackable GCSE skill (e.g. "algebra_solve_one_step") ----
+// Skills are referenced by slug from archetypes/mastery, but are not a hard FK
+// target — archetypes carry their own skillSlug so the engine can run without a
+// fully-populated Skill table.
+export const skill = pgTable("Skill", {
+  slug: text("slug").primaryKey(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull().default("maths"),
+});
+
+export type Skill = InferSelectModel<typeof skill>;
+
+// ---- LessonSkill: a join table mapping skills to lessons ----
+export const lessonSkill = pgTable(
+  "LessonSkill",
+  {
+    lessonId: integer("lessonId")
+      .notNull()
+      .references(() => lesson.id, { onDelete: "cascade" }),
+    skillSlug: text("skillSlug").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.lessonId, table.skillSlug] }),
+  })
+);
+
+// ---- QuestionArchetype: a reusable GCSE-style question template ----
+// One archetype produces hundreds of concrete questions: variableSchemaJson
+// supplies pools of values, and answerExpression is a JS template literal
+// (e.g. "`${a+b}x`") evaluated with those values to compute the answer.
+// Normal lesson, challenge, grading and scoring require ZERO LLM calls.
+export const questionArchetype = pgTable("QuestionArchetype", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  slug: text("slug").notNull().unique(),
+  subject: text("subject").notNull().default("maths"),
+  yearGroup: integer("yearGroup").notNull(),
+  missionSlug: text("missionSlug").notNull(),
+  lessonSlug: text("lessonSlug").notNull(),
+  skillSlug: text("skillSlug").notNull(),
+  gcseDomain: text("gcseDomain").notNull(),
+  difficultyBand: difficultyBandEnum("difficultyBand").notNull(),
+  questionType: questionTypeEnum("questionType")
+    .notNull()
+    .default("short_text"),
+  template: text("template").notNull(),
+  variableSchemaJson: json("variableSchemaJson")
+    .$type<Record<string, (string | number)[]>>()
+    .notNull()
+    .default({}),
+  answerExpression: text("answerExpression").notNull(),
+  acceptableAnswerRulesJson: json("acceptableAnswerRulesJson")
+    .$type<{
+      numeric?: boolean;
+      tolerance?: number;
+      caseInsensitive?: boolean;
+      normaliseAlgebra?: boolean;
+    }>()
+    .notNull()
+    .default({}),
+  hintTemplate: text("hintTemplate"),
+  explanationTemplate: text("explanationTemplate"),
+  misconceptionTagsJson: json("misconceptionTagsJson")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  sourceStyle: text("sourceStyle"),
+  calculatorAllowed: boolean("calculatorAllowed").notNull().default(false),
+  isActive: boolean("isActive").notNull().default(true),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export type QuestionArchetype = InferSelectModel<typeof questionArchetype>;
+
+// ---- GeneratedQuestion: optional runtime cache of rendered questions ----
+export const generatedQuestion = pgTable("GeneratedQuestion", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  archetypeId: uuid("archetypeId")
+    .notNull()
+    .references(() => questionArchetype.id, { onDelete: "cascade" }),
+  variablesJson: json("variablesJson")
+    .$type<Record<string, number | string>>()
+    .notNull()
+    .default({}),
+  prompt: text("prompt").notNull(),
+  optionsJson: json("optionsJson").$type<string[]>(),
+  correctAnswer: text("correctAnswer").notNull(),
+  hint: text("hint"),
+  explanation: text("explanation"),
+  difficultyBand: difficultyBandEnum("difficultyBand").notNull(),
+  promptHash: text("promptHash").notNull().unique(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type GeneratedQuestion = InferSelectModel<typeof generatedQuestion>;
+
+// ---- StudentSkillMastery: persistent skill mastery for logged-in students ----
+export const studentSkillMastery = pgTable(
+  "StudentSkillMastery",
+  {
+    studentId: uuid("studentId")
+      .notNull()
+      .references(() => studentProfile.id, { onDelete: "cascade" }),
+    skillSlug: text("skillSlug").notNull(),
+    masteryScore: integer("masteryScore").notNull().default(0),
+    currentBand: difficultyBandEnum("currentBand").notNull().default("must"),
+    attempts: integer("attempts").notNull().default(0),
+    correct: integer("correct").notNull().default(0),
+    recentCorrectStreak: integer("recentCorrectStreak").notNull().default(0),
+    recentWrongStreak: integer("recentWrongStreak").notNull().default(0),
+    lastAttemptAt: timestamp("lastAttemptAt"),
+    updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.studentId, table.skillSlug] }),
+  })
+);
+
+export type StudentSkillMastery = InferSelectModel<typeof studentSkillMastery>;
+
+// ---- QuestionAttempt: a single answered question ----
+// studentId for logged-in students; guestSessionId for guests (used to enforce
+// the 5-questions-per-day guest limit).
+export const questionAttempt = pgTable("QuestionAttempt", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  studentId: uuid("studentId").references(() => studentProfile.id, {
+    onDelete: "cascade",
+  }),
+  guestSessionId: text("guestSessionId"),
+  questionId: uuid("questionId").references(() => generatedQuestion.id, {
+    onDelete: "set null",
+  }),
+  archetypeId: uuid("archetypeId")
+    .notNull()
+    .references(() => questionArchetype.id, { onDelete: "cascade" }),
+  skillSlug: text("skillSlug").notNull(),
+  difficultyBand: difficultyBandEnum("difficultyBand").notNull(),
+  prompt: text("prompt").notNull(),
+  studentAnswer: text("studentAnswer").notNull(),
+  correctAnswer: text("correctAnswer").notNull(),
+  isCorrect: boolean("isCorrect").notNull(),
+  timeTakenMs: integer("timeTakenMs"),
+  misconceptionTag: text("misconceptionTag"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type QuestionAttempt = InferSelectModel<typeof questionAttempt>;
