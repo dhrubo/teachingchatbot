@@ -1,5 +1,5 @@
 // lib/ai/guest-mission.ts
-import { type MissionDefinition, getMission, MISSIONS } from "./missions";
+import { type MissionDefinition, getMission } from "./missions";
 
 const GUEST_MISSION_IDS = [
   "missions/percentages",
