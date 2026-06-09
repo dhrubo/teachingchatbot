@@ -112,16 +112,18 @@ export function ChatShell() {
           )}
         >
           <AchievementToast />
-          {messages.length === 0 && !isLoading && (
-            <SaraDashboard />
-          )}
           <ChatHeader
             chatId={chatId}
             isReadonly={isReadonly}
             selectedVisibilityType={visibilityType}
           />
 
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:rounded-tl-[12px] md:border-t md:border-l md:border-border/40">
+          {messages.length === 0 && !isLoading ? (
+            <div className="flex-1 overflow-y-auto">
+              <SaraDashboard />
+            </div>
+          ) : (
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:rounded-tl-[12px] md:border-t md:border-l md:border-border/40">
             <Messages
               addToolApprovalResponse={addToolApprovalResponse}
               chatId={chatId}
@@ -233,26 +235,27 @@ export function ChatShell() {
               )}
             </div>
           </div>
+          )}
         </div>
 
-        <Artifact
-          addToolApprovalResponse={addToolApprovalResponse}
-          attachments={attachments}
-          chatId={chatId}
-          input={input}
-          isReadonly={isReadonly}
-          messages={messages}
-          regenerate={regenerate}
-          selectedModelId={currentModelId}
-          selectedVisibilityType={visibilityType}
-          sendMessage={sendMessage}
-          setAttachments={setAttachments}
-          setInput={setInput}
-          setMessages={setMessages}
-          status={status}
-          stop={stop}
-          votes={votes}
-        />
+      <Artifact
+        addToolApprovalResponse={addToolApprovalResponse}
+        attachments={attachments}
+        chatId={chatId}
+        input={input}
+        isReadonly={isReadonly}
+        messages={messages}
+        regenerate={regenerate}
+        selectedModelId={currentModelId}
+        selectedVisibilityType={visibilityType}
+        sendMessage={sendMessage}
+        setAttachments={setAttachments}
+        setInput={setInput}
+        setMessages={setMessages}
+        status={status}
+        stop={stop}
+        votes={votes}
+      />
       </div>
 
       <DataStreamHandler />
