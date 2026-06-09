@@ -55,6 +55,16 @@ export default function RootLayout({
     >
       <head>
         <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-1QTC6KLH10"
+        />
+        <script
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-1QTC6KLH10');`,
+          }}
+        />
+        <script
           // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
           dangerouslySetInnerHTML={{
             __html: THEME_COLOR_SCRIPT,
