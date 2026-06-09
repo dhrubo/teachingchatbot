@@ -248,6 +248,18 @@ export const MISSIONS: MissionDefinition[] = [
   },
 ];
 
+// Runtime validation — catches orphaned prerequisite IDs early.
+const allMissionIds = new Set(MISSIONS.map((m) => m.id));
+for (const m of MISSIONS) {
+  for (const p of m.prerequisiteMissionIds) {
+    if (!allMissionIds.has(p)) {
+      throw new Error(
+        `Mission "${m.id}" references unknown prerequisite "${p}"`
+      );
+    }
+  }
+}
+
 export function getMission(id: string): MissionDefinition | undefined {
   return MISSIONS.find((m) => m.id === id);
 }
