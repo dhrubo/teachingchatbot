@@ -118,127 +118,129 @@ export function ChatShell() {
             selectedVisibilityType={visibilityType}
           />
 
-          {messages.length === 0 && !isLoading ? (
+          {messages.length === 0 && !isLoading && (
             <div className="flex-1 overflow-y-auto">
               <SaraDashboard />
             </div>
-          ) : (
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:rounded-tl-[12px] md:border-t md:border-l md:border-border/40">
-            <Messages
-              addToolApprovalResponse={addToolApprovalResponse}
-              chatId={chatId}
-              isArtifactVisible={isArtifactVisible}
-              isLoading={isLoading}
-              isReadonly={isReadonly}
-              messages={messages}
-              onEditMessage={(msg) => {
-                const text = msg.parts
-                  ?.filter((p) => p.type === "text")
-                  .map((p) => p.text)
-                  .join("");
-                setInput(text ?? "");
-                setEditingMessage(msg);
-              }}
-              regenerate={regenerate}
-              selectedModelId={currentModelId}
-              setMessages={setMessages}
-              status={status}
-              votes={votes}
-            />
+          )}
 
-            {phase === "cards" && mission && (
-              <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-8 backdrop-blur-sm">
-                <div className="w-full max-w-lg px-4">
-                  <div className="mb-3 text-center">
-                    <span className="text-2xl">{mission.emoji}</span>
-                    <h3 className="mt-1 text-lg font-bold text-foreground">
-                      {mission.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Concept review
-                    </p>
+          {(messages.length > 0 || isLoading) && (
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:rounded-tl-[12px] md:border-t md:border-l md:border-border/40">
+              <Messages
+                addToolApprovalResponse={addToolApprovalResponse}
+                chatId={chatId}
+                isArtifactVisible={isArtifactVisible}
+                isLoading={isLoading}
+                isReadonly={isReadonly}
+                messages={messages}
+                onEditMessage={(msg) => {
+                  const text = msg.parts
+                    ?.filter((p) => p.type === "text")
+                    .map((p) => p.text)
+                    .join("");
+                  setInput(text ?? "");
+                  setEditingMessage(msg);
+                }}
+                regenerate={regenerate}
+                selectedModelId={currentModelId}
+                setMessages={setMessages}
+                status={status}
+                votes={votes}
+              />
+
+              {phase === "cards" && mission && (
+                <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-8 backdrop-blur-sm">
+                  <div className="w-full max-w-lg px-4">
+                    <div className="mb-3 text-center">
+                      <span className="text-2xl">{mission.emoji}</span>
+                      <h3 className="mt-1 text-lg font-bold text-foreground">
+                        {mission.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Concept review
+                      </p>
+                    </div>
+                    <ConceptCardSlides
+                      cards={mission.conceptCards}
+                      onComplete={completeCards}
+                      onHelp={() => {
+                        exitMission();
+                        sendMessage({
+                          role: "user",
+                          parts: [
+                            {
+                              type: "text",
+                              text: "Can you explain this concept differently?",
+                            },
+                          ],
+                        });
+                      }}
+                    />
                   </div>
-                  <ConceptCardSlides
-                    cards={mission.conceptCards}
-                    onComplete={completeCards}
-                    onHelp={() => {
-                      exitMission();
-                      sendMessage({
-                        role: "user",
-                        parts: [
-                          {
-                            type: "text",
-                            text: "Can you explain this concept differently?",
-                          },
-                        ],
-                      });
-                    }}
+                </div>
+              )}
+
+              {phase === "results" && challengeResults && mission && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 backdrop-blur-sm">
+                  <ChallengeResultsScreen
+                    missionTitle={mission.title}
+                    onContinue={handleMissionContinue}
+                    onReview={
+                      challengeResults.wrong > 0
+                        ? handleMissionReview
+                        : undefined
+                    }
+                    results={challengeResults}
                   />
                 </div>
-              </div>
-            )}
-
-            {phase === "results" && challengeResults && mission && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 backdrop-blur-sm">
-                <ChallengeResultsScreen
-                  missionTitle={mission.title}
-                  onContinue={handleMissionContinue}
-                  onReview={
-                    challengeResults.wrong > 0
-                      ? handleMissionReview
-                      : undefined
-                  }
-                  results={challengeResults}
-                />
-              </div>
-            )}
-
-            <TopicSelectScreen />
-
-            <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-5xl gap-2 border-t-0 bg-background px-3 pb-3 md:px-6 md:pb-4">
-              {!isReadonly && phase !== "challenge" && (
-                <MultimodalInput
-                  attachments={attachments}
-                  chatId={chatId}
-                  editingMessage={editingMessage}
-                  input={input}
-                  isLoading={isLoading}
-                  messages={messages}
-                  onCancelEdit={() => {
-                    setEditingMessage(null);
-                    setInput("");
-                  }}
-                  onModelChange={setCurrentModelId}
-                  selectedModelId={currentModelId}
-                  selectedVisibilityType={visibilityType}
-                  sendMessage={
-                    editingMessage
-                      ? async () => {
-                          const msg = editingMessage;
-                          setEditingMessage(null);
-                          await submitEditedMessage({
-                            message: msg,
-                            text: input,
-                            setMessages,
-                            regenerate,
-                          });
-                          setInput("");
-                        }
-                      : sendMessage
-                  }
-                  setAttachments={setAttachments}
-                  setInput={setInput}
-                  setMessages={setMessages}
-                  status={status}
-                  stop={stop}
-                />
               )}
+
+              <TopicSelectScreen />
+
+              <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-5xl gap-2 border-t-0 bg-background px-3 pb-3 md:px-6 md:pb-4">
+                {!isReadonly && phase !== "challenge" && (
+                  <MultimodalInput
+                    attachments={attachments}
+                    chatId={chatId}
+                    editingMessage={editingMessage}
+                    input={input}
+                    isLoading={isLoading}
+                    messages={messages}
+                    onCancelEdit={() => {
+                      setEditingMessage(null);
+                      setInput("");
+                    }}
+                    onModelChange={setCurrentModelId}
+                    selectedModelId={currentModelId}
+                    selectedVisibilityType={visibilityType}
+                    sendMessage={
+                      editingMessage
+                        ? async () => {
+                            const msg = editingMessage;
+                            setEditingMessage(null);
+                            await submitEditedMessage({
+                              message: msg,
+                              text: input,
+                              setMessages,
+                              regenerate,
+                            });
+                            setInput("");
+                          }
+                        : sendMessage
+                    }
+                    setAttachments={setAttachments}
+                    setInput={setInput}
+                    setMessages={setMessages}
+                    status={status}
+                    stop={stop}
+                  />
+                )}
+              </div>
             </div>
-          </div>
           )}
         </div>
 
-      <Artifact
+        <Artifact
         addToolApprovalResponse={addToolApprovalResponse}
         attachments={attachments}
         chatId={chatId}

@@ -1,10 +1,21 @@
-import { getMission, getMissionsByYear } from "@/lib/ai/missions";
-import { getStudentMissionProgress } from "@/lib/db/queries/mission";
-import { getStudentsByUserId } from "@/lib/db/queries/student";
-import { auth } from "@/app/(auth)/auth";
-import { redirect } from "next/navigation";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useCallback, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
+type DashboardData = {
+  student: { id: string; name: string; schoolYear: number } | null;
+  missions: { id: string; title: string; emoji: string; description: string }[];
+  progress: {
+    missionId: string;
+    status: string;
+    score: number;
+    challengesDone: number;
+    challengesTotal: number;
+    completedAt: string | null;
+  }[];
+};
 
 function statusBadge(status: string) {
   const colors: Record<string, string> = {
@@ -16,16 +27,43 @@ function statusBadge(status: string) {
   return colors[status] ?? colors.not_started;
 }
 
-export default async function ParentDashboard() {
-  const session = await auth();
-  if (!session?.user || (session.user as any).type === "guest") {
-    redirect("/");
+export default function ParentDashboardPage() {
+  const { data: session, status: authStatus } = useSession();
+  const router = useRouter();
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (authStatus === "loading") return;
+    if (!session?.user || (session.user as any).type === "guest") {
+      router.replace("/");
+      return;
+    }
+    fetch("/api/dashboard")
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+      .then((json: DashboardData) => {
+        setData(json);
+        setLoading(false);
+      })
+      .catch((e) => {
+        console.error("Failed to load dashboard", e);
+        setLoading(false);
+      });
+  }, [session, authStatus, router]);
+
+  const handleBack = useCallback(() => {
+    router.push("/");
+  }, [router]);
+
+  if (loading || authStatus === "loading") {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-12">
+        <p className="text-muted-foreground">Loading dashboard...</p>
+      </div>
+    );
   }
 
-  const userId = session.user.id!;
-  const students = await getStudentsByUserId({ userId });
-
-  if (students.length === 0) {
+  if (!data?.student) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-12">
         <h1 className="mb-2 text-3xl font-bold text-foreground">Parent Dashboard</h1>
@@ -34,18 +72,14 @@ export default async function ParentDashboard() {
     );
   }
 
-  const student = students[0];
-  const year = (student.schoolYear ?? 8).toString() as "8" | "9";
-  const missions = getMissionsByYear(year);
-  const missionProgress = await getStudentMissionProgress(student.id);
-  const progressMap = new Map(missionProgress.map((p) => [p.missionId, p]));
-
-  const completed = missionProgress.filter((p) => p.status === "completed" || p.status === "mastered");
-  const inProgress = missionProgress.filter((p) => p.status === "in_progress");
-  const mastered = missionProgress.filter((p) => p.status === "mastered");
-  const currentMission = inProgress[0] ?? null;
-
-  const currentMissionDef = currentMission ? getMission(currentMission.missionId) : null;
+  const { student, missions, progress } = data;
+  const progressMap = new Map(progress.map((p) => [p.missionId, p]));
+  const completedList = progress.filter((p) => p.status === "completed" || p.status === "mastered");
+  const inProgressList = progress.filter((p) => p.status === "in_progress");
+  const currentMission = inProgressList[0] ?? null;
+  const currentMissionDef = currentMission
+    ? missions.find((m) => m.id === currentMission.missionId) ?? null
+    : null;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -56,20 +90,21 @@ export default async function ParentDashboard() {
             {student.name} &middot; Year {student.schoolYear}
           </p>
         </div>
-        <a
+        <button
           className="rounded-full bg-[image:var(--gradient-sunset)] px-4 py-1.5 text-sm font-semibold text-white shadow-lg"
-          href="/"
+          onClick={handleBack}
+          type="button"
         >
           Back to app
-        </a>
+        </button>
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
-          { label: "Completed", value: completed.length, emoji: "✅" },
-          { label: "In Progress", value: inProgress.length, emoji: "📖" },
-          { label: "Mastered", value: mastered.length, emoji: "🏆" },
-          { label: "Remaining", value: missions.length - completed.length - inProgress.length, emoji: "📋" },
+          { label: "Completed", value: completedList.length, emoji: "✅" },
+          { label: "In Progress", value: inProgressList.length, emoji: "📖" },
+          { label: "Mastered", value: progress.filter((p) => p.status === "mastered").length, emoji: "🏆" },
+          { label: "Remaining", value: missions.length - completedList.length - inProgressList.length, emoji: "📋" },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -113,7 +148,7 @@ export default async function ParentDashboard() {
         </div>
       )}
 
-      <h2 className="mb-4 text-xl font-bold text-foreground">All Missions</h2>
+      <h2 className="mb-4 text-xl font-bold text-foreground">All Missions ({missions.length})</h2>
       <div className="space-y-3">
         {missions.map((mission) => {
           const mp = progressMap.get(mission.id);
