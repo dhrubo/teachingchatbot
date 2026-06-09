@@ -1,160 +1,342 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useActiveChat } from "@/hooks/use-active-chat";
 import { Button } from "@/components/ui/button";
-import { topicSuggestions, guestRegex } from "@/lib/constants";
+import { guestRegex } from "@/lib/constants";
 import { SaraMascot } from "@/components/brand/sara-mascot";
 import { PlayerStats } from "@/components/brand/player-stats";
-import { MissionCard } from "@/components/brand/mission-card";
-import { TopicMap } from "@/components/brand/topic-map";
-import { CoachBubble } from "@/components/brand/coach-bubble";
+import { MissionMap } from "@/components/chat/mission-map";
+import { getMissionsByYear, type MissionDefinition } from "@/lib/ai/missions";
+import { pickGuestMission } from "@/lib/ai/guest-mission";
+import { cn } from "@/lib/utils";
 
-const COACH_MESSAGES = [
-  "Start small. Win one concept at a time.",
-  "Every right answer builds a stronger brain.",
-  "You don't have to be great to start, but you have to start to be great.",
-  "Small steps every day = big progress.",
-  "Mistakes are proof that you're trying.",
-  "Focus on one mission at a time — mastery, not speed.",
-  "The best time to start was yesterday. The next best time is now.",
+const HOW_IT_WORKS = [
+  {
+    icon: "📖",
+    title: "Learn",
+    description: "Short visual lessons — one idea at a time.",
+  },
+  {
+    icon: "✏️",
+    title: "Practise",
+    description: "Interactive questions with instant feedback.",
+  },
+  {
+    icon: "🎯",
+    title: "Challenge",
+    description: "Graded challenges to prove your understanding.",
+  },
+  {
+    icon: "🏆",
+    title: "Master",
+    description: "Unlock the next mission when you're ready.",
+  },
 ];
 
-const DAILY_COACH =
-  COACH_MESSAGES[new Date().getDate() % COACH_MESSAGES.length];
-
 export function SaraDashboard() {
-  const {
-    sendMessage,
-    xpStreak,
-    topicProgress,
-    topicList,
-    completedTopics,
-  } = useActiveChat();
-
+  const { sendMessage, xpStreak, topicProgress, topicList, completedTopics } =
+    useActiveChat();
   const { data, status } = useSession();
   const isGuest = guestRegex.test(data?.user?.email ?? "");
-  const showAuth = status !== "loading" && (!data?.user || isGuest);
+  const isLoading = status === "loading";
+  const isLoggedIn = status === "authenticated" && !isGuest;
 
   const [year, setYear] = useState<"8" | "9">("8");
 
-  const allTopics = topicSuggestions[year];
+  const missions = useMemo(() => getMissionsByYear(year), [year]);
+
+  const guestMission = useMemo(() => pickGuestMission(), []);
+
+  const continueMission = useMemo(() => {
+    if (!topicProgress) return null;
+    return (
+      missions.find((m) =>
+        m.topics.includes(topicProgress.topic),
+      ) ?? null
+    );
+  }, [missions, topicProgress]);
+
+  const todayMission = continueMission ?? guestMission;
+
+  const completedMissionIds = useMemo(
+    () =>
+      missions
+        .filter((m) =>
+          completedTopics.some((t: string) => m.topics.includes(t)),
+        )
+        .map((m) => m.id),
+    [missions, completedTopics],
+  );
+
+  const currentMissionId = useMemo(() => {
+    if (!topicProgress) return undefined;
+    const match = missions.find((m) =>
+      m.topics.includes(topicProgress.topic),
+    );
+    return match?.id;
+  }, [missions, topicProgress]);
+
   const hasProgressData = xpStreak !== null && xpStreak.xp > 0;
 
-  const topicCards = allTopics.map((t) => {
-    const isCompleted = completedTopics.includes(t.label);
-    const isActive = topicList.includes(t.label);
-    return {
-      title: t.label,
-      emoji: t.emoji,
-      progressPercent: isCompleted ? 100 : isActive ? 50 : 0,
-      locked: false,
-      onClick: () => sendMessage({ role: "user", parts: [{ type: "text", text: t.prompt }] }),
-    };
-  });
+  function startMission(mission: MissionDefinition) {
+    sendMessage({
+      role: "user",
+      parts: [
+        {
+          type: "text",
+          text: `I want to learn about ${mission.title}. Start me off easy.`,
+        },
+      ],
+    });
+  }
+
+  const showAuth = !isLoading && (!data?.user || isGuest);
 
   return (
-    <AnimatePresence>
+    <div className="mx-auto min-h-screen w-full max-w-2xl px-4 py-8">
       <motion.div
-        key="sara-dashboard"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-gradient-to-br from-[#1E1B4B] via-[#312E81] to-[#4C1D95] px-4 py-8"
+        transition={{ duration: 0.3 }}
+        className="flex flex-col gap-8"
       >
-        {showAuth && (
-          <div className="absolute right-4 top-4 flex items-center gap-2">
-            <Button
-              asChild
-              className="rounded-full px-4 text-white/70 hover:text-white"
-              size="sm"
-              variant="ghost"
-            >
-              <Link href="/login">Sign in</Link>
-            </Button>
-            <Button
-              asChild
-              className="rounded-full bg-[image:var(--gradient-sunset)] px-4 font-semibold text-white shadow-[var(--shadow-card)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
-              size="sm"
-            >
-              <Link href="/register">Sign up free ✨</Link>
-            </Button>
-          </div>
-        )}
-        <div className="flex w-full max-w-xl flex-col gap-5 pt-12">
-          <div className="flex flex-col items-center text-center">
-            <SaraMascot size={88} animated mood="happy" />
-            <h1 className="mt-4 text-2xl font-bold tracking-tight text-white">
-              Meet SARA, your AI maths coach
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-white/60">
-              Build confidence with tiny lessons, smart hints, and one challenge
-              at a time.
-            </p>
-          </div>
-
-          <PlayerStats
-            xp={hasProgressData ? xpStreak!.xp : 0}
-            streak={hasProgressData ? xpStreak!.streak : 0}
-            level={hasProgressData ? Math.floor(xpStreak!.xp / 100) + 1 : 1}
-            badges={hasProgressData ? xpStreak!.badges.length : 0}
-          />
-
-          {topicProgress && topicProgress.score > 0 && (
-            <MissionCard
-              title={`Today's mission: ${topicProgress.topic}`}
-              emoji="🎯"
-              description={`Keep building your ${topicProgress.topic} skills`}
-              progressPercent={Math.round((topicProgress.score / 5) * 100)}
-              onClick={() =>
-                sendMessage({
-                  role: "user",
-                  parts: [
-                    {
-                      type: "text",
-                      text: `Let's continue with ${topicProgress.topic}.`,
-                    },
-                  ],
-                })
-              }
-            />
+        {/* ---- Hero ---- */}
+        <section className="relative flex flex-col items-center pt-8 text-center">
+          {showAuth && (
+            <div className="absolute right-0 top-0 flex items-center gap-2">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="rounded-full px-4 text-muted-foreground hover:text-foreground"
+              >
+                <Link href="/login">Sign in</Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                className="rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-4 font-semibold text-white shadow-lg shadow-orange-500/20 transition-transform hover:scale-[1.03] active:scale-[0.98]"
+              >
+                <Link href="/register">Sign up free ✨</Link>
+              </Button>
+            </div>
           )}
+          <SaraMascot size={96} mood="happy" animated />
+          <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
+            Learn Maths Without Feeling Stuck
+          </h1>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+            SARA is your AI maths coach — tiny visual lessons, one challenge at
+            a time, and progress that actually sticks.
+          </p>
+        </section>
 
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white/80">Missions</h2>
-            <div className="flex gap-1 rounded-full border border-white/10 bg-white/5 p-0.5">
+        {/* ---- PlayerStats (logged-in only) ---- */}
+        {isLoggedIn && hasProgressData && (
+          <PlayerStats
+            xp={xpStreak!.xp}
+            streak={xpStreak!.streak}
+            level={Math.floor(xpStreak!.xp / 100) + 1}
+            badges={xpStreak!.badges.length}
+          />
+        )}
+
+        {/* ---- "What is this?" ---- */}
+        <section className="rounded-2xl border border-border/40 bg-card/30 p-5 backdrop-blur-sm">
+          <h2 className="text-base font-semibold text-foreground">
+            What is this?
+          </h2>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0">📖</span>
+              <span>
+                <strong className="text-foreground">Short visual lessons</strong>
+                {" "}— one concept at a time, with diagrams and examples.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0">🎯</span>
+              <span>
+                <strong className="text-foreground">Concept cards</strong>
+                {" "}— key ideas you can always come back to.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0">⚡</span>
+              <span>
+                <strong className="text-foreground">Challenge mode</strong>
+                {" "}— answer questions, earn XP, unlock the next topic.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0">📊</span>
+              <span>
+                <strong className="text-foreground">Progress tracking</strong>
+                {" "}— see how far you've come and what's next.
+              </span>
+            </li>
+          </ul>
+        </section>
+
+        {/* ---- Year toggle ---- */}
+        <div className="flex items-center justify-center">
+          <div className="flex gap-1 rounded-full border border-border/40 bg-muted/30 p-0.5">
+            <button
+              onClick={() => setYear("8")}
+              className={cn(
+                "rounded-full px-4 py-1 text-sm font-medium transition-colors",
+                year === "8"
+                  ? "bg-gradient-to-r from-orange-500 to-violet-500 text-white"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Year 8
+            </button>
+            <button
+              onClick={() => setYear("9")}
+              className={cn(
+                "rounded-full px-4 py-1 text-sm font-medium transition-colors",
+                year === "9"
+                  ? "bg-gradient-to-r from-orange-500 to-violet-500 text-white"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Year 9
+            </button>
+          </div>
+        </div>
+
+        {/* ---- Today's Mission ---- */}
+        {todayMission && (
+          <section>
+            <h2 className="mb-3 text-sm font-semibold text-foreground/80">
+              Today&apos;s Mission
+            </h2>
+            <div className="group flex w-full items-center gap-3 rounded-2xl border border-orange-500/15 bg-card/40 p-4 text-left backdrop-blur-sm transition-all duration-200 hover:bg-card/60">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/20 to-violet-500/20 text-xl">
+                {todayMission.emoji}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-sm font-semibold text-foreground">
+                  {todayMission.title}
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {todayMission.description}
+                </p>
+                <span className="mt-1 inline-block text-[10px] text-muted-foreground/60">
+                  ⏱ ~{todayMission.estimatedMinutes} min
+                </span>
+              </div>
               <button
-                onClick={() => setYear("8")}
-                className={`rounded-full px-3 py-0.5 text-xs font-medium transition-colors ${
-                  year === "8"
-                    ? "bg-gradient-to-r from-orange-500 to-violet-500 text-white"
-                    : "text-white/50 hover:text-white/80"
-                }`}
+                onClick={() => startMission(todayMission)}
+                className="shrink-0 rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-4 py-1.5 text-xs font-semibold text-white shadow-lg shadow-orange-500/20 transition-transform duration-200 hover:scale-[1.03] active:scale-[0.97]"
               >
-                Year 8
-              </button>
-              <button
-                onClick={() => setYear("9")}
-                className={`rounded-full px-3 py-0.5 text-xs font-medium transition-colors ${
-                  year === "9"
-                    ? "bg-gradient-to-r from-orange-500 to-violet-500 text-white"
-                    : "text-white/50 hover:text-white/80"
-                }`}
-              >
-                Year 9
+                {continueMission ? "Continue →" : "Start →"}
               </button>
             </div>
+          </section>
+        )}
+
+        {/* ---- Mission Map ---- */}
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-foreground/80">
+            Your Learning Journey
+          </h2>
+          <div className="rounded-2xl border border-border/40 bg-card/20 p-4 backdrop-blur-sm">
+            <MissionMap
+              year={year}
+              completedMissions={completedMissionIds}
+              currentMissionId={currentMissionId}
+              onSelect={(mission) => startMission(mission)}
+            />
           </div>
+        </section>
 
-          <TopicMap topics={topicCards} />
+        {/* ---- How It Works ---- */}
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-foreground/80">
+            How It Works
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            {HOW_IT_WORKS.map((item) => (
+              <div
+                key={item.title}
+                className="rounded-2xl border border-border/40 bg-card/30 p-4 backdrop-blur-sm"
+              >
+                <span className="text-2xl">{item.icon}</span>
+                <h3 className="mt-2 text-sm font-semibold text-foreground">
+                  {item.title}
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {item.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-          <CoachBubble message={DAILY_COACH} />
-        </div>
+        {/* ---- What You'll Learn ---- */}
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-foreground/80">
+            What You&apos;ll Learn
+          </h2>
+          <div className="flex flex-col gap-2">
+            {missions.map((mission) => {
+              const isCompleted = completedMissionIds.includes(mission.id);
+              const isCurrent = mission.id === currentMissionId;
+              return (
+                <button
+                  key={mission.id}
+                  onClick={() => startMission(mission)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl border bg-card/20 p-3 text-left backdrop-blur-sm transition-all duration-200",
+                    isCompleted
+                      ? "border-green-500/30 hover:border-green-500/60"
+                      : isCurrent
+                        ? "border-orange-500/30 bg-card/40 hover:border-orange-500/60"
+                        : "border-border/30 hover:border-border/60 hover:bg-card/40",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500/15 to-violet-500/15 text-base",
+                      isCompleted && "from-green-500/20 to-green-500/10",
+                    )}
+                  >
+                    {isCompleted ? "✓" : mission.emoji}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <span
+                      className={cn(
+                        "text-sm font-medium",
+                        isCompleted
+                          ? "text-green-400"
+                          : isCurrent
+                            ? "text-orange-300"
+                            : "text-foreground",
+                      )}
+                    >
+                      {mission.title}
+                    </span>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {mission.description}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground/60">
+                    {mission.estimatedMinutes} min
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <div className="h-8" />
       </motion.div>
-    </AnimatePresence>
+    </div>
   );
 }
