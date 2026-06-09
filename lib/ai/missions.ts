@@ -35,7 +35,7 @@ export const MISSIONS: MissionDefinition[] = [
     description: "Master percentages — from basics to real-world problems.",
     estimatedMinutes: 15,
     topics: ["Percentages"],
-    prerequisiteMissionIds: ["missions/number-skills", "missions/fractions"],
+    prerequisiteMissionIds: [],
     gcseDomain: "number",
     lessons: [
       {
@@ -85,7 +85,7 @@ export const MISSIONS: MissionDefinition[] = [
       "Simplify ratios, share in a given ratio, and solve proportion problems.",
     estimatedMinutes: 15,
     topics: ["Ratio"],
-    prerequisiteMissionIds: ["missions/number-skills", "missions/fractions"],
+    prerequisiteMissionIds: [],
     gcseDomain: "ratio_proportion_rates",
     lessons: [
       {

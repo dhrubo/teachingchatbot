@@ -499,3 +499,72 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 ### Open Items
 - The pasted-syllabus `pickTopic` flow still uses the LLM chat path (those topics aren't DB missions, so they have no concept-card bank). It no longer shows premature challenges (Phase 33 suppresses graded inline questions), but it teaches via LLM text rather than the carded mission flow.
 - The nav `TopicPicker` fallback slugs are best-effort; topics whose slug doesn't match a seeded mission fall back to deterministic cards + the "no questions available" challenge path until mission/archetype slugs are aligned (carried over from Phase 33).
+
+---
+
+## Phase 34a Log: Topic Overlays Rendered at Panel Level (fix: "nothing loads")
+
+- **Status:** Completed
+- **Symptom:** after Phase 34, selecting a topic on the homepage did nothing visible.
+- **Root cause:** the mission overlays (loading/cards/footer/results) were rendered **inside shell.tsx's `messages.length > 0` branch**. On a fresh homepage `messages.length === 0`, so the dashboard kept rendering and the overlays were never mounted.
+- **Fix (`shell.tsx`):** made the left panel `relative` and moved the mission overlays to the panel level, rendering whenever `isInMission` (gated on `phase`); the dashboard now hides while `isInMission`. Also cleared the local-fallback `MISSIONS` prerequisite ids in `missions.ts` that were spamming `[browser] … unknown prerequisite` warnings.
+- **Verified (live DB):** `/api/lessons?missionCards=percentages` returns 4 real cards; homepage 200, clean log; 104/104 tests, build clean.
+
+---
+
+## Phase 35 Log: Paste-a-Topic Matching + Admin Topic Requests + Card-Footer Choices
+
+- **Status:** Completed
+- **Context:** the user wanted the homepage to let students **paste a list of maths topics** (from a school syllabus), auto-match them to available topics, start the matched ones, and flag unmatched ones to an admin. Plus the concept-card "Ready for Challenge" screen should also offer leaving the lesson.
+- **Actions Taken:**
+    1.  **`TopicRequest` table (`lib/db/schema.ts`, migration `0009_topic_requests.sql`):** logs topics the app couldn't match — `topicText`, `normalisedText` (unique, for de-dupe), `requestedByUserId`, `requestCount`, `status` (new/reviewed/added/dismissed). Queries in `lib/db/queries/topic-requests.ts` (`normaliseTopicText`, `getActiveMissions`, `recordTopicRequest` upsert-bumps count, `getTopicRequests`).
+    2.  **`/api/match-topics` route (new):** takes pasted text → `extractTopics()` → one **`generateObject` LLM call** (via `getTitleModel`) mapping each line to the best DB mission slug or null against the live `Mission` list → returns `{ matched:[{input,slug,title}], unavailable:[] }`. Unmatched topics are recorded as `TopicRequest`s (fire-and-forget; never blocks the user). Fails soft (everything unavailable) if the LLM errors.
+    3.  **Homepage paste box (`components/chat/topic-paste-box.tsx`, new):** prompt + textarea above the dashboard ("What do you want to learn? … paste your topic list"). On submit it calls `/api/match-topics` and shows matched topics as **Start** buttons (→ `useStartTopic`, the gated mission flow) plus a "Not available yet — we've told our team" list for the rest. Added near the top of `SaraDashboard`.
+    4.  **Concept-card footer (`concept-card-slides.tsx`):** the last card's single "Ready for Challenge →" became **Continue →** (to the lesson footer with all three choices) plus a **Choose another topic** button (`onChooseAnother` → `exitMission`), so the student is never funnelled only toward the challenge.
+    5.  **Admin surfacing (`/api/dashboard` + parent `dashboard/page.tsx`):** the parent/admin dashboard now fetches and renders **Requested Topics**, ordered by `requestCount`, in both the has-student and no-student states.
+- **Verified (live DB):** applied the additive `0009` migration; posted the user's full pasted list to `/api/match-topics` → 12 topics correctly matched to missions (incl. "Standard Form"→Indices and Standard Form, "Convert currencies"→Ratio and Proportion), 3 genuinely-missing ("Sequences", "Nth term rule", "Error Intervals") flagged unavailable **and logged as `TopicRequest`s**; re-posting "Sequences" bumped `requestCount` to 2 (de-dupe works). Test rows cleaned up afterwards. `pnpm test:unit` 104/104, `next build` clean (27 routes incl. `/api/match-topics`), changed files lint-clean.
+
+### Key Decisions
+- **LLM matching is one `generateObject` call per paste** (not per topic) and only runs when the student explicitly pastes + clicks — the gated lesson/challenge loop stays LLM-free. Matched topics start the same DB concept-card flow as the nav picker.
+- **Unknown topics are stored, not emailed.** `TopicRequest` de-dupes by normalised text and bumps a count; the admin sees demand on the dashboard. Email/webhook can be layered on later.
+
+### Open Items
+- Migrations `0008` (destructive recreate) and `0009` (additive) are applied to the dev DB; `0009` was applied directly (additive, safe). A future `pnpm db:generate` will still prompt about the un-regenerated `0008`/`0009` snapshots.
+- "Requested Topics" is visible to any logged-in (non-guest) account on the parent dashboard — there's no separate admin role yet, so it's effectively per-account-visible admin info.
+
+---
+
+## Phase 36 Log: Database Query Optimization (Scalability & Memory Footprint)
+
+- **Status:** Completed
+- **Context:** Conducted an architectural code review of the whole codebase. Found an opportunity to improve query scalability inside the adaptive GCSE engine.
+- **Actions Taken:**
+    1.  **Optimized `getMasteryForSkills` (`lib/db/queries/questions.ts`):** 
+        - Modified the query to include a Drizzle `inArray` filter constraint matching the requested `skillSlugs` on the database level.
+        - Previously, it fetched the entire skill mastery profile of the student and filtered in memory on the client. With this fix, only the requested masteries are retrieved, dramatically lowering payload, network latency, and memory footprint as students practice more skills over several weeks/months.
+    2.  **Verified:**
+        - Type-check via `npx tsc --noEmit` returns clean.
+        - Ran Vitest suite: **104/104 unit tests passed** green.
+
+---
+
+## Phase 37 Log: Admin View, User Approval → Premium Gating, Webhook Notifications
+
+- **Status:** Completed
+- **Context:** follow-ups to Phase 35 — gate "Requested Topics" behind a real admin role, notify on new topic requests, build an admin view, and add a **user approval workflow** where only admin-approved users get the premium model. Also re-enabled the homepage "What You'll Learn" cards as clickable topic starters.
+- **Actions Taken:**
+    1.  **Admin role gating + admin view (`/admin`):** the `User.role` (`user`/`admin`) field already existed and flows through the session. Promoted `dhrubo@gmail.com` to `admin` (DB update). New admin-only API `app/(parent)/api/admin/route.ts` (GET: users + topic requests + curriculum; POST: set user approval) gated on `session.user.role === "admin"`. New page `app/(parent)/admin/page.tsx` with stat cards, a **Users** list (approve/reject), **Topic Requests** (by demand), and curriculum coverage. Linked from the sidebar user-nav dropdown (admins only). The parent `/dashboard` "Requested Topics" is now also admin-gated (API returns `[]` to non-admins).
+    2.  **Webhook notification (`lib/db/queries/topic-requests.ts`):** `recordTopicRequest` now detects a genuinely-new request (Postgres `RETURNING (xmax = 0)`) and POSTs to `TOPIC_REQUEST_WEBHOOK_URL` (Slack/Discord/Zapier-compatible) when set; no-ops + best-effort otherwise. Documented in `.env.example`.
+    3.  **User approval → premium gating (migration `0010`):** added `User.approvalStatus` (`pending`/`approved`/`rejected`, default `pending`). Backfilled existing non-guest users to `approved` so nobody lost access. New `lib/db/queries/admin.ts` (`getRegularUsers`, `setUserApprovalStatus`, `getApprovalStatus`). The chat route now computes `isPremiumUser = type !== "guest" && approvalStatus === "approved"` (fetched per-request in the existing parallel read, so approval takes effect immediately without re-login) and passes it to `getTutorProviderCandidates(...)` — replacing the old "any signed-in user is premium" rule.
+    4.  **Homepage cards clickable (`sara-dashboard.tsx`):** reverted "What You'll Learn" from an informational list back to clickable `<button>`s that start the gated mission flow via `useStartTopic`.
+- **Verified (live DB):** applied additive migrations `0009`/`0010` directly; backfill set all 393 non-guest rows to `approved`; new-signup column default confirmed `'pending'`; admin user list shows the 2 real users (391 guests excluded); approve→reject→approve round-trip works; webhook no-ops when env unset. `pnpm test:unit` **104/104**, `next build` clean (**29 routes** incl. `/admin`, `/api/admin`), all changed files lint-clean.
+
+### Key Decisions
+- **Approval gates premium only**, not app access — pending/rejected users still use the app on the free model (lowest friction). Premium is decided per-request from the DB so admin actions are instant.
+- **Existing users auto-approved, new signups pending** — no regressions for current users; the workflow applies going forward.
+- **Notifications via optional webhook**, not a hard email dependency — fires once per first-time topic, stays best-effort.
+
+### Open Items
+- The session JWT still carries `role`/`type` from login time; `approvalStatus` is intentionally read fresh in the chat route (not the token) so approval is immediate. The admin link in the sidebar uses the session `role`, so a freshly-promoted admin must re-login to see it (premium gating itself doesn't need re-login).
+- Guest accounts have non-anonymous-flagged `guest-*` emails in this DB; the admin user list filters them by `email NOT LIKE 'guest-%'`.
+- Migrations `0008`–`0010` applied to the dev DB directly; a future `pnpm db:generate` will still prompt about un-regenerated snapshots.

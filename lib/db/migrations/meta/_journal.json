@@ -64,6 +64,20 @@
       "when": 1781100000000,
       "tag": "0008_question_archetype_engine",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781200000000,
+      "tag": "0009_topic_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781300000000,
+      "tag": "0010_user_approval",
+      "breakpoints": true
     }
   ]
 }

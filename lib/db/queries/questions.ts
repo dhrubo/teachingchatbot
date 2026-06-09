@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import type { DifficultyBand } from "@/lib/adaptive/update-mastery";
@@ -87,7 +87,12 @@ export async function getMasteryForSkills(
   return await db
     .select()
     .from(studentSkillMastery)
-    .where(eq(studentSkillMastery.studentId, studentId));
+    .where(
+      and(
+        eq(studentSkillMastery.studentId, studentId),
+        inArray(studentSkillMastery.skillSlug, skillSlugs)
+      )
+    );
 }
 
 export async function getRecentAttempts(params: {

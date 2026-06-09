@@ -23,6 +23,13 @@ export const user = pgTable("User", {
   image: text("image"),
   isAnonymous: boolean("isAnonymous").notNull().default(false),
   role: varchar("role", { length: 16 }).notNull().default("user"),
+  // Admin approval gate for premium model access. New regular signups start
+  // "pending"; only "approved" users get the premium model.
+  approvalStatus: varchar("approvalStatus", {
+    enum: ["pending", "approved", "rejected"],
+  })
+    .notNull()
+    .default("pending"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
@@ -441,3 +448,25 @@ export const questionAttempt = pgTable("QuestionAttempt", {
 });
 
 export type QuestionAttempt = InferSelectModel<typeof questionAttempt>;
+
+// ---- TopicRequest: a pasted/typed topic the app could NOT match to a mission.
+// Logged so an admin can see demand for topics that aren't in the curriculum yet.
+export const topicRequest = pgTable("TopicRequest", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  // The raw topic text the student pasted/typed (normalised for de-duping).
+  topicText: text("topicText").notNull(),
+  normalisedText: text("normalisedText").notNull(),
+  // Who asked (best-effort): a user id if known, else null for guests.
+  requestedByUserId: uuid("requestedByUserId"),
+  // How many times this (normalised) topic has been requested.
+  requestCount: integer("requestCount").notNull().default(1),
+  status: varchar("status", {
+    enum: ["new", "reviewed", "added", "dismissed"],
+  })
+    .notNull()
+    .default("new"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export type TopicRequest = InferSelectModel<typeof topicRequest>;

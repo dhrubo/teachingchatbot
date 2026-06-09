@@ -8,7 +8,10 @@ import { cn } from "@/lib/utils";
 
 type ConceptCardSlidesProps = {
   cards: ConceptCard[];
+  // Reached the end of this card batch → show the lesson footer choices.
   onComplete: () => void;
+  // Leave the lesson and pick a different topic.
+  onChooseAnother?: () => void;
   // Fired once per distinct card the student actually reaches — feeds the
   // MIN_CONCEPT_CARDS_BEFORE_CHALLENGE gate.
   onCardSeen?: () => void;
@@ -19,6 +22,7 @@ type ConceptCardSlidesProps = {
 export function ConceptCardSlides({
   cards,
   onComplete,
+  onChooseAnother,
   onCardSeen,
   onHelp,
 }: ConceptCardSlidesProps) {
@@ -100,15 +104,27 @@ export function ConceptCardSlides({
           ← Back
         </Button>
 
-        {onHelp && (
+        {/* On the last card offer leaving the lesson, not just the challenge. */}
+        {isLast && onChooseAnother ? (
           <Button
             className="rounded-full text-sm text-muted-foreground"
-            onClick={onHelp}
+            onClick={onChooseAnother}
             size="sm"
             variant="ghost"
           >
-            Ask Tutor 💬
+            Choose another topic
           </Button>
+        ) : (
+          onHelp && (
+            <Button
+              className="rounded-full text-sm text-muted-foreground"
+              onClick={onHelp}
+              size="sm"
+              variant="ghost"
+            >
+              Ask Tutor 💬
+            </Button>
+          )
         )}
 
         {isLast ? (
@@ -117,7 +133,7 @@ export function ConceptCardSlides({
             onClick={onComplete}
             size="sm"
           >
-            Ready for Challenge →
+            Continue →
           </Button>
         ) : (
           <Button

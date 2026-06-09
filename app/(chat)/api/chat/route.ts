@@ -35,6 +35,7 @@ import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
   deleteChatById,
+  getApprovalStatus,
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
@@ -121,18 +122,26 @@ export async function POST(request: Request) {
 
     const isToolApprovalFlow = Boolean(messages);
 
-    // These three reads are independent of each other — fire them concurrently
-    // rather than paying for three serial DB round-trips before the model can
-    // start. getMessagesByChatId keyed on the request id returns [] for a
-    // not-yet-created chat, which is harmless: we only use it when `chat` exists.
-    const [messageCount, chat, chatMessages] = await Promise.all([
-      getMessageCountByUserId({
-        id: session.user.id,
-        differenceInHours: 1,
-      }),
-      getChatById({ id }),
-      getMessagesByChatId({ id }),
-    ]);
+    // These reads are independent of each other — fire them concurrently rather
+    // than paying for serial DB round-trips before the model can start.
+    // getMessagesByChatId keyed on the request id returns [] for a not-yet-created
+    // chat, which is harmless: we only use it when `chat` exists.
+    const [messageCount, chat, chatMessages, approvalStatus] = await Promise.all(
+      [
+        getMessageCountByUserId({
+          id: session.user.id,
+          differenceInHours: 1,
+        }),
+        getChatById({ id }),
+        getMessagesByChatId({ id }),
+        // Premium is admin-gated: only approved, signed-in users get it.
+        userType === "guest"
+          ? Promise.resolve(null)
+          : getApprovalStatus(session.user.id),
+      ]
+    );
+
+    const isPremiumUser = userType !== "guest" && approvalStatus === "approved";
 
     if (messageCount > getEntitlements(userType).maxMessagesPerHour) {
       return new ChatbotError("rate_limit:chat").toResponse();
@@ -340,9 +349,7 @@ export async function POST(request: Request) {
         // challenges the student can't answer. The guard skips duplicates.
         let questionAsked = false;
 
-        const candidates = getTutorProviderCandidates(
-          session.user.type !== "guest"
-        );
+        const candidates = getTutorProviderCandidates(isPremiumUser);
 
         const {
           result: llmResult,

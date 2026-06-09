@@ -1,4 +1,9 @@
 export {
+  getApprovalStatus,
+  getRegularUsers,
+  setUserApprovalStatus,
+} from "./admin";
+export {
   createGuestUser,
   createUser,
   getUser,
@@ -43,8 +48,8 @@ export {
   createGoal,
   createStudent,
   getGoalsByStudentId,
-  getStudentsByUserId,
   getStudentProfile,
+  getStudentsByUserId,
   updateGoal,
   updateStudentProfile,
 } from "./student";

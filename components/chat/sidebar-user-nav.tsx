@@ -32,6 +32,8 @@ export function SidebarUserNav({ user }: { user: User }) {
   const { data, status } = useSession();
 
   const isGuest = guestRegex.test(data?.user?.email ?? "");
+  const isAdmin =
+    (data?.user as { role?: string } | undefined)?.role === "admin";
 
   return (
     <SidebarMenu>
@@ -73,6 +75,17 @@ export function SidebarUserNav({ user }: { user: User }) {
             data-testid="user-nav-menu"
             side="top"
           >
+            {isAdmin && (
+              <DropdownMenuItem asChild>
+                <button
+                  className="w-full cursor-pointer text-[13px]"
+                  onClick={() => router.push("/admin")}
+                  type="button"
+                >
+                  Admin
+                </button>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild data-testid="user-nav-item-auth">
               <button
                 className="w-full cursor-pointer text-[13px]"

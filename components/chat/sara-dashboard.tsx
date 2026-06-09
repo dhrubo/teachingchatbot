@@ -7,6 +7,7 @@ import useSWR from "swr";
 import { PlayerStats } from "@/components/brand/player-stats";
 import { SaraMascot } from "@/components/brand/sara-mascot";
 import { MissionMap } from "@/components/chat/mission-map";
+import { TopicPasteBox } from "@/components/chat/topic-paste-box";
 import { useActiveChat } from "@/hooks/use-active-chat";
 import { useStartTopic } from "@/hooks/use-start-topic";
 import { pickGuestMission } from "@/lib/ai/guest-mission";
@@ -157,6 +158,9 @@ export function SaraDashboard() {
           </p>
         </section>
 
+        {/* ---- Pick / paste a topic (primary entry point) ---- */}
+        <TopicPasteBox />
+
         {/* ---- PlayerStats (logged-in only) ---- */}
         {isLoggedIn && hasProgressData && stats && (
           <PlayerStats
@@ -306,33 +310,31 @@ export function SaraDashboard() {
           </div>
         </section>
 
-        {/* ---- What You'll Learn (informational) ----
-            Primary topic selection is the "Choose a Topic" nav dropdown; this
-            section is an at-a-glance overview of the curriculum, not a picker. */}
+        {/* ---- What You'll Learn ---- */}
         <section>
           <h2 className="mb-1 text-sm font-semibold text-foreground/80">
             What You&apos;ll Learn
           </h2>
           <p className="mb-3 text-xs text-muted-foreground">
-            Year {year} maths, broken into bite-sized topics. Pick one from{" "}
-            <strong className="text-foreground">Choose a Topic</strong> at the
-            top to start.
+            Year {year} maths, broken into bite-sized topics. Tap any to start.
           </p>
           <div className="flex flex-col gap-2">
             {missions.map((mission) => {
               const isCompleted = completedMissionIds.includes(mission.id);
               const isCurrent = mission.id === currentMissionId;
               return (
-                <div
+                <button
                   className={cn(
-                    "flex items-center gap-3 rounded-2xl border bg-card/20 p-3 text-left backdrop-blur-sm",
+                    "flex items-center gap-3 rounded-2xl border bg-card/20 p-3 text-left backdrop-blur-sm transition-all duration-200",
                     isCompleted
-                      ? "border-green-500/30"
+                      ? "border-green-500/30 hover:border-green-500/60"
                       : isCurrent
-                        ? "border-orange-500/30 bg-card/40"
-                        : "border-border/30"
+                        ? "border-orange-500/30 bg-card/40 hover:border-orange-500/60"
+                        : "border-border/30 hover:border-border/60 hover:bg-card/40"
                   )}
                   key={mission.id}
+                  onClick={() => startMission(mission)}
+                  type="button"
                 >
                   <span
                     className={cn(
@@ -362,7 +364,7 @@ export function SaraDashboard() {
                   <span className="shrink-0 text-xs text-muted-foreground/60">
                     {mission.estimatedMinutes} min
                   </span>
-                </div>
+                </button>
               );
             })}
           </div>

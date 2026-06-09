@@ -4,12 +4,43 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { bandFromScore } from "@/lib/adaptive/update-mastery";
-import type { StudentSkillMastery } from "@/lib/db/schema";
+import type { StudentSkillMastery, TopicRequest } from "@/lib/db/schema";
 
 type DashboardData = {
   student: { id: string; name: string; schoolYear: number } | null;
   skillMastery: StudentSkillMastery[];
+  topicRequests?: TopicRequest[];
 };
+
+function RequestedTopics({ requests }: { requests: TopicRequest[] }) {
+  if (requests.length === 0) {
+    return null;
+  }
+  return (
+    <div className="mt-10">
+      <h2 className="mb-1 text-xl font-bold text-foreground">
+        📋 Requested Topics ({requests.length})
+      </h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Topics students pasted that aren&apos;t in the curriculum yet — ordered
+        by how often they&apos;ve been asked for.
+      </p>
+      <div className="space-y-2">
+        {requests.map((r) => (
+          <div
+            className="flex items-center justify-between rounded-2xl border border-border/40 bg-card p-4"
+            key={r.id}
+          >
+            <span className="font-medium text-foreground">{r.topicText}</span>
+            <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+              requested {r.requestCount}×
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function bandColor(band: string) {
   const colors: Record<string, string> = {
@@ -59,7 +90,10 @@ export default function ParentDashboardPage() {
 
   useEffect(() => {
     if (authStatus === "loading") return;
-    if (!session?.user || (session.user as any).type === "guest") {
+    if (
+      !session?.user ||
+      (session.user as { type?: string }).type === "guest"
+    ) {
       router.replace("/");
       return;
     }
@@ -96,11 +130,13 @@ export default function ParentDashboardPage() {
         <p className="text-muted-foreground">
           No students linked to your account yet.
         </p>
+        <RequestedTopics requests={data?.topicRequests ?? []} />
       </div>
     );
   }
 
   const { student, skillMastery } = data;
+  const topicRequests = data.topicRequests ?? [];
   const strongSkills = skillMastery.filter((s) => s.masteryScore >= 75);
   const weakSkills = skillMastery.filter((s) => s.masteryScore < 50);
 
@@ -167,6 +203,8 @@ export default function ParentDashboardPage() {
           <SkillMasteryRow key={skill.skillSlug} mastery={skill} />
         ))}
       </div>
+
+      <RequestedTopics requests={topicRequests} />
     </div>
   );
 }

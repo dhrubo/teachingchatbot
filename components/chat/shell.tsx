@@ -65,6 +65,7 @@ export function ChatShell() {
     currentCards,
     hasMoreCards,
     consentState,
+    isInMission,
     recordCardSeen,
     completeCards,
     continueLearning,
@@ -117,7 +118,7 @@ export function ChatShell() {
       <div className="flex h-dvh w-full flex-row overflow-hidden">
         <div
           className={cn(
-            "flex min-w-0 flex-col bg-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "relative flex min-w-0 flex-col bg-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
             isArtifactVisible ? "w-[40%]" : "w-full"
           )}
         >
@@ -128,11 +129,112 @@ export function ChatShell() {
             selectedVisibilityType={visibilityType}
           />
 
-          {messages.length === 0 && !isLoading && (
+          {messages.length === 0 && !isLoading && !isInMission && (
             <div className="flex-1 overflow-y-auto">
               <SaraDashboard />
             </div>
           )}
+
+          {/* ---- Mission overlays (concept cards → lesson footer → results) ----
+              Rendered at the panel level so they appear whether or not there are
+              chat messages yet. The full-screen Challenge phase is rendered
+              separately at the document root below. */}
+          {isInMission && phase === "loading" && mission && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-background/95 backdrop-blur-sm">
+              <span className="animate-pulse text-3xl">{mission.emoji}</span>
+              <p className="text-sm text-muted-foreground">
+                Loading {mission.title}…
+              </p>
+            </div>
+          )}
+
+          {isInMission && phase === "cards" && mission && (
+            <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-8 backdrop-blur-sm">
+              <div className="w-full max-w-lg px-4">
+                <div className="mb-3 text-center">
+                  <span className="text-2xl">{mission.emoji}</span>
+                  <h3 className="mt-1 text-lg font-bold text-foreground">
+                    {mission.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Concept review
+                  </p>
+                </div>
+                {currentCards.length > 0 && (
+                  <ConceptCardSlides
+                    cards={currentCards}
+                    onCardSeen={recordCardSeen}
+                    onChooseAnother={exitMission}
+                    onComplete={completeCards}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* LESSON FOOTER — shown after a batch of cards. The challenge is
+              NEVER started automatically: the student explicitly chooses.
+              "Start Challenge Mode" is gated (≥3 cards + this click). */}
+          {isInMission && phase === "gate" && mission && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 px-4 backdrop-blur-sm">
+              <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-card p-6 text-center">
+                <span className="text-3xl">{mission.emoji}</span>
+                <h3 className="mt-2 text-lg font-bold text-foreground">
+                  {mission.title}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  What would you like to do next?
+                </p>
+                <div className="mt-5 flex flex-col gap-2">
+                  {hasMoreCards && (
+                    <Button
+                      className="rounded-full"
+                      onClick={continueLearning}
+                      size="sm"
+                      variant="outline"
+                    >
+                      Continue Learning
+                    </Button>
+                  )}
+                  <Button
+                    className="rounded-full bg-[image:var(--gradient-sunset)] px-6 font-semibold text-white shadow-lg"
+                    onClick={startChallengeMode}
+                    size="sm"
+                  >
+                    Start Challenge Mode
+                  </Button>
+                  <Button
+                    className="rounded-full"
+                    onClick={exitMission}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Choose Another Topic
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isInMission &&
+            phase === "results" &&
+            challengeResults &&
+            mission && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 backdrop-blur-sm">
+                <ChallengeResultsScreen
+                  missionTitle={mission.title}
+                  onContinue={handleMissionContinue}
+                  onReview={
+                    challengeResults.questionCount -
+                      challengeResults.finalScore >
+                    0
+                      ? handleMissionReview
+                      : undefined
+                  }
+                  results={challengeResults}
+                />
+              </div>
+            )}
 
           {(messages.length > 0 || isLoading) && (
             <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:rounded-tl-[12px] md:border-t md:border-l md:border-border/40">
@@ -157,99 +259,6 @@ export function ChatShell() {
                 status={status}
                 votes={votes}
               />
-
-              {phase === "loading" && mission && (
-                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-background/95 backdrop-blur-sm">
-                  <span className="animate-pulse text-3xl">
-                    {mission.emoji}
-                  </span>
-                  <p className="text-sm text-muted-foreground">
-                    Loading {mission.title}…
-                  </p>
-                </div>
-              )}
-
-              {phase === "cards" && mission && currentCards.length > 0 && (
-                <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-8 backdrop-blur-sm">
-                  <div className="w-full max-w-lg px-4">
-                    <div className="mb-3 text-center">
-                      <span className="text-2xl">{mission.emoji}</span>
-                      <h3 className="mt-1 text-lg font-bold text-foreground">
-                        {mission.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Concept review
-                      </p>
-                    </div>
-                    <ConceptCardSlides
-                      cards={currentCards}
-                      onCardSeen={recordCardSeen}
-                      onComplete={completeCards}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* LESSON FOOTER — shown after a batch of cards. The challenge is
-                  NEVER started automatically: the student explicitly chooses.
-                  "Start Challenge Mode" is gated (≥3 cards + this click). */}
-              {phase === "gate" && mission && (
-                <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 px-4 backdrop-blur-sm">
-                  <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-card p-6 text-center">
-                    <span className="text-3xl">{mission.emoji}</span>
-                    <h3 className="mt-2 text-lg font-bold text-foreground">
-                      {mission.title}
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      What would you like to do next?
-                    </p>
-                    <div className="mt-5 flex flex-col gap-2">
-                      {hasMoreCards && (
-                        <Button
-                          className="rounded-full"
-                          onClick={continueLearning}
-                          size="sm"
-                          variant="outline"
-                        >
-                          Continue Learning
-                        </Button>
-                      )}
-                      <Button
-                        className="rounded-full bg-[image:var(--gradient-sunset)] px-6 font-semibold text-white shadow-lg"
-                        onClick={startChallengeMode}
-                        size="sm"
-                      >
-                        Start Challenge Mode
-                      </Button>
-                      <Button
-                        className="rounded-full"
-                        onClick={exitMission}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        Choose Another Topic
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {phase === "results" && challengeResults && mission && (
-                <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 backdrop-blur-sm">
-                  <ChallengeResultsScreen
-                    missionTitle={mission.title}
-                    onContinue={handleMissionContinue}
-                    onReview={
-                      challengeResults.questionCount -
-                        challengeResults.finalScore >
-                      0
-                        ? handleMissionReview
-                        : undefined
-                    }
-                    results={challengeResults}
-                  />
-                </div>
-              )}
 
               <TopicSelectScreen />
 
