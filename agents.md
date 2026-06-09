@@ -568,3 +568,13 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 - The session JWT still carries `role`/`type` from login time; `approvalStatus` is intentionally read fresh in the chat route (not the token) so approval is immediate. The admin link in the sidebar uses the session `role`, so a freshly-promoted admin must re-login to see it (premium gating itself doesn't need re-login).
 - Guest accounts have non-anonymous-flagged `guest-*` emails in this DB; the admin user list filters them by `email NOT LIKE 'guest-%'`.
 - Migrations `0008`–`0010` applied to the dev DB directly; a future `pnpm db:generate` will still prompt about un-regenerated snapshots.
+
+---
+
+## Phase 38 Log: Fix "No questions available" — Seed Archetypes + Mission-Slug Aliasing
+
+- **Status:** Completed
+- **Symptom:** Challenge Mode threw `No questions available for this lesson yet.` for every topic.
+- **Root cause:** the `QuestionArchetype` table (created by migration `0008`) was **never seeded** in this DB — 0 rows. Compounding it, the archetype JSON used authoring slugs (`ratio-and-proportion`, `angles-and-geometry`, `powers-and-standard-form`, plus `equations`/`statistics`) that don't match the DB `Mission.slug`s the client sends (`ratio-proportion`, `angles-geometry`, `indices-standard-form`), so even after seeding the `getSkillSlugsForMission` lookup would miss.
+- **Fix:** added a `MISSION_SLUG_ALIASES` map to `scripts/seed-question-archetypes.ts` (`canonicalMissionSlug`) that rewrites authoring slugs → canonical DB mission slugs at seed time (`equations`→`algebra-basics`, `statistics`→`straight-line-graphs`, etc.), then ran `pnpm seed:question-archetypes`.
+- **Verified (live DB):** 39 archetypes seeded; every archetype `missionSlug` now matches a `Mission` (algebra-basics 17, percentages 7, probability 4, straight-line-graphs 4, angles-geometry 3, ratio-proportion 3, indices-standard-form 1 — none orphaned). `/api/adaptive-challenge` now returns a valid question for percentages, ratio-proportion, algebra-basics, probability and straight-line-graphs; answer submission grades correctly (guest mastery null as designed). Test attempt rows cleaned up. `pnpm test:unit` 104/104, seed script lint-clean.

@@ -9,6 +9,24 @@ config({ path: ".env.local" });
 
 const DATA_DIR = path.join(process.cwd(), "data/question-archetypes");
 
+// The archetype JSON uses authoring-friendly mission slugs; the runtime looks
+// questions up by the DB Mission.slug the client sends. Map authoring slugs →
+// the canonical DB mission slug so the adaptive engine can find them.
+const MISSION_SLUG_ALIASES: Record<string, string> = {
+  "angles-and-geometry": "angles-geometry",
+  "ratio-and-proportion": "ratio-proportion",
+  "powers-and-standard-form": "indices-standard-form",
+  // No dedicated "equations" mission — equations are taught under Algebra Basics.
+  equations: "algebra-basics",
+  // No dedicated "statistics" mission yet — keep under straight-line-graphs
+  // (where the distance-time / interpreting-graphs skills live).
+  statistics: "straight-line-graphs",
+};
+
+function canonicalMissionSlug(slug: string): string {
+  return MISSION_SLUG_ALIASES[slug] ?? slug;
+}
+
 type ArchetypeSeed = {
   slug: string;
   subject: string;
@@ -112,7 +130,7 @@ async function main() {
       slug: item.slug,
       subject: item.subject ?? "maths",
       yearGroup: item.yearGroup,
-      missionSlug: item.missionSlug,
+      missionSlug: canonicalMissionSlug(item.missionSlug),
       lessonSlug: item.lessonSlug,
       skillSlug: item.skillSlug,
       gcseDomain: item.gcseDomain,
