@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,13 +21,16 @@ import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AchievementToast } from "./achievement-toast";
 import { Artifact } from "./artifact";
+import { ChallengeMode, type ChallengeResults } from "./challenge-mode";
+import { ChallengeResultsScreen } from "./challenge-results";
 import { ChatHeader } from "./chat-header";
+import { ConceptCardSlides } from "./concept-card-slides";
 import { DataStreamHandler } from "./data-stream-handler";
 import { submitEditedMessage } from "./message-editor";
 import { Messages } from "./messages";
+import { useMission } from "./mission-orchestrator";
 import { MultimodalInput } from "./multimodal-input";
 import { SaraDashboard } from "./sara-dashboard";
-import { TopicEntryOverlay } from "./topic-entry-overlay";
 import { TopicSelectScreen } from "./topic-select-screen";
 
 export function ChatShell() {
@@ -54,6 +57,29 @@ export function ChatShell() {
     confirmLeave,
     cancelLeave,
   } = useActiveChat();
+
+  const {
+    mission,
+    phase,
+    completeCards,
+    finishChallenge,
+    exitMission,
+    isInMission,
+    challengeQuestions,
+    challengeResults,
+  } = useMission();
+
+  const handleMissionContinue = useCallback(() => {
+    exitMission();
+  }, [exitMission]);
+
+  const handleMissionReview = useCallback(() => {
+    exitMission();
+    sendMessage({
+      role: "user",
+      parts: [{ type: "text", text: "I'd like to review my mistakes, please." }],
+    });
+  }, [exitMission, sendMessage]);
 
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(
     null
@@ -118,10 +144,57 @@ export function ChatShell() {
               votes={votes}
             />
 
+            {phase === "cards" && mission && (
+              <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-8 backdrop-blur-sm">
+                <div className="w-full max-w-lg px-4">
+                  <div className="mb-3 text-center">
+                    <span className="text-2xl">{mission.emoji}</span>
+                    <h3 className="mt-1 text-lg font-bold text-foreground">
+                      {mission.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Concept review
+                    </p>
+                  </div>
+                  <ConceptCardSlides
+                    cards={mission.conceptCards}
+                    onComplete={completeCards}
+                    onHelp={() => {
+                      exitMission();
+                      sendMessage({
+                        role: "user",
+                        parts: [
+                          {
+                            type: "text",
+                            text: "Can you explain this concept differently?",
+                          },
+                        ],
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {phase === "results" && challengeResults && mission && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 backdrop-blur-sm">
+                <ChallengeResultsScreen
+                  missionTitle={mission.title}
+                  onContinue={handleMissionContinue}
+                  onReview={
+                    challengeResults.wrong > 0
+                      ? handleMissionReview
+                      : undefined
+                  }
+                  results={challengeResults}
+                />
+              </div>
+            )}
+
             <TopicSelectScreen />
 
             <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-5xl gap-2 border-t-0 bg-background px-3 pb-3 md:px-6 md:pb-4">
-              {!isReadonly && (
+              {!isReadonly && phase !== "challenge" && (
                 <MultimodalInput
                   attachments={attachments}
                   chatId={chatId}
@@ -184,7 +257,28 @@ export function ChatShell() {
 
       <DataStreamHandler />
 
-      <TopicEntryOverlay />
+      {phase === "challenge" && challengeQuestions.length > 0 && mission && (
+        <ChallengeMode
+          missionTitle={mission.title}
+          onComplete={(results: ChallengeResults) =>
+            finishChallenge(results)
+          }
+          onExit={exitMission}
+          onHelp={() => {
+            exitMission();
+            sendMessage({
+              role: "user",
+              parts: [
+                {
+                  type: "text",
+                  text: "I need help with this question.",
+                },
+              ],
+            });
+          }}
+          questions={challengeQuestions}
+        />
+      )}
 
       <AlertDialog
         onOpenChange={(o) => {
