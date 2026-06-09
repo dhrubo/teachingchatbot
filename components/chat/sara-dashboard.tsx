@@ -1,11 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { useActiveChat } from "@/hooks/use-active-chat";
-import { Button } from "@/components/ui/button";
 import { guestRegex } from "@/lib/constants";
 import { SaraMascot } from "@/components/brand/sara-mascot";
 import { PlayerStats } from "@/components/brand/player-stats";
@@ -94,8 +92,6 @@ export function SaraDashboard() {
     });
   }
 
-  const showAuth = !isLoading && (!data?.user || isGuest);
-
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <motion.div
@@ -106,25 +102,6 @@ export function SaraDashboard() {
       >
         {/* ---- Hero ---- */}
         <section className="relative flex flex-col items-center pt-8 text-center">
-          {showAuth && (
-            <div className="absolute right-0 top-0 flex items-center gap-2">
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="rounded-full px-4 text-muted-foreground hover:text-foreground"
-              >
-                <Link href="/login">Sign in</Link>
-              </Button>
-              <Button
-                asChild
-                size="sm"
-                className="rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-4 font-semibold text-white shadow-lg shadow-orange-500/20 transition-transform hover:scale-[1.03] active:scale-[0.98]"
-              >
-                <Link href="/register">Sign up free ✨</Link>
-              </Button>
-            </div>
-          )}
           <SaraMascot size={96} mood="happy" animated />
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
             Learn Maths Without Feeling Stuck
