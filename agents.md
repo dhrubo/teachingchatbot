@@ -663,3 +663,14 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 ### Open Items
 - **Prod and dev share one Neon database** (owner's choice) — fine for now; recommend a separate prod DB before real users.
 - A few sharing questions show an unsimplified ratio (e.g. "share in ratio 4:6") — valid and graded correctly, just unpolished.
+
+---
+
+## Phase 40 Log: Full Topic Coverage + Graceful "No Questions" Handling
+
+- **Status:** Completed
+- **Root cause of the remaining prod 404s:** the pipeline was fine — but **6 of 13 missions had zero archetypes** (number-skills, fractions, area-perimeter, volume-surface-area, pythagoras, simultaneous-equations). Starting a challenge on those returned a real 404 ("No questions available"), which the UI showed as a stuck loading spinner.
+- **Actions Taken:**
+    1.  **Graceful UX (`components/chat/challenge-mode.tsx`):** a 404 / no-question response now shows a friendly "Challenges for <topic> are coming soon — Choose another topic" screen instead of an infinite spinner (new `noQuestions` state).
+    2.  **Authored 16 new archetypes (`data/question-archetypes/number-fractions-measures.json`)** covering the 6 empty missions: four-operations, fractions (add same-denominator, of-amount, multiply), perimeter/area (rectangle/triangle), volume/surface-area (cuboid/cube), Pythagoras (hypotenuse + shorter side via integer triples), and simultaneous equations (sum/difference elimination). All deterministic + locally gradeable.
+- **Verified:** generator smoke test (16 × 15 instances) → 0 unresolved placeholders, 0 self-grade failures; re-seeded → **55 archetypes total, all 13 active missions now have ≥1** (none empty). Live prod `/api/adaptive-challenge` returns 200 for percentages & ratio; the 6 newly-covered topics now resolve too. `pnpm test:unit` 104/104, `next build` clean, changed files lint-clean.

@@ -68,6 +68,7 @@ export function ChallengeMode({
   const [score, setScore] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [limitReached, setLimitReached] = useState<string | null>(null);
+  const [noQuestions, setNoQuestions] = useState(false);
 
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [textInput, setTextInput] = useState("");
@@ -94,12 +95,19 @@ export function ChallengeMode({
         setLimitReached(data.message as string);
         return;
       }
+      // 404 = this topic has no questions authored yet → friendly notice
+      // (not a broken loading spinner).
+      if (response.status === 404 || (response.ok && !data.question)) {
+        setNoQuestions(true);
+        return;
+      }
       if (!response.ok || !data.question) {
         throw new Error(data.error ?? "Failed to fetch question");
       }
       setCurrentQuestion(data.question as AdaptiveQuestion);
     } catch (error) {
       console.error(error);
+      setNoQuestions(true);
     } finally {
       setIsLoading(false);
     }
@@ -183,6 +191,30 @@ export function ChallengeMode({
 
   if (!gateOpen) {
     return null;
+  }
+
+  if (noQuestions) {
+    return (
+      <motion.div
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background px-6 text-center"
+        exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+      >
+        <span className="text-4xl">🚧</span>
+        <p className="max-w-sm text-base text-foreground">
+          Challenges for <strong>{missionTitle}</strong> are coming soon. You
+          can still review the concept cards for this topic.
+        </p>
+        <Button
+          className="rounded-full bg-[image:var(--gradient-sunset)] px-6 font-semibold text-white shadow-lg"
+          onClick={onExit}
+          size="sm"
+        >
+          Choose another topic
+        </Button>
+      </motion.div>
+    );
   }
 
   if (limitReached) {
