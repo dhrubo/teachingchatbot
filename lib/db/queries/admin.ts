@@ -1,12 +1,8 @@
 import "server-only";
 
 import { desc, eq, notLike } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { db } from "@/lib/db/client";
 import { user } from "../schema";
-
-const client = postgres(process.env.POSTGRES_URL ?? "");
-const db = drizzle(client);
 
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 

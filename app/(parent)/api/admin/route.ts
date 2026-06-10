@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
+import { checkAdminRateLimit } from "@/lib/ratelimit";
 import { getRegularUsers, setUserApprovalStatus } from "@/lib/db/queries/admin";
 import {
   getActiveMissionCount,
@@ -43,8 +44,15 @@ export async function GET() {
 
 // Admin-only: approve / reject / reset a user's premium access.
 export async function POST(req: NextRequest) {
-  if (!(await requireAdmin())) {
+  const adminSession = await requireAdmin();
+  if (!adminSession) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  try {
+    await checkAdminRateLimit(adminSession.user.id);
+  } catch {
+    return NextResponse.json({ error: "too many requests" }, { status: 429 });
   }
 
   const { userId, status } = (await req.json()) as {

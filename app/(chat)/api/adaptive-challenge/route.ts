@@ -66,17 +66,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const next = lessonSlug
-      ? await selectNextQuestionForLesson({
-          studentId: "studentId" in caller ? caller.studentId : undefined,
-          guestSessionId: caller.isGuest ? caller.guestSessionId : undefined,
-          lessonSlug,
-        })
-      : await selectNextQuestionForMission({
-          studentId: "studentId" in caller ? caller.studentId : undefined,
-          guestSessionId: caller.isGuest ? caller.guestSessionId : undefined,
-          missionSlug: missionSlug as string,
-        });
+    let next: Awaited<ReturnType<typeof selectNextQuestionForMission>> = null;
+    try {
+      next = lessonSlug
+        ? await selectNextQuestionForLesson({
+            studentId: "studentId" in caller ? caller.studentId : undefined,
+            guestSessionId: caller.isGuest ? caller.guestSessionId : undefined,
+            lessonSlug,
+          })
+        : await selectNextQuestionForMission({
+            studentId: "studentId" in caller ? caller.studentId : undefined,
+            guestSessionId: caller.isGuest ? caller.guestSessionId : undefined,
+            missionSlug: missionSlug as string,
+          });
+    } catch (err) {
+      console.error("[adaptive-challenge] engine error:", err, {
+        missionSlug,
+        isGuest: caller.isGuest,
+      });
+      return NextResponse.json(
+        { error: "Failed to generate question." },
+        { status: 500 }
+      );
+    }
 
     if (!next) {
       return NextResponse.json(

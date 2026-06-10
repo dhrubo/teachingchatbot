@@ -18,7 +18,7 @@ const FileSchema = z.object({
 export async function POST(request: Request) {
   const session = await auth();
 
-  if (!session) {
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -49,8 +49,9 @@ export async function POST(request: Request) {
     const fileBuffer = await file.arrayBuffer();
 
     try {
-      const data = await put(`${safeName}`, fileBuffer, {
+      const data = await put(`${session.user.id}/${safeName}`, fileBuffer, {
         access: "public",
+        addRandomSuffix: true,
       });
 
       return NextResponse.json(data);

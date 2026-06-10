@@ -1,8 +1,7 @@
 import "server-only";
 
 import { and, asc, desc, eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { db } from "@/lib/db/client";
 import { ChatbotError } from "@/lib/errors";
 import {
   type StudentGoal,
@@ -10,9 +9,6 @@ import {
   studentGoal,
   studentProfile,
 } from "../schema";
-
-const client = postgres(process.env.POSTGRES_URL ?? "");
-const db = drizzle(client);
 
 // --- Student profile ---
 

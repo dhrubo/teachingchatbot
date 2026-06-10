@@ -1,8 +1,7 @@
 import "server-only";
 
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { db } from "@/lib/db/client";
 import type { DifficultyBand } from "@/lib/adaptive/update-mastery";
 import {
   type QuestionArchetype,
@@ -11,9 +10,6 @@ import {
   type StudentSkillMastery,
   studentSkillMastery,
 } from "../schema";
-
-const client = postgres(process.env.POSTGRES_URL ?? "");
-const db = drizzle(client);
 
 /** Distinct skill slugs that have active archetypes for a given lesson slug. */
 export async function getSkillSlugsForLesson(

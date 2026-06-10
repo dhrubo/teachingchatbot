@@ -1,10 +1,12 @@
 import { getTutorProviderCandidates } from "@/lib/ai/providers";
+import { auth } from "@/app/(auth)/auth";
 import { isProductionEnvironment } from "@/lib/constants";
 
 export async function GET() {
-  if (isProductionEnvironment) {
+  const session = await auth();
+  if (session?.user?.role !== "admin") {
     return Response.json(
-      { error: "Not available in production" },
+      { error: "Not available" },
       { status: 404 }
     );
   }

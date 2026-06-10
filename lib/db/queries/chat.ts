@@ -13,8 +13,7 @@ import {
   lt,
   type SQL,
 } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { db } from "@/lib/db/client";
 import type { VisibilityType } from "@/components/chat/visibility-selector";
 import { ChatbotError } from "@/lib/errors";
 import {
@@ -26,9 +25,6 @@ import {
   user,
   vote,
 } from "../schema";
-
-const client = postgres(process.env.POSTGRES_URL ?? "");
-const db = drizzle(client);
 
 export async function saveChat({
   id,

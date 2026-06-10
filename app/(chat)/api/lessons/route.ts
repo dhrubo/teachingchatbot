@@ -1,16 +1,17 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { db } from "@/lib/db/client";
 import { type NextRequest, NextResponse } from "next/server";
-import postgres from "postgres";
+import { auth } from "@/app/(auth)/auth";
 import { conceptCard, lesson, mission } from "@/lib/db/schema";
-
-const client = postgres(process.env.POSTGRES_URL ?? "");
-const db = drizzle(client);
 
 // GET /api/lessons?year=8          → list missions
 // GET /api/lessons?mission=X       → list lessons for a mission
 // GET /api/lessons?lesson=Y        → get lesson + concept cards + randomized questions
 export async function GET(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { searchParams } = new URL(req.url);
   const yearParam = searchParams.get("year");
   const missionSlug = searchParams.get("mission");

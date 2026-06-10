@@ -1,12 +1,8 @@
 import "server-only";
 
 import { desc, eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { db } from "@/lib/db/client";
 import { mission, type TopicRequest, topicRequest } from "../schema";
-
-const client = postgres(process.env.POSTGRES_URL ?? "");
-const db = drizzle(client);
 
 export function normaliseTopicText(text: string): string {
   return text

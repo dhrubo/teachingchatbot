@@ -75,6 +75,9 @@ async function selectFromSkills(params: {
   const rng = params.rng ?? Math.random;
   const skillSlugs = params.skillSlugs;
   if (skillSlugs.length === 0) {
+    console.warn(
+      "[adaptive-engine] no skill slugs found for mission/lesson"
+    );
     return null;
   }
 
@@ -103,6 +106,10 @@ async function selectFromSkills(params: {
 
   const archetypes = await getArchetypesForSkillBand(skillSlug, band);
   if (archetypes.length === 0) {
+    console.warn(
+      "[adaptive-engine] no archetypes for",
+      { skillSlug, band }
+    );
     return null;
   }
 
@@ -121,6 +128,10 @@ async function selectFromSkills(params: {
 
   const generated = generateFromArchetype(archetype, rng);
   if (!generated) {
+    console.warn(
+      "[adaptive-engine] generateFromArchetype returned null",
+      { slug: archetype.slug }
+    );
     return null;
   }
 

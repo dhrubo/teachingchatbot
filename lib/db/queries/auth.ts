@@ -1,16 +1,12 @@
 import "server-only";
 
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { db } from "@/lib/db/client";
 import { ChatbotError } from "@/lib/errors";
 import { generateUUID } from "@/lib/utils";
 import { type User, user } from "../schema";
 import { generateHashedPassword } from "../utils";
 import { deleteExpiredGuestChats } from "./chat";
-
-const client = postgres(process.env.POSTGRES_URL ?? "");
-const db = drizzle(client);
 
 export async function getUser(email: string): Promise<User[]> {
   try {
