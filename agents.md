@@ -620,3 +620,46 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
   8. **`lib/challenge-gate.ts`**: Added `review_mistakes` and `content_complete` to `consentStateForPhase` map (→ `"complete"` consent state).
   9. **`lib/ai/prompts-tutor.ts`**: Added CRITICAL UX RULE: every explanation must end with a CTA; never restart onboarding or replay cards unless explicitly requested.
 - **Verified:** `pnpm test:unit` 104/104 pass. `pnpm build` clean. All files lint-clean.
+
+---
+
+## Phase 41 Log: Security Audit — 16 CRITICAL/HIGH Fixes Applied
+
+- **Status:** Completed
+- **Trigger:** User requested security audit before sharing the codebase on GitHub.
+- **Audit scope:** Authentication, API route protection, secrets management, rate limiting, dependency vulnerabilities, data access controls, guest isolation, error handling.
+- **Findings addressed (CRITICAL + HIGH):**
+  1. **proxy.ts misnamed/not loaded** — `proxy.ts` had a named `proxy` export but Next.js 16.2.0 didn't load it (convention changed in 16.2.5). Renamed to `middleware.ts` → then reverted to `proxy.ts` after updating to Next 16.2.5 which supports the new Proxy convention. Verified `ƒ Proxy (Middleware)` in build output.
+  2. **`trustHost: true` in auth.config.ts** — Disables NextAuth's CSRF origin check. Removed. The app relies on Vercel's host header verification instead.
+  3. **File uploads publicly accessible** — Changed from `access: "public"` to scoped under `session.user.id/` with `addRandomSuffix: true`. Added `session.user` check (was checking `session` only).
+  4. **Email enumeration via registration** — Removed `user_exists` status from register action type. Returns generic `failed` for both existing-user and actual-failure cases.
+  5. **Lessons API completely unauthenticated** — Added `auth()` call with 401 for unauthenticated requests.
+  6. **Debug endpoints leak provider config** — `/api/debug/ai-provider` and `/api/debug/ai-calls` now gated on `session.user.role === "admin"` instead of just `isProductionEnvironment`.
+  7. **Rate limiting Redis-only (no fallback)** — Rewrote `checkIpRateLimit` with in-memory `Map` fallback when Redis is unavailable. Added `checkAdminRateLimit` for admin POST endpoints. Applied to admin approval endpoint.
+  8. **`next` 16.2.0 → 16.2.5** — Updated from 16.2.0 to 16.2.5, fixing 20+ high-severity dependency vulnerabilities (HttpOnly bypass, cache poisoning, undici memory issues).
+  9. **8 separate Postgres client instances** — Consolidated all `lib/db/queries/*.ts` and `app/(chat)/api/lessons/route.ts` to use a single shared `lib/db/client.ts` with `POSTGRES_URL` validation (throws on missing, no `?? ""` fallback).
+  10. **Adaptive-challenge 404 in production** — Added diagnostic logging to engine.ts (`[adaptive-engine]` prefixed) and adaptive-challenge route.ts to trace the exact failure point (skill slugs not found / no archetypes / generation failure). Logs appear in Vercel function logs.
+  11. **Stale `.env` with real Vertex AI key** — Deleted from disk. User should rotate the key in Google Cloud Console.
+  12. **Admin POST endpoint no rate limiting** — Added `checkAdminRateLimit()` (20 actions/minute per user, in-memory).
+- **Not addressed (defense-in-depth, already gated at higher layer):**
+  - Student query ownership (`manageGoals` tool already verifies `student.userId === session.user.id`)
+  - `deleteChatById`/`updateChatVisibilityById` internal ownership guard (callers already verify)
+  - `correctAnswer` returned to client (required for local grading — intentional design)
+- **Deployed:** `9886b6f` → production at teachingchatbot-snowy.vercel.app
+- **Verified:** `pnpm test:unit` 104/104, `pnpm build` clean, `ƒ Proxy (Middleware)` in build output.
+
+---
+
+## Phase 39 Log: Production DB Wiring + Seed-Data Quality Fixes
+
+- **Status:** Completed
+- **Production 404 root cause:** `/api/adaptive-challenge` returned 404 in prod because **production had no database connection** — every DB env var (`POSTGRES_URL`, `DATABASE_URL`, `PGHOST`, …) was empty in Vercel. (`vercel env pull` redacts encrypted values to `""`, which masked it; the deployed function ran but `postgres("")` couldn't connect, so question lookups returned null → 404.)
+- **Fix (config):** set `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `DATABASE_URL`, `DATABASE_URL_UNPOOLED` in Vercel **production** to the Neon DB (same one as dev, per the owner's choice) and redeployed. Build logs confirm `migrate → seed (39 archetypes) → next build` ran against the prod DB; the live endpoint now returns **200** with real questions for percentages/ratio/algebra/probability/straight-line-graphs. Also made the build self-heal: `build` = `migrate && seed-question-archetypes && next build` (idempotent seed).
+- **Seed-data quality fixes:**
+    1.  **`{answer}` / `{expr}` placeholders rendered literally** in hints/explanations. Generalised `substitute()` in `lib/questions/generate-from-archetype.ts` to **evaluate** each `{...}` as an expression against the variable bag (so `{a+b}`, `{price*pct/100}`, `{answer}` all resolve), with literal fallback. Injected the computed `answer` into the hint/explanation scope. Fixed 19 archetypes at once with no JSON edits.
+    2.  **Degenerate ratio questions** ("ratio 5:5, 0 more dogs"). Reworked `data/question-archetypes/ratio.json` so the second part is derived/distinct: `ratio_simplify` uses a coprime `pairs` tuple pool; `ratio_share_total` and `ratio_difference_given` derive `b = a + gap` (gap ≥ 1) so the larger share / positive difference are always well-defined.
+- **Verified:** generator smoke test over all 39 archetypes × 12 instances — **0 unresolved `{...}`, 0 self-grade failures**; ratio questions now read sensibly ("ratio 2:5, 30 more dogs → 70"); explanations substitute the answer ("10% of 60 = 10/100 × 60 = 6."). `pnpm test:unit` 104/104, generator lint-clean. Re-seeded the shared DB.
+
+### Open Items
+- **Prod and dev share one Neon database** (owner's choice) — fine for now; recommend a separate prod DB before real users.
+- A few sharing questions show an unsimplified ratio (e.g. "share in ratio 4:6") — valid and graded correctly, just unpolished.

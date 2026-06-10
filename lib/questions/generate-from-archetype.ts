@@ -130,14 +130,21 @@ function resolveVariables(
   return out;
 }
 
-// Substitute {var} placeholders in a template string.
+// Substitute {expr} placeholders in a template string. Each placeholder is
+// evaluated as a JS expression against the variable bag (so "{a}", "{a+b}",
+// "{price*pct/100}" and "{answer}" all work). Falls back to the literal text if
+// the expression can't be evaluated, so a stray brace never breaks rendering.
 function substitute(
   template: string,
-  variables: Record<string, number | string>
+  scope: Record<string, number | string>
 ): string {
-  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in variables ? `${variables[name]}` : match
-  );
+  return template.replace(/\{([^{}]+)\}/g, (match, expr: string) => {
+    try {
+      return `${evaluateExpression(expr, scope)}`;
+    } catch {
+      return match;
+    }
+  });
 }
 
 function buildOptions(archetype: QuestionArchetype): string[] | null {
@@ -165,11 +172,13 @@ export function generateFromArchetype(
       archetype.answerExpression,
       variables
     );
+    // Hints/explanations may reference the computed answer via {answer}.
+    const withAnswer = { ...variables, answer: correctAnswer };
     const hint = archetype.hintTemplate
-      ? substitute(archetype.hintTemplate, variables)
+      ? substitute(archetype.hintTemplate, withAnswer)
       : null;
     const explanation = archetype.explanationTemplate
-      ? substitute(archetype.explanationTemplate, variables)
+      ? substitute(archetype.explanationTemplate, withAnswer)
       : null;
     const options = buildOptions(archetype);
 
