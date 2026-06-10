@@ -1,3 +1,4 @@
+import { Parser } from "expr-eval";
 import type { QuestionArchetype } from "@/lib/db/schema";
 import { ANSWER_HELPERS } from "./answer-helpers";
 
@@ -15,69 +16,30 @@ export type GeneratedQuestionValue = {
   rules: Record<string, unknown>;
 };
 
-const HELPER_NAMES = Object.keys(ANSWER_HELPERS);
-const HELPER_VALUES = Object.values(ANSWER_HELPERS);
-
-// JS reserved words that a seed author might legitimately use as a variable
-// name (e.g. {new} for a new price). These get aliased before evaluation.
-const RESERVED = new Set([
-  "new",
-  "var",
-  "let",
-  "const",
-  "delete",
-  "in",
-  "do",
-  "if",
-  "else",
-  "return",
-  "function",
-  "class",
-  "this",
-  "void",
-  "with",
-]);
-
-function safeName(name: string): string {
-  return RESERVED.has(name) ? `__${name}` : name;
-}
-
-// Rewrite whole-word references to reserved-name variables in an expression.
-function aliasExpression(expression: string, scopeNames: string[]): string {
-  let out = expression;
-  for (const name of scopeNames) {
-    if (RESERVED.has(name)) {
-      out = out.replace(new RegExp(`\\b${name}\\b`, "g"), safeName(name));
-    }
-  }
-  return out;
-}
-
 // Evaluate an archetype expression string against the resolved variable bag.
-// Expressions are author-controlled seed data (never user input), and only the
-// whitelisted ANSWER_HELPERS plus the bound variables are in scope.
+// Uses expr-eval Parser which has no access to Node.js globals, file I/O, or
+// prototype pollution — safe even if expressions came from untrusted input.
 function evaluateExpression(
   expression: string,
   scope: Record<string, unknown>
 ): unknown {
-  const scopeNames = Object.keys(scope);
-  const aliasedNames = scopeNames.map(safeName);
-  const scopeValues = Object.values(scope);
-  const aliased = aliasExpression(expression, scopeNames);
-  const fn = new Function(
-    ...HELPER_NAMES,
-    ...aliasedNames,
-    `"use strict"; return (${aliased});`
-  );
-  return fn(...HELPER_VALUES, ...scopeValues);
+  const parser = new Parser({ operators: { comparison: true, concatenate: false } });
+  const mergedScope = { ...ANSWER_HELPERS, ...scope };
+  const normalized = expression.replace(/===/g, "==").replace(/!==/g, "!=");
+  if (normalized.startsWith("`") && normalized.endsWith("`")) {
+    const inner = normalized.slice(1, -1);
+    return inner.replace(/\${([^}]+)}/g, (_, expr) =>
+      String(parser.evaluate(expr, mergedScope as any))
+    );
+  }
+  return parser.evaluate(normalized, mergedScope as any);
 }
 
-// A template-literal style expression like "`${a+b}x`". We wrap raw values too.
 function evaluateTemplate(
   expression: string,
   scope: Record<string, unknown>
 ): string {
-  return `${evaluateExpression(expression, scope)}`;
+  return String(evaluateExpression(expression, scope));
 }
 
 const pickRandom = <T>(arr: T[], rng: () => number): T =>
