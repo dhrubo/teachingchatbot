@@ -15,8 +15,9 @@
       "!components/ai-elements",
       "!components/elements",
       "!components/ui",
+      "!hooks/use-mobile.ts",
       "!lib/utils.ts",
-      "!hooks/use-mobile.ts"
+      "!.superpowers"
     ]
   },
   "linter": {
