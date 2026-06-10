@@ -1,5 +1,3 @@
-"use client";
-
 export type LessonAction =
   | "continue_learning"
   | "start_challenge"
