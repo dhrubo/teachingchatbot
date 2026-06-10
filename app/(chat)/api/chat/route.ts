@@ -23,6 +23,7 @@ import {
   getModelCapabilities,
 } from "@/lib/ai/models";
 import { TUTOR_SYSTEM_PROMPT } from "@/lib/ai/prompts-tutor";
+import { VISIBLE_TOOL_TYPES, hasRenderableContent } from "@/lib/ai/visible-tools";
 import { getTutorProviderCandidates, isUsingGateway } from "@/lib/ai/providers";
 import { streamTextWithFallback } from "@/lib/ai/stream-with-provider-fallback";
 import { createChatTitle, isLLMTitleEnabled } from "@/lib/ai/title";
@@ -64,30 +65,7 @@ function getStreamContext() {
 
 export { getStreamContext };
 
-// Tools whose output the student actually sees. Must mirror the client's
-// VISIBLE_TOOL_TYPES (hooks/use-active-chat.tsx): askQuestion renders a
-// challenge card, emitChallengeBundle drives the answer panel. Silent
-// persistence tools (updateTopicProgress, manageGoals, …) render nothing.
-const VISIBLE_TOOL_TYPES = new Set([
-  "tool-askQuestion",
-]);
-
-// True if a message carries something the STUDENT can see: non-empty text, or
-// a VISIBLE tool call with output. Step markers, empty text, and silent
-// tool-only turns don't count — so a content-less assistant turn isn't
-// persisted as a blank/invisible bubble the student can't get past.
-function hasRenderableContent(message: { parts?: unknown[] }): boolean {
-  return (message.parts ?? []).some((part) => {
-    const p = part as { type?: string; text?: string; output?: unknown };
-    if (p.type === "text") {
-      return (p.text ?? "").trim().length > 0;
-    }
-    if (typeof p.type === "string" && VISIBLE_TOOL_TYPES.has(p.type)) {
-      return p.output !== undefined;
-    }
-    return false;
-  });
-}
+// VISIBLE_TOOL_TYPES and hasRenderableContent live in lib/ai/visible-tools.ts
 
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;

@@ -32,6 +32,7 @@ import {
 } from "@/lib/active-question";
 import type { ChallengeBundle } from "@/lib/ai/challenge-bundle";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+import { VISIBLE_TOOL_TYPES, hasRenderableContent } from "@/lib/ai/visible-tools";
 import type { Vote } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
 import { playSound } from "@/lib/sounds";
@@ -101,29 +102,7 @@ type ActiveChatContextValue = {
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
 
-// Tools whose output is actually shown to the student (askQuestion renders a
-// challenge card). Other tools (updateStudentProfile, manageGoals,
-// startNewTopicSession, getCurriculumTopics) persist data or steer state but
-// render NOTHING in the thread — a turn made up only of those is invisible to
-// the student, which looks like "nothing happened / old explanations remain".
-const VISIBLE_TOOL_TYPES = new Set([
-  "tool-askQuestion",
-]);
-
-// True if a message has something the STUDENT can see: non-empty text or a
-// visible tool call with output. Silent persistence tools don't count, so a
-// tool-only-silent turn is treated as content-less and triggers the retry.
-function hasRenderableContent(message: ChatMessage): boolean {
-  return (message.parts ?? []).some((part) => {
-    if (part.type === "text") {
-      return (part.text ?? "").trim().length > 0;
-    }
-    if (VISIBLE_TOOL_TYPES.has(part.type)) {
-      return (part as { output?: unknown }).output !== undefined;
-    }
-    return false;
-  });
-}
+// VISIBLE_TOOL_TYPES and hasRenderableContent live in lib/ai/visible-tools.ts
 
 function extractChatId(pathname: string): string | null {
   const match = pathname.match(/\/chat\/([^/]+)/);
