@@ -79,6 +79,8 @@ export function consentStateForPhase(
     case "challenge":
       return "active";
     case "results":
+    case "review_mistakes":
+    case "content_complete":
     case "complete":
       return "complete";
     default:

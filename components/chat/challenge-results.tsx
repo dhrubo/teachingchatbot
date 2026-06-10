@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import type { ChallengeResults } from "./challenge-mode";
+import type { ChallengeResults, WrongAnswerRecord } from "./challenge-mode";
 
 type ChallengeResultsScreenProps = {
   results: ChallengeResults;
@@ -16,6 +16,18 @@ function starRating(score: number, total: number): string {
   return "⭐".repeat(Math.max(0, filled)) + "☆".repeat(Math.max(0, 5 - filled));
 }
 
+function strongSkills(wrong: WrongAnswerRecord[]): string[] {
+  // Identify skills the student got right — for now, we infer from absence in wrong list.
+  const wrongSlugs = new Set(wrong.map((w) => w.skillSlug));
+  return wrongSlugs.size > 0 ? [] : ["Good progress across all skills"];
+}
+
+function weakSkills(wrong: WrongAnswerRecord[]): string[] {
+  const slugs = [...new Set(wrong.map((w) => w.skillSlug))];
+  if (slugs.length === 0) return [];
+  return slugs.map((s) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()));
+}
+
 export function ChallengeResultsScreen({
   results,
   missionTitle,
@@ -23,13 +35,18 @@ export function ChallengeResultsScreen({
   onReview,
 }: ChallengeResultsScreenProps) {
   const pct =
-    results.questionCount > 0 ? Math.round((results.finalScore / results.questionCount) * 100) : 0;
+    results.questionCount > 0
+      ? Math.round((results.finalScore / results.questionCount) * 100)
+      : 0;
   const wrongCount = results.questionCount - results.finalScore;
+  const wrong = results.wrongAnswers ?? [];
+  const weak = weakSkills(wrong);
+  const strong = strongSkills(wrong);
 
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center px-6 py-12 text-center"
+      className="mx-auto flex w-full max-w-md flex-col items-center px-6 py-12 text-center"
       exit={{ opacity: 0, y: 20 }}
       initial={{ opacity: 0, y: 20 }}
     >
@@ -52,21 +69,50 @@ export function ChallengeResultsScreen({
       <p className="mb-6 text-xs text-muted-foreground">
         Correct: {results.finalScore} • Wrong: {wrongCount} • Accuracy: {pct}%
       </p>
-      <div className="flex gap-3">
+
+      {/* Strong Skills */}
+      {strong.length > 0 && (
+        <div className="mb-4 w-full rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 text-left">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-green-600">
+            ✓ Strong Skills
+          </p>
+          {strong.map((s) => (
+            <p className="text-sm text-foreground/80" key={s}>
+              ✓ {s}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Needs Practice */}
+      {weak.length > 0 && (
+        <div className="mb-6 w-full rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-left">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-600">
+            ⚠ Needs Practice
+          </p>
+          {weak.map((s) => (
+            <p className="text-sm text-foreground/80" key={s}>
+              ⚠ {s}
+            </p>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-wrap justify-center gap-3">
         {onReview && wrongCount > 0 && (
           <Button
             className="rounded-full border border-border/60 bg-card px-5 text-sm text-foreground shadow-sm"
             onClick={onReview}
             variant="outline"
           >
-            Review mistakes
+            Review Mistakes
           </Button>
         )}
         <Button
           className="rounded-full bg-[image:var(--gradient-sunset)] px-6 font-semibold text-white shadow-lg"
           onClick={onContinue}
         >
-          Continue learning →
+          Continue Learning →
         </Button>
       </div>
     </motion.div>

@@ -26,13 +26,16 @@ import { ChallengeMode, type ChallengeResults } from "./challenge-mode";
 import { ChallengeResultsScreen } from "./challenge-results";
 import { ChatHeader } from "./chat-header";
 import { ConceptCardSlides } from "./concept-card-slides";
+import { ContentCompleteScreen } from "./content-complete-screen";
 import { DataStreamHandler } from "./data-stream-handler";
 import { submitEditedMessage } from "./message-editor";
 import { Messages } from "./messages";
 import { useMission } from "./mission-orchestrator";
 import { MultimodalInput } from "./multimodal-input";
+import { ReviewMistakesScreen } from "./review-mistakes-screen";
 import { SaraDashboard } from "./sara-dashboard";
 import { TopicSelectScreen } from "./topic-select-screen";
+import type { LessonAction } from "@/lib/learning-state-machine";
 
 export function ChatShell() {
   const {
@@ -73,24 +76,43 @@ export function ChatShell() {
     finishChallenge,
     exitMission,
     challengeResults,
+    wrongAnswers,
+    allowedActions,
+    startReviewMistakes,
+    retrySimilar,
+    showAnotherExample,
+    performAction,
   } = useMission();
 
-  // ActiveMission.slug is already the bare slug the adaptive engine keys off.
   const missionSlug = mission?.slug ?? "";
 
   const handleMissionContinue = useCallback(() => {
     exitMission();
   }, [exitMission]);
 
-  const handleMissionReview = useCallback(() => {
-    exitMission();
-    sendMessage({
-      role: "user",
-      parts: [
-        { type: "text", text: "I'd like to review my mistakes, please." },
-      ],
-    });
-  }, [exitMission, sendMessage]);
+  const handleMissionAction = useCallback(
+    (action: LessonAction) => {
+      if (action === "choose_topic" || action === "next_mission") {
+        exitMission();
+      } else if (action === "start_challenge") {
+        startChallengeMode();
+      } else if (action === "review_mistakes") {
+        startReviewMistakes();
+      } else if (action === "retry_similar") {
+        retrySimilar();
+      } else if (action === "show_example" || action === "continue_learning") {
+        continueLearning();
+      }
+    },
+    [exitMission, startChallengeMode, startReviewMistakes, retrySimilar, continueLearning]
+  );
+
+  const handleChallengeComplete = useCallback(
+    (results: ChallengeResults) => {
+      finishChallenge(results, results.wrongAnswers ?? []);
+    },
+    [finishChallenge]
+  );
 
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(
     null
@@ -135,10 +157,7 @@ export function ChatShell() {
             </div>
           )}
 
-          {/* ---- Mission overlays (concept cards → lesson footer → results) ----
-              Rendered at the panel level so they appear whether or not there are
-              chat messages yet. The full-screen Challenge phase is rendered
-              separately at the document root below. */}
+          {/* ---- Loading ---- */}
           {isInMission && phase === "loading" && mission && (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-background/95 backdrop-blur-sm">
               <span className="animate-pulse text-3xl">{mission.emoji}</span>
@@ -148,6 +167,7 @@ export function ChatShell() {
             </div>
           )}
 
+          {/* ---- Concept Cards ---- */}
           {isInMission && phase === "cards" && mission && (
             <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-8 backdrop-blur-sm">
               <div className="w-full max-w-lg px-4">
@@ -172,9 +192,7 @@ export function ChatShell() {
             </div>
           )}
 
-          {/* LESSON FOOTER — shown after a batch of cards. The challenge is
-              NEVER started automatically: the student explicitly chooses.
-              "Start Challenge Mode" is gated (≥3 cards + this click). */}
+          {/* ---- Lesson Footer / Gate ---- */}
           {isInMission && phase === "gate" && mission && (
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 px-4 backdrop-blur-sm">
               <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-card p-6 text-center">
@@ -216,6 +234,32 @@ export function ChatShell() {
             </div>
           )}
 
+          {/* ---- Review Mistakes ---- */}
+          {isInMission && phase === "review_mistakes" && mission && (
+            <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-6 backdrop-blur-sm">
+              <ReviewMistakesScreen
+                missionTitle={mission.title}
+                missionEmoji={mission.emoji}
+                wrongAnswers={wrongAnswers}
+                allowedActions={allowedActions}
+                onAction={handleMissionAction}
+              />
+            </div>
+          )}
+
+          {/* ---- Content Complete (end of lesson cards) ---- */}
+          {isInMission && phase === "content_complete" && mission && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 backdrop-blur-sm">
+              <ContentCompleteScreen
+                missionTitle={mission.title}
+                missionEmoji={mission.emoji}
+                allowedActions={allowedActions}
+                onAction={handleMissionAction}
+              />
+            </div>
+          )}
+
+          {/* ---- Results ---- */}
           {isInMission &&
             phase === "results" &&
             challengeResults &&
@@ -228,7 +272,7 @@ export function ChatShell() {
                     challengeResults.questionCount -
                       challengeResults.finalScore >
                     0
-                      ? handleMissionReview
+                      ? () => handleMissionAction("review_mistakes")
                       : undefined
                   }
                   results={challengeResults}
@@ -332,7 +376,7 @@ export function ChatShell() {
           consentState={consentState}
           missionSlug={missionSlug}
           missionTitle={mission.title}
-          onComplete={(results: ChallengeResults) => finishChallenge(results)}
+          onComplete={handleChallengeComplete}
           onExit={exitMission}
           onHelp={() => {
             exitMission();

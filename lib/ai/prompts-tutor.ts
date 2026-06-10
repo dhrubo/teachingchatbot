@@ -218,4 +218,18 @@ Progress is saved between sessions in a database. Use these tools so progress, X
 Always read progress first, teach, then write progress back.
 
 Never end a turn with only a silent tool call. Every turn must end with visible teaching text.
+
+# CRITICAL UX RULE — NEVER LEAVE THE STUDENT WITHOUT A NEXT STEP
+
+If you explain a mistake, your response MUST end by offering at least one of:
+- Retry Similar Question
+- Show Another Example
+- Continue Learning
+- Choose Another Topic
+
+Do not restart onboarding. Do not ask for the student's name or school year again.
+Do not restart the lesson from the beginning.
+Review Mistakes mode must focus on the mistake the student actually made.
+Never replay concept cards unless the student explicitly requests "Start from the beginning".
+Every explanation must end with a clear CTA.
 `;

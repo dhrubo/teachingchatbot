@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { XIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   type ChallengeConsentState,
@@ -13,8 +13,6 @@ import { gradeAnswer } from "@/lib/questions/grade-answer";
 import { playSound } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
 
-// A fully-rendered adaptive question. correctAnswer + rules let us grade locally
-// with ZERO further calls during the 5-question run.
 type AdaptiveQuestion = {
   archetypeId: string;
   archetypeSlug: string;
@@ -29,14 +27,23 @@ type AdaptiveQuestion = {
   explanation: string | null;
 };
 
+export type WrongAnswerRecord = {
+  questionNumber: number;
+  prompt: string;
+  studentAnswer: string;
+  correctAnswer: string;
+  explanation: string | null;
+  skillSlug: string;
+  difficultyBand: string;
+};
+
 export type ChallengeResults = {
   finalScore: number;
   questionCount: number;
+  wrongAnswers: WrongAnswerRecord[];
 };
 
 type ChallengeModeProps = {
-  // The consent state from the mission orchestrator. ChallengeMode renders its
-  // questions ONLY when this is "active" — never inline, never before consent.
   consentState: ChallengeConsentState;
   missionSlug: string;
   missionTitle: string;
@@ -65,7 +72,8 @@ export function ChallengeMode({
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [textInput, setTextInput] = useState("");
 
-  // HARD GATE: never fetch a question unless Challenge Mode is genuinely active.
+  const wrongRef = useRef<WrongAnswerRecord[]>([]);
+
   const gateOpen = canShowChallengeQuestion(consentState);
 
   const fetchNextQuestion = useCallback(async () => {
@@ -97,7 +105,6 @@ export function ChallengeMode({
     }
   }, [gateOpen, missionSlug]);
 
-  // Persist the attempt + update mastery server-side (grading already done).
   const submitAnswer = async (question: AdaptiveQuestion, answer: string) => {
     try {
       await fetch("/api/adaptive-challenge", {
@@ -127,7 +134,6 @@ export function ChallengeMode({
     if (feedback || !currentQuestion) {
       return;
     }
-    // Local grading — ZERO LLM calls.
     const isCorrect = gradeAnswer({
       studentAnswer: answer,
       correctAnswer: currentQuestion.correctAnswer,
@@ -138,6 +144,15 @@ export function ChallengeMode({
       playSound("success");
     } else {
       playSound("wrong");
+      wrongRef.current.push({
+        questionNumber,
+        prompt: currentQuestion.prompt,
+        studentAnswer: answer,
+        correctAnswer: currentQuestion.correctAnswer,
+        explanation: currentQuestion.explanation,
+        skillSlug: currentQuestion.skillSlug,
+        difficultyBand: currentQuestion.difficultyBand,
+      });
     }
 
     setFeedback(isCorrect ? "correct" : "wrong");
@@ -152,7 +167,11 @@ export function ChallengeMode({
     const newScore = score + (isCorrect ? 1 : 0);
 
     if (questionNumber >= TOTAL_QUESTIONS) {
-      onComplete({ finalScore: newScore, questionCount: TOTAL_QUESTIONS });
+      onComplete({
+        finalScore: newScore,
+        questionCount: TOTAL_QUESTIONS,
+        wrongAnswers: wrongRef.current,
+      });
     } else {
       setQuestionNumber((n) => n + 1);
       setScore(newScore);
@@ -162,7 +181,6 @@ export function ChallengeMode({
     }
   };
 
-  // Belt-and-braces: if the gate isn't open, render nothing at all.
   if (!gateOpen) {
     return null;
   }
@@ -210,7 +228,6 @@ export function ChallengeMode({
       exit={{ opacity: 0 }}
       initial={{ opacity: 0 }}
     >
-      {/* Top bar */}
       <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
         <span className="text-xs font-medium text-muted-foreground">
           <span className="text-foreground">{missionTitle}</span> · Question{" "}
@@ -229,7 +246,6 @@ export function ChallengeMode({
         </Button>
       </div>
 
-      {/* Progress bar */}
       <div className="h-1 w-full bg-border/30">
         <div
           className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-300"
@@ -239,7 +255,6 @@ export function ChallengeMode({
         />
       </div>
 
-      {/* Question area */}
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-lg">
           <AnimatePresence mode="wait">
@@ -298,7 +313,6 @@ export function ChallengeMode({
                 </div>
               )}
 
-              {/* Feedback display */}
               {feedback && (
                 <div
                   className={cn(
@@ -337,7 +351,6 @@ export function ChallengeMode({
         </div>
       </div>
 
-      {/* Help button */}
       <div className="border-t border-border/50 px-4 py-2 text-center">
         <button
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"

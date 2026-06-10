@@ -14,22 +14,30 @@ import {
   canStartChallenge,
   consentStateForPhase,
 } from "@/lib/challenge-gate";
-import type { ChallengeResults } from "./challenge-mode";
+import {
+  type LessonAction,
+  isValidTransition,
+  assertHasNextAction,
+} from "@/lib/learning-state-machine";
+import type {
+  ChallengeResults,
+  WrongAnswerRecord,
+} from "./challenge-mode";
 
 export type MissionPhase =
-  | "intro" // nothing active
-  | "loading" // fetching the mission's concept cards
-  | "cards" // showing a batch of concept cards
-  | "gate" // lesson footer: Continue Learning / Start Challenge / Choose Another Topic
-  | "challenge" // full-screen challenge running
-  | "results" // challenge results
-  | "complete";
+  | "intro"
+  | "loading"
+  | "cards"
+  | "gate"
+  | "challenge"
+  | "review_mistakes"
+  | "results"
+  | "content_complete"
+  | "topic_selection";
 
-// How many concept cards are shown per batch before the footer choices appear.
 const CARDS_PER_BATCH = 3;
 
 export type ActiveMission = {
-  // The bare slug (e.g. "ratio-and-proportion") used by the adaptive engine.
   slug: string;
   title: string;
   emoji: string;
@@ -38,28 +46,25 @@ export type ActiveMission = {
 type MissionContextValue = {
   mission: ActiveMission | null;
   phase: MissionPhase;
-  // The concept cards for the CURRENT batch (≤ CARDS_PER_BATCH).
   currentCards: ConceptCard[];
-  // Total distinct cards the student has seen this mission (drives the gate).
+  allCards: ConceptCard[];
   conceptCardsSeen: number;
-  // Are there more card batches after the current one?
   hasMoreCards: boolean;
-  // Single source of truth for the challenge gate, derived from phase + cards.
   consentState: ChallengeConsentState;
-  // Start a mission with its (already-loaded) concept cards.
+  wrongAnswers: WrongAnswerRecord[];
+  allowedActions: LessonAction[];
+
   startMissionWithCards: (mission: ActiveMission, cards: ConceptCard[]) => void;
-  // Show a loading state while cards are fetched.
   beginMissionLoading: (mission: ActiveMission) => void;
   recordCardSeen: () => void;
-  // Cards batch finished → show the lesson footer (NOT a challenge).
   completeCards: () => void;
-  // "Continue Learning" → reveal the next batch of cards.
   continueLearning: () => void;
-  // The ONLY action that opens the challenge gate. Requires an explicit click
-  // AND ≥ MIN_CONCEPT_CARDS_BEFORE_CHALLENGE cards seen — both, no exceptions.
   startChallengeMode: () => void;
-  finishChallenge: (results: ChallengeResults) => void;
-  // Leave the mission UI entirely (Choose Another Topic / Return Home).
+  finishChallenge: (results: ChallengeResults, wrong: WrongAnswerRecord[]) => void;
+  startReviewMistakes: () => void;
+  retrySimilar: () => void;
+  showAnotherExample: () => void;
+  performAction: (action: LessonAction) => void;
   exitMission: () => void;
   isInMission: boolean;
   challengeResults: ChallengeResults | null;
@@ -75,6 +80,7 @@ export function MissionProvider({ children }: { children: ReactNode }) {
   const [conceptCardsSeen, setConceptCardsSeen] = useState(0);
   const [challengeResults, setChallengeResults] =
     useState<ChallengeResults | null>(null);
+  const [wrongAnswers, setWrongAnswers] = useState<WrongAnswerRecord[]>([]);
 
   const currentCards = useMemo(
     () =>
@@ -87,12 +93,62 @@ export function MissionProvider({ children }: { children: ReactNode }) {
 
   const hasMoreCards = (batchIndex + 1) * CARDS_PER_BATCH < allCards.length;
 
+  const deriveAllowedActions = useCallback(
+    (p: MissionPhase): LessonAction[] => {
+      const actions: LessonAction[] = [];
+      switch (p) {
+        case "cards":
+        case "gate":
+          if (hasMoreCards) actions.push("continue_learning");
+          actions.push("start_challenge");
+          actions.push("choose_topic");
+          break;
+        case "challenge":
+          actions.push("review_mistakes");
+          actions.push("choose_topic");
+          break;
+        case "review_mistakes":
+          if (wrongAnswers.length > 0) actions.push("retry_similar");
+          actions.push("show_example");
+          actions.push("continue_learning");
+          actions.push("choose_topic");
+          break;
+        case "results":
+          if (wrongAnswers.length > 0) actions.push("review_mistakes");
+          actions.push("continue_learning");
+          actions.push("next_mission");
+          actions.push("choose_topic");
+          break;
+        case "content_complete":
+          actions.push("start_challenge");
+          if (wrongAnswers.length > 0) actions.push("review_mistakes");
+          actions.push("choose_topic");
+          break;
+        default:
+          break;
+      }
+      return actions;
+    },
+    [hasMoreCards, wrongAnswers.length]
+  );
+
+  const currentAllowedActions = useMemo(
+    () => deriveAllowedActions(phase),
+    [deriveAllowedActions, phase]
+  );
+
+  // After every phase change, assert the state has exits.
+  const assertPhase = useCallback((p: MissionPhase) => {
+    assertHasNextAction(p as unknown as Parameters<typeof assertHasNextAction>[0]);
+  }, []);
+
   const beginMissionLoading = useCallback((m: ActiveMission) => {
     setMission(m);
     setAllCards([]);
     setBatchIndex(0);
     setConceptCardsSeen(0);
     setChallengeResults(null);
+    setWrongAnswers([]);
     setPhase("loading");
   }, []);
 
@@ -103,6 +159,7 @@ export function MissionProvider({ children }: { children: ReactNode }) {
       setBatchIndex(0);
       setConceptCardsSeen(0);
       setChallengeResults(null);
+      setWrongAnswers([]);
       setPhase("cards");
     },
     []
@@ -112,20 +169,23 @@ export function MissionProvider({ children }: { children: ReactNode }) {
     setConceptCardsSeen((n) => n + 1);
   }, []);
 
-  // Cards finished → lesson footer (NOT a challenge). The student decides next.
   const completeCards = useCallback(() => {
     setPhase("gate");
-  }, []);
+    assertPhase("gate");
+  }, [assertPhase]);
 
   const continueLearning = useCallback(() => {
+    // If no more cards, move to content_complete instead of gate loop.
+    if (!hasMoreCards) {
+      setPhase("content_complete");
+      assertPhase("content_complete");
+      return;
+    }
     setBatchIndex((i) => i + 1);
     setPhase("cards");
-  }, []);
+    assertPhase("cards");
+  }, [hasMoreCards, assertPhase]);
 
-  // The ONLY path that activates Challenge Mode. Topic selection, lesson start,
-  // LLM tool calls, message reloads, auto-send and typed acknowledgements
-  // ("ok", "next", …) must never reach this. The guard enforces both required
-  // conditions regardless of how it is called.
   const startChallengeMode = useCallback(() => {
     if (
       !canStartChallenge({
@@ -136,13 +196,75 @@ export function MissionProvider({ children }: { children: ReactNode }) {
       return;
     }
     setChallengeResults(null);
+    setWrongAnswers([]);
     setPhase("challenge");
-  }, [conceptCardsSeen]);
+    assertPhase("challenge");
+  }, [conceptCardsSeen, assertPhase]);
 
-  const finishChallenge = useCallback((results: ChallengeResults) => {
-    setChallengeResults(results);
-    setPhase("results");
-  }, []);
+  const finishChallenge = useCallback(
+    (results: ChallengeResults, wrong: WrongAnswerRecord[]) => {
+      setChallengeResults(results);
+      setWrongAnswers(wrong);
+      setPhase("results");
+      assertPhase("results");
+    },
+    [assertPhase]
+  );
+
+  const startReviewMistakes = useCallback(() => {
+    setPhase("review_mistakes");
+    assertPhase("review_mistakes");
+  }, [assertPhase]);
+
+  const retrySimilar = useCallback(() => {
+    setChallengeResults(null);
+    setPhase("challenge");
+    assertPhase("challenge");
+  }, [assertPhase]);
+
+  const showAnotherExample = useCallback(() => {
+    // Show next batch of cards or return to teaching state.
+    setPhase("cards");
+    assertPhase("cards");
+  }, [assertPhase]);
+
+  const performAction = useCallback(
+    (action: LessonAction) => {
+      if (!isValidTransition(phase as never, action)) {
+        console.warn(
+          `[state-machine] invalid transition: "${phase}" -> "${action}"`
+        );
+        return;
+      }
+      switch (action) {
+        case "continue_learning":
+          continueLearning();
+          break;
+        case "start_challenge":
+          startChallengeMode();
+          break;
+        case "retry_similar":
+          retrySimilar();
+          break;
+        case "show_example":
+          showAnotherExample();
+          break;
+        case "review_mistakes":
+          startReviewMistakes();
+          break;
+        case "choose_topic":
+          exitMission();
+          break;
+        case "next_mission":
+          exitMission();
+          break;
+        default:
+          break;
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [phase, continueLearning, startChallengeMode, retrySimilar, showAnotherExample, startReviewMistakes]
+  );
 
   const exitMission = useCallback(() => {
     setMission(null);
@@ -150,6 +272,7 @@ export function MissionProvider({ children }: { children: ReactNode }) {
     setBatchIndex(0);
     setConceptCardsSeen(0);
     setChallengeResults(null);
+    setWrongAnswers([]);
     setPhase("intro");
   }, []);
 
@@ -158,9 +281,12 @@ export function MissionProvider({ children }: { children: ReactNode }) {
       mission,
       phase,
       currentCards,
+      allCards,
       conceptCardsSeen,
       hasMoreCards,
       consentState: consentStateForPhase(phase, conceptCardsSeen),
+      wrongAnswers,
+      allowedActions: currentAllowedActions,
       startMissionWithCards,
       beginMissionLoading,
       recordCardSeen,
@@ -168,6 +294,10 @@ export function MissionProvider({ children }: { children: ReactNode }) {
       continueLearning,
       startChallengeMode,
       finishChallenge,
+      startReviewMistakes,
+      retrySimilar,
+      showAnotherExample,
+      performAction,
       exitMission,
       isInMission: mission !== null,
       challengeResults,
@@ -176,8 +306,11 @@ export function MissionProvider({ children }: { children: ReactNode }) {
       mission,
       phase,
       currentCards,
+      allCards,
       conceptCardsSeen,
       hasMoreCards,
+      wrongAnswers,
+      currentAllowedActions,
       startMissionWithCards,
       beginMissionLoading,
       recordCardSeen,
@@ -185,6 +318,10 @@ export function MissionProvider({ children }: { children: ReactNode }) {
       continueLearning,
       startChallengeMode,
       finishChallenge,
+      startReviewMistakes,
+      retrySimilar,
+      showAnotherExample,
+      performAction,
       exitMission,
       challengeResults,
     ]

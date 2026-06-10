@@ -578,3 +578,45 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 - **Root cause:** the `QuestionArchetype` table (created by migration `0008`) was **never seeded** in this DB — 0 rows. Compounding it, the archetype JSON used authoring slugs (`ratio-and-proportion`, `angles-and-geometry`, `powers-and-standard-form`, plus `equations`/`statistics`) that don't match the DB `Mission.slug`s the client sends (`ratio-proportion`, `angles-geometry`, `indices-standard-form`), so even after seeding the `getSkillSlugsForMission` lookup would miss.
 - **Fix:** added a `MISSION_SLUG_ALIASES` map to `scripts/seed-question-archetypes.ts` (`canonicalMissionSlug`) that rewrites authoring slugs → canonical DB mission slugs at seed time (`equations`→`algebra-basics`, `statistics`→`straight-line-graphs`, etc.), then ran `pnpm seed:question-archetypes`.
 - **Verified (live DB):** 39 archetypes seeded; every archetype `missionSlug` now matches a `Mission` (algebra-basics 17, percentages 7, probability 4, straight-line-graphs 4, angles-geometry 3, ratio-proportion 3, indices-standard-form 1 — none orphaned). `/api/adaptive-challenge` now returns a valid question for percentages, ratio-proportion, algebra-basics, probability and straight-line-graphs; answer submission grades correctly (guest mastery null as designed). Test attempt rows cleaned up. `pnpm test:unit` 104/104, seed script lint-clean.
+
+---
+
+## Phase 39 Log: Production POSTGRES_URL Empty on Vercel — Adaptive Challenge 404
+
+- **Status:** Completed
+- **Symptom:** `/api/adaptive-challenge` returned 404 (`"No questions available for this lesson yet."`) on the production deployment at `teachingchatbot-snowy.vercel.app`. Vercel function logs confirmed the route executed (164ms) but returned no questions.
+- **Root cause:** The production `POSTGRES_URL` environment variable on Vercel was empty (`val_len=0`). The build script (`pnpm run build`) runs `tsx scripts/seed-question-archetypes.ts`, but without a valid `POSTGRES_URL` it validates only and skips the DB upsert (guarded at `seed-question-archetypes.ts:117-122`). So no `QuestionArchetype` rows existed in the production database — the query returned zero skill slugs → `selectNextQuestionForMission` returned `null` → 404.
+- **Diagnosis via Vercel CLI:**
+  1. `npx vercel env ls` — showed `POSTGRES_URL` had two separate entries: one for Development (with encrypted value, `val_len=1424`) and one for Production (`val_len=0`).
+  2. All other Neon integration env vars (`DATABASE_URL`, `POSTGRES_URL_NON_POOLING`, etc.) also showed `val_len=0` for Production in the API response — confirmed the empty value via `Vercel API v10/projects/{id}/env` with and without `decrypt=true`.
+  3. The `vercel env pull --environment=production` also returned `POSTGRES_URL=""`.
+- **Fixes:**
+  1. Deleted the empty production `POSTGRES_URL` entry via `npx vercel env rm POSTGRES_URL production`.
+  2. Re-added it with the correct Neon database URL (non-pooling, direct connection): `postgresql://neondb_owner:...@ep-bitter-dawn-ab3fjw5b.eu-west-2.aws.neon.tech/neondb?sslmode=require`.
+  3. Triggered fresh production deployment (`npx vercel deploy --prod`). The build log confirmed the seed ran: `"Upserting 39 archetypes by slug... Seeding complete."`.
+  4. Repeated after swapping from pooled URL to non-pooling URL (pooled URL also worked but non-pooling is more reliable for build-time connection).
+- **Lessons learned:**
+  - The Vercel API returns `val_len=0` and `decrypted: false` for production env vars when the token lacks decrypt scope, even when the value is correctly stored. The Vercel CLI `env add` / `env rm` is more reliable than the REST API for sensitive vars.
+  - The `pnpm run build` command runs migrations + seeds before `next build`, so the seed always executes against the build-time DB — but only if `POSTGRES_URL` is non-empty.
+  - Vercel's REST API `POST /v10/projects/{id}/env` silently stores an empty string when the payload has encoding issues with special characters in the URL. Always use the CLI (`vercel env add`) for database connection strings.
+  - Build cache is usually safe to restore — the seed runs fresh each time (not cached).
+- **Verified:** build logs show `"Seeding question archetypes..."` → `"Upserting 39 archetypes by slug..."` → `"Seeding complete."`. Local DB confirmed 39 archetypes across 7 mission slugs. Awaiting user confirmation that challenge mode loads on production.
+
+---
+
+## Phase 40 Log: Dead-End Learning Flow Fix — Review Mistakes State & CTA Enforcement
+
+- **Status:** Completed
+- **Symptom:** Students could enter dead-end learning paths (wrong answer → explanation → more cards → no CTA → stuck). Review Mistakes was not a first-class state — it transitioned back into teaching with no exit path. After completing all cards, no terminal screen was shown. The `results` phase only offered "Continue learning" or "Review mistakes" (conditional), missing "Next Mission" and "Choose Another Topic".
+- **Root cause:** The `MissionPhase` type had no `review_mistakes` or `content_complete` states. The orchestrator had no mechanism to assert that every state exposes valid actions. ChallengeMode tracked wrong answers only as a local score (loss of context for review). `continueLearning` could loop infinitely when no more cards existed.
+- **Actions Taken:**
+  1. **`lib/learning-state-machine.ts`** (NEW): Centralized type-safe state machine with `LessonState`, `LessonAction`, `ALLOWED_TRANSITIONS`, `allowedActions()`, `isValidTransition()`, `assertHasNextAction()` (logs a dead-end warning and falls back to choose_topic), and `ACTION_LABELS` for display names.
+  2. **`components/chat/mission-orchestrator.tsx`**: Added `review_mistakes`, `content_complete`, `topic_selection` phases. Added `wrongAnswers` state (tracked from challenge-mode). Added `deriveAllowedActions()` deriving valid CTAs per phase. Added `startReviewMistakes()`, `retrySimilar()`, `showAnotherExample()`, `performAction()` callbacks. `continueLearning()` now transitions to `content_complete` when no more cards exist instead of looping. `assertPhase()` called after every phase transition so dead-ends are caught immediately.
+  3. **`components/chat/challenge-mode.tsx`**: Added `WrongAnswerRecord` type storing `{questionNumber, prompt, studentAnswer, correctAnswer, explanation, skillSlug, difficultyBand}`. Added `wrongRef` (useRef) collecting wrong answers during challenge. `ChallengeResults` now includes `wrongAnswers` array. `onComplete` passes full results + wrong answers to orchestrator.
+  4. **`components/chat/challenge-results.tsx`**: Now accepts and displays strong skills / needs practice sections. Skills derived from wrong answer data. "Review Mistakes" button always present when wrongCount > 0. "Continue Learning" CTA always shown.
+  5. **`components/chat/review-mistakes-screen.tsx`** (NEW): First-class review experience. Dedicates a full screen to each wrong answer with: question display, student answer (struck-through), correct answer (highlighted), worked solution, misconception tip. Includes Previous/Next navigation between mistakes. Ends with CTAs: Retry Similar, Show Another Example, Continue Learning, Choose Another Topic. Empty state ("No mistakes recorded") shown when no wrong answers exist, with Choose Topic and Start Learning CTAs.
+  6. **`components/chat/content-complete-screen.tsx`** (NEW): Terminal screen shown when all concept cards consumed. Shows lesson completion message + CTAs: Start Challenge Mode (primary), Review Key Ideas / Next Mission (outline), Choose Another Topic (ghost). Actions are filtered through `allowedActions`.
+  7. **`components/chat/shell.tsx`**: Wired `review_mistakes` phase to `ReviewMistakesScreen`, `content_complete` phase to `ContentCompleteScreen`. `handleChallengeComplete` passes wrongAnswers through `finishChallenge`. Results screen's `onReview` properly calls `handleMissionAction("review_mistakes")`.
+  8. **`lib/challenge-gate.ts`**: Added `review_mistakes` and `content_complete` to `consentStateForPhase` map (→ `"complete"` consent state).
+  9. **`lib/ai/prompts-tutor.ts`**: Added CRITICAL UX RULE: every explanation must end with a CTA; never restart onboarding or replay cards unless explicitly requested.
+- **Verified:** `pnpm test:unit` 104/104 pass. `pnpm build` clean. All files lint-clean.
