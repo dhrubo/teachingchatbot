@@ -18,6 +18,7 @@
     "db:up": "drizzle-kit up",
     "seed": "npx tsx scripts/seed-question-archetypes.ts",
     "seed:question-archetypes": "npx tsx scripts/seed-question-archetypes.ts",
+    "seed:question-archetypes:csv": "npx tsx scripts/seed-question-archetypes-csv.ts",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
