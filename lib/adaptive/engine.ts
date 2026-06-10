@@ -104,7 +104,20 @@ async function selectFromSkills(params: {
 
   const band = selectNextBand({ mastery: masteryBySkill.get(skillSlug), rng });
 
-  const archetypes = await getArchetypesForSkillBand(skillSlug, band);
+  const [archetypes, recent] = await Promise.all([
+    getArchetypesForSkillBand(skillSlug, band).catch((err) => {
+      console.error("[adaptive-engine] getArchetypesForSkillBand failed:", err);
+      return [];
+    }),
+    getRecentAttempts({
+      studentId: params.studentId,
+      guestSessionId: params.guestSessionId,
+      limit: 10,
+    }).catch((err) => {
+      console.error("[adaptive-engine] getRecentAttempts failed:", err);
+      return [];
+    }),
+  ]);
   if (archetypes.length === 0) {
     console.warn(
       "[adaptive-engine] no archetypes for",
@@ -112,12 +125,6 @@ async function selectFromSkills(params: {
     );
     return null;
   }
-
-  const recent = await getRecentAttempts({
-    studentId: params.studentId,
-    guestSessionId: params.guestSessionId,
-    limit: 10,
-  });
   const chosenSlug = pickArchetypeSlug(
     archetypes.map((a) => a.slug),
     recent,
@@ -166,6 +173,8 @@ export async function recordAnswer(params: {
   rules?: Record<string, unknown>;
   misconceptionTags?: string[];
   timeTakenMs?: number;
+  /** Pass pre-fetched mastery to avoid a redundant DB query. */
+  currentMastery?: MasteryState;
 }): Promise<{ isCorrect: boolean; mastery: MasteryState | null }> {
   const isCorrect = gradeAnswer({
     studentAnswer: params.studentAnswer,
@@ -203,11 +212,11 @@ export async function recordAnswer(params: {
     return { isCorrect, mastery: null };
   }
 
-  const existing = await getMasteryForSkills(params.studentId, [
-    params.skillSlug,
-  ]);
   const current: MasteryState =
-    existing.find((m) => m.skillSlug === params.skillSlug) ?? emptyMastery();
+    params.currentMastery
+    ?? (await getMasteryForSkills(params.studentId, [params.skillSlug]))
+      .find((m) => m.skillSlug === params.skillSlug)
+    ?? emptyMastery();
   const next = updateMastery(current, {
     isCorrect,
     difficultyBand: params.difficultyBand,
