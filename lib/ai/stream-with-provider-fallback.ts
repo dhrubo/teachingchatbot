@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { streamText, type ModelMessage } from "ai";
 import { recordAiCall } from "./ai-call-log";
 import type { ProviderCandidate } from "./providers";
 import { isQuotaError } from "./providers";
@@ -35,7 +35,7 @@ export function logAiCall(
 
 export async function streamTextWithFallback(
   candidates: ProviderCandidate[],
-  config: Omit<Parameters<typeof streamText>[0], "model" | "maxRetries">,
+  config: Omit<Parameters<typeof streamText>[0], "model" | "maxRetries" | "prompt"> & { messages: ModelMessage[] },
   onModelSwitch?: (name: string) => void,
   reason: AiCallReason = "lesson_bundle",
   overrideRequestId?: string
@@ -53,7 +53,7 @@ export async function streamTextWithFallback(
     attempted++;
     try {
       const result = streamText({
-        ...(config as any),
+        ...config,
         model: candidate.model,
         maxRetries: 0,
       });

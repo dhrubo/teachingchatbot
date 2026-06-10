@@ -30,7 +30,7 @@ export async function createUser(email: string, password: string) {
 }
 
 export async function createGuestUser() {
-  const email = `guest-${Date.now()}`;
+  const email = `guest-${generateUUID()}`;
   const password = generateHashedPassword(generateUUID());
 
   try {
