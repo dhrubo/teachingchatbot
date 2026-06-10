@@ -78,6 +78,13 @@
       "when": 1781300000000,
       "tag": "0010_user_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1781400000000,
+      "tag": "0011_chat_userId_message_chatId_idx",
+      "breakpoints": true
     }
   ]
 }
