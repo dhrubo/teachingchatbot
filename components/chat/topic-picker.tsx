@@ -107,7 +107,7 @@ export function TopicPicker({ className }: { className?: string }) {
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <Button
-          className={cn("rounded-full px-3 text-sm font-medium", className)}
+          className={cn("rounded-full px-3 text-sm font-medium transition-all duration-200 hover:translate-y-[-1px]", className)}
           size="sm"
           variant="ghost"
         >

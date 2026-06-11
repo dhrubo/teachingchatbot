@@ -27,7 +27,7 @@ export function SoundToggle() {
     <Button
       aria-label={muted ? "Unmute sound effects" : "Mute sound effects"}
       aria-pressed={muted}
-      className="text-muted-foreground hover:text-foreground"
+      className="text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all duration-200 hover:translate-y-[-1px]"
       onClick={toggle}
       size="icon-sm"
       title={muted ? "Sound off" : "Sound on"}
