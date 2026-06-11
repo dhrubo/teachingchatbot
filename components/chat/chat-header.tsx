@@ -28,7 +28,7 @@ function AuthButtons() {
     <>
       <Button
         asChild
-        className="rounded-full px-4 text-muted-foreground hover:text-foreground"
+        className="rounded-full px-4 text-muted-foreground hover:text-foreground transition-all duration-200 hover:translate-y-[-1px] hover:bg-white/5"
         size="sm"
         variant="ghost"
       >
@@ -36,7 +36,7 @@ function AuthButtons() {
       </Button>
       <Button
         asChild
-        className="rounded-full bg-[image:var(--gradient-sunset)] px-4 font-semibold text-white shadow-[var(--shadow-card)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
+        className="rounded-full bg-[image:var(--gradient-sunset)] px-4 font-semibold text-white shadow-md shadow-amber-500/10 transition-all duration-200 hover:scale-[1.03] hover:translate-y-[-1px] active:scale-[0.98] hover:shadow-[0_0_15px_-3px_rgba(244,63,94,0.3)] hover:border hover:border-amber-500/20"
         size="sm"
       >
         <Link href="/register">Sign up free ✨</Link>
@@ -65,10 +65,10 @@ function PureChatHeader({
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-sidebar/80 px-3 backdrop-blur-sm">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-[#090915]/80 px-3 backdrop-blur-md border-b border-indigo-950/40">
       {!isGuest && (
         <Button
-          className="md:hidden"
+          className="md:hidden hover:bg-white/5 transition-all duration-200 hover:translate-y-[-1px]"
           onClick={toggleSidebar}
           size="icon-sm"
           variant="ghost"
@@ -78,7 +78,7 @@ function PureChatHeader({
       )}
 
       {/* Logo → Return Home (resets the mission UI, keeps progress/messages). */}
-      <HomeLogo className="flex items-center gap-1.5">
+      <HomeLogo className="flex items-center gap-1.5 transition-all duration-200 hover:opacity-90 active:scale-[0.98] hover:translate-y-[-0.5px]">
         <SaraMascot animated={false} size={22} />
         <span className="text-sm font-semibold tracking-tight text-foreground">
           SARA
@@ -86,16 +86,17 @@ function PureChatHeader({
       </HomeLogo>
 
       {/* Primary topic discovery for everyone. */}
-      <TopicPicker />
+      <TopicPicker className="transition-all duration-200 hover:translate-y-[-1px] hover:bg-white/5" />
 
       {!isReadonly && !isGuest && (
         <VisibilitySelector
           chatId={chatId}
+          className="transition-all duration-200 hover:translate-y-[-1px] hover:bg-white/5"
           selectedVisibilityType={selectedVisibilityType}
         />
       )}
 
-      {!isGuest && <TopicsMenuButton />}
+      {!isGuest && <TopicsMenuButton className="transition-all duration-200 hover:translate-y-[-1px]" />}
 
       <div className="ml-auto flex items-center gap-2">
         <ProgressPill />

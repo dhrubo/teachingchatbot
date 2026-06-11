@@ -52,10 +52,10 @@ export function ConceptCardSlides({
             className={cn(
               "h-2 rounded-full transition-all duration-300",
               i === index
-                ? "w-6 bg-gradient-to-r from-primary to-primary/60"
+                ? "w-6 bg-[image:var(--gradient-sunset)]"
                 : i < index
-                  ? "w-2 bg-primary/40"
-                  : "w-2 bg-muted-foreground/20"
+                  ? "w-2 bg-orange-500/40"
+                  : "w-2 bg-indigo-500/20"
             )}
             key={dot.id}
           />
@@ -66,27 +66,35 @@ export function ConceptCardSlides({
       <AnimatePresence mode="wait">
         <motion.div
           animate={{ opacity: 1, x: 0 }}
-          className="rounded-2xl border border-border/50 bg-card p-6"
+          className="bg-indigo-950/45 border border-indigo-500/20 shadow-lg shadow-indigo-950/60 backdrop-blur-md rounded-2xl p-6"
           exit={{ opacity: 0, x: -20 }}
           initial={{ opacity: 0, x: 20 }}
           key={card.id}
           transition={{ duration: 0.25 }}
         >
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {card.title}
-          </p>
-          <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-center font-mono text-lg font-semibold text-primary">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              Concept {index + 1} of {cards.length}
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              {card.title}
+            </span>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-indigo-500/10 bg-indigo-950/80 p-5 text-center font-mono text-xl font-bold text-violet-400">
             {card.visual}
           </div>
+
           {card.example && (
-            <div className="mb-3 rounded-lg border border-border/30 bg-muted/30 px-3 py-2 text-sm text-foreground/80">
-              <span className="font-medium text-muted-foreground">
-                Example:{" "}
+            <div className="mb-3 rounded-r-lg border-l-4 border-orange-500 bg-white/5 px-4 py-3 text-sm text-slate-300 leading-relaxed">
+              <span className="font-bold text-orange-400 mr-1.5">
+                Example:
               </span>
               {card.example}
             </div>
           )}
-          <p className="text-sm leading-relaxed text-muted-foreground">
+
+          <p className="text-sm leading-relaxed text-slate-300">
             {card.explanation}
           </p>
         </motion.div>
@@ -95,7 +103,7 @@ export function ConceptCardSlides({
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <Button
-          className="rounded-full text-sm text-muted-foreground"
+          className="rounded-full text-sm text-muted-foreground transition-all duration-200 hover:scale-[1.03] hover:translate-y-[-1px] active:scale-[0.98]"
           disabled={index === 0}
           onClick={() => setIndex((i) => Math.max(0, i - 1))}
           size="sm"
@@ -104,10 +112,9 @@ export function ConceptCardSlides({
           ← Back
         </Button>
 
-        {/* On the last card offer leaving the lesson, not just the challenge. */}
         {isLast && onChooseAnother ? (
           <Button
-            className="rounded-full text-sm text-muted-foreground"
+            className="rounded-full text-sm text-muted-foreground transition-all duration-200 hover:scale-[1.03] hover:translate-y-[-1px] active:scale-[0.98]"
             onClick={onChooseAnother}
             size="sm"
             variant="ghost"
@@ -117,7 +124,7 @@ export function ConceptCardSlides({
         ) : (
           onHelp && (
             <Button
-              className="rounded-full text-sm text-muted-foreground"
+              className="rounded-full text-sm text-muted-foreground transition-all duration-200 hover:scale-[1.03] hover:translate-y-[-1px] active:scale-[0.98]"
               onClick={onHelp}
               size="sm"
               variant="ghost"
@@ -129,7 +136,7 @@ export function ConceptCardSlides({
 
         {isLast ? (
           <Button
-            className="rounded-full bg-[image:var(--gradient-sunset)] px-5 font-semibold text-white shadow-lg"
+            className="rounded-full bg-[image:var(--gradient-sunset)] px-5 font-semibold text-white shadow-lg transition-all duration-200 hover:scale-[1.03] hover:translate-y-[-1px] hover:shadow-[0_0_15px_-3px_rgba(244,63,94,0.3)] active:scale-[0.98]"
             onClick={onComplete}
             size="sm"
           >
@@ -137,7 +144,7 @@ export function ConceptCardSlides({
           </Button>
         ) : (
           <Button
-            className="rounded-full bg-[image:var(--gradient-sunset)] px-5 font-semibold text-white shadow-lg"
+            className="rounded-full bg-[image:var(--gradient-sunset)] px-5 font-semibold text-white shadow-lg transition-all duration-200 hover:scale-[1.03] hover:translate-y-[-1px] hover:shadow-[0_0_15px_-3px_rgba(244,63,94,0.3)] active:scale-[0.98]"
             onClick={() => setIndex((i) => Math.min(cards.length - 1, i + 1))}
             size="sm"
           >

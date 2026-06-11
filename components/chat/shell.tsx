@@ -140,7 +140,7 @@ export function ChatShell() {
       <div className="flex h-dvh w-full flex-row overflow-hidden">
         <div
           className={cn(
-            "relative flex min-w-0 flex-col bg-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "relative flex min-w-0 flex-col bg-[#090915] transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] border-r border-indigo-950/40",
             isArtifactVisible ? "w-[40%]" : "w-full"
           )}
         >
@@ -159,24 +159,26 @@ export function ChatShell() {
 
           {/* ---- Loading ---- */}
           {isInMission && phase === "loading" && mission && (
-            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-background/95 backdrop-blur-sm">
-              <span className="animate-pulse text-3xl">{mission.emoji}</span>
-              <p className="text-sm text-muted-foreground">
-                Loading {mission.title}…
-              </p>
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 backdrop-blur-md px-4">
+              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-12 flex flex-col items-center justify-center gap-4 text-center">
+                <span className="animate-pulse text-4xl">{mission.emoji}</span>
+                <p className="text-base font-medium text-indigo-200">
+                  Loading {mission.title}…
+                </p>
+              </div>
             </div>
           )}
 
           {/* ---- Concept Cards ---- */}
           {isInMission && phase === "cards" && mission && (
-            <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-8 backdrop-blur-sm">
-              <div className="w-full max-w-lg px-4">
-                <div className="mb-3 text-center">
-                  <span className="text-2xl">{mission.emoji}</span>
-                  <h3 className="mt-1 text-lg font-bold text-foreground">
+            <div className="absolute inset-0 z-30 flex items-center justify-center overflow-y-auto bg-[#090915]/80 p-4 backdrop-blur-md">
+              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                <div className="mb-5 text-center">
+                  <span className="text-3xl">{mission.emoji}</span>
+                  <h3 className="mt-2 text-xl font-bold text-foreground tracking-tight">
                     {mission.title}
                   </h3>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-indigo-300/80">
                     Concept review
                   </p>
                 </div>
@@ -194,37 +196,37 @@ export function ChatShell() {
 
           {/* ---- Lesson Footer / Gate ---- */}
           {isInMission && phase === "gate" && mission && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 px-4 backdrop-blur-sm">
-              <div className="w-full max-w-sm rounded-2xl border border-border/50 bg-card p-6 text-center">
-                <span className="text-3xl">{mission.emoji}</span>
-                <h3 className="mt-2 text-lg font-bold text-foreground">
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
+              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 text-center transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                <span className="text-4xl">{mission.emoji}</span>
+                <h3 className="mt-3 text-2xl font-bold text-foreground tracking-tight">
                   {mission.title}
                 </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-2 text-base text-indigo-200">
                   What would you like to do next?
                 </p>
-                <div className="mt-5 flex flex-col gap-2">
+                <div className="mt-8 flex flex-col gap-3 max-w-md mx-auto">
                   {hasMoreCards && (
                     <Button
-                      className="rounded-full"
+                      className="rounded-full py-5 text-sm font-medium hover:bg-indigo-950/40 border-indigo-950/60 hover:translate-y-[-1px] transition-all"
                       onClick={continueLearning}
-                      size="sm"
+                      size="default"
                       variant="outline"
                     >
                       Continue Learning
                     </Button>
                   )}
                   <Button
-                    className="rounded-full bg-[image:var(--gradient-sunset)] px-6 font-semibold text-white shadow-lg"
+                    className="rounded-full bg-[image:var(--gradient-sunset)] py-5 font-bold text-white shadow-lg shadow-amber-500/15 hover:opacity-95 hover:translate-y-[-1px] hover:scale-[1.01] transition-all duration-200 text-sm"
                     onClick={startChallengeMode}
-                    size="sm"
+                    size="default"
                   >
                     Start Challenge Mode
                   </Button>
                   <Button
-                    className="rounded-full"
+                    className="rounded-full py-5 text-sm font-medium text-muted-foreground hover:text-foreground hover:translate-y-[-1px] transition-all"
                     onClick={exitMission}
-                    size="sm"
+                    size="default"
                     variant="ghost"
                   >
                     Choose Another Topic
@@ -236,26 +238,30 @@ export function ChatShell() {
 
           {/* ---- Review Mistakes ---- */}
           {isInMission && phase === "review_mistakes" && mission && (
-            <div className="absolute inset-0 z-30 flex items-start justify-center overflow-y-auto bg-background/95 pt-6 backdrop-blur-sm">
-              <ReviewMistakesScreen
-                missionTitle={mission.title}
-                missionEmoji={mission.emoji}
-                wrongAnswers={wrongAnswers}
-                allowedActions={allowedActions}
-                onAction={handleMissionAction}
-              />
+            <div className="absolute inset-0 z-30 flex items-center justify-center overflow-y-auto bg-[#090915]/80 p-4 backdrop-blur-md">
+              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                <ReviewMistakesScreen
+                  missionTitle={mission.title}
+                  missionEmoji={mission.emoji}
+                  wrongAnswers={wrongAnswers}
+                  allowedActions={allowedActions}
+                  onAction={handleMissionAction}
+                />
+              </div>
             </div>
           )}
 
           {/* ---- Content Complete (end of lesson cards) ---- */}
           {isInMission && phase === "content_complete" && mission && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 backdrop-blur-sm">
-              <ContentCompleteScreen
-                missionTitle={mission.title}
-                missionEmoji={mission.emoji}
-                allowedActions={allowedActions}
-                onAction={handleMissionAction}
-              />
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
+              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                <ContentCompleteScreen
+                  missionTitle={mission.title}
+                  missionEmoji={mission.emoji}
+                  allowedActions={allowedActions}
+                  onAction={handleMissionAction}
+                />
+              </div>
             </div>
           )}
 
@@ -264,19 +270,21 @@ export function ChatShell() {
             phase === "results" &&
             challengeResults &&
             mission && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 backdrop-blur-sm">
-                <ChallengeResultsScreen
-                  missionTitle={mission.title}
-                  onContinue={handleMissionContinue}
-                  onReview={
-                    challengeResults.questionCount -
-                      challengeResults.finalScore >
-                    0
-                      ? () => handleMissionAction("review_mistakes")
-                      : undefined
-                  }
-                  results={challengeResults}
-                />
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
+                <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                  <ChallengeResultsScreen
+                    missionTitle={mission.title}
+                    onContinue={handleMissionContinue}
+                    onReview={
+                      challengeResults.questionCount -
+                        challengeResults.finalScore >
+                      0
+                        ? () => handleMissionAction("review_mistakes")
+                        : undefined
+                    }
+                    results={challengeResults}
+                  />
+                </div>
               </div>
             )}
 

@@ -100,62 +100,68 @@ export function ReviewMistakesScreen({
       <AnimatePresence mode="wait">
         <motion.div
           animate={{ opacity: 1, x: 0 }}
-          className="w-full rounded-2xl border border-border/50 bg-card p-5"
+          className="w-full bg-indigo-950/45 border border-indigo-500/20 shadow-lg shadow-indigo-950/60 backdrop-blur-md rounded-2xl p-6"
           exit={{ opacity: 0, x: -20 }}
           initial={{ opacity: 0, x: 20 }}
           key={currentIndex}
           transition={{ duration: 0.2 }}
         >
           {/* Question */}
-          <div className="mb-3 rounded-xl border border-border/30 bg-muted/30 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="mb-4 rounded-xl border border-indigo-500/10 bg-indigo-950/30 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-300/70">
               Question
             </p>
-            <p className="mt-1 text-sm text-foreground">{current.prompt}</p>
+            <p className="mt-1 text-sm font-medium text-slate-100">{current.prompt}</p>
           </div>
 
           {/* Your answer */}
-          <div className="mb-3 flex items-center gap-2">
-            <span className="rounded bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
-              Your answer
-            </span>
-            <span className="text-sm text-destructive line-through">
-              {current.studentAnswer}
-            </span>
+          <div className="mb-3 flex items-center justify-between rounded-xl border border-red-500/20 bg-gradient-to-r from-red-500/10 to-transparent p-3">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-red-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-red-400 border border-red-500/30">
+                Your Answer
+              </span>
+              <span className="text-sm font-medium text-red-300 line-through decoration-red-500 decoration-2">
+                {current.studentAnswer}
+              </span>
+            </div>
+            <span className="text-lg">❌</span>
           </div>
 
           {/* Correct answer */}
-          <div className="mb-3 flex items-center gap-2">
-            <span className="rounded bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500">
-              Correct answer
-            </span>
-            <span className="text-sm font-semibold text-green-500">
-              {current.correctAnswer}
-            </span>
+          <div className="mb-4 flex items-center justify-between rounded-xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 to-transparent p-3">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400 border border-emerald-500/30">
+                Correct Answer
+              </span>
+              <span className="text-sm font-bold tracking-wide text-emerald-300">
+                {current.correctAnswer}
+              </span>
+            </div>
+            <span className="text-lg">✅</span>
           </div>
 
           {/* Worked solution */}
-          <div className="mb-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-blue-600">
+          <div className="mb-4 rounded-xl border-l-4 border-l-blue-500 border border-indigo-500/10 bg-indigo-950/20 p-4">
+            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-blue-400">
               Worked Solution
             </p>
             {current.explanation ? (
-              <p className="text-sm leading-relaxed text-foreground/80">
+              <p className="text-sm leading-relaxed text-slate-200">
                 {current.explanation}
               </p>
             ) : (
-              <p className="text-sm text-foreground/60">
-                {current.correctAnswer} is the correct answer.
+              <p className="text-sm leading-relaxed text-slate-300">
+                <span className="font-semibold text-emerald-400">{current.correctAnswer}</span> is the correct answer.
               </p>
             )}
           </div>
 
           {/* Misconception hint */}
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-600">
-              Tip
+          <div className="rounded-xl border-l-4 border-l-amber-500 border border-amber-500/10 bg-amber-500/5 p-4">
+            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-400">
+              💡 Misconception Tip
             </p>
-            <p className="text-sm text-foreground/80">
+            <p className="text-sm leading-relaxed text-amber-100/90">
               Double-check your working step by step. You may have made a small
               slip in the method.
             </p>
@@ -166,7 +172,7 @@ export function ReviewMistakesScreen({
       {/* Navigation between mistakes */}
       <div className="mt-4 flex w-full items-center justify-between">
         <Button
-          className="rounded-full"
+          className="rounded-full px-4 py-2 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg active:scale-95 disabled:pointer-events-none disabled:opacity-50 text-indigo-200 hover:text-white"
           disabled={currentIndex === 0}
           onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
           size="sm"
@@ -174,14 +180,14 @@ export function ReviewMistakesScreen({
         >
           ← Previous
         </Button>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs font-semibold text-indigo-300">
           {currentIndex + 1} / {wrongAnswers.length}
         </span>
         {isLast ? (
           <div />
         ) : (
           <Button
-            className="rounded-full"
+            className="rounded-full px-4 py-2 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg active:scale-95 text-indigo-200 hover:text-white"
             onClick={() => setCurrentIndex((i) => Math.min(wrongAnswers.length - 1, i + 1))}
             size="sm"
             variant="ghost"
@@ -192,18 +198,20 @@ export function ReviewMistakesScreen({
       </div>
 
       {/* CTAs */}
-      <div className="mt-6 flex w-full max-w-sm flex-col gap-2">
+      <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
         {meta.map((m) => (
           <Button
-            className={
+            className={`w-full rounded-full text-sm font-semibold transition-all duration-200 hover:translate-y-[-1px] active:scale-[0.99] ${
               m.variant === "primary"
-                ? "rounded-full bg-[image:var(--gradient-sunset)] px-6 font-semibold text-white shadow-lg"
-                : "rounded-full"
-            }
+                ? "bg-[image:var(--gradient-sunset)] text-white shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/35 border-0"
+                : m.variant === "outline"
+                ? "border border-indigo-500/30 bg-indigo-950/25 text-indigo-200 shadow-md hover:bg-indigo-900/40 hover:text-white"
+                : "text-indigo-300 hover:bg-indigo-950/40 hover:text-white"
+            }`}
             key={m.action}
             onClick={() => onAction(m.action)}
-            size="sm"
-            variant={m.variant === "primary" ? "default" : m.variant}
+            size="lg"
+            variant={m.variant === "primary" ? "default" : m.variant === "outline" ? "outline" : "ghost"}
           >
             {m.label}
           </Button>
