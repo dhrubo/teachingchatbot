@@ -78,9 +78,11 @@ function PureChatHeader({
       )}
 
       {/* Logo → Return Home (resets the mission UI, keeps progress/messages). */}
-      <HomeLogo className="flex items-center gap-1.5 transition-all duration-200 hover:opacity-90 active:scale-[0.98] hover:translate-y-[-0.5px]">
-        <SaraMascot animated={false} size={22} />
-        <span className="text-sm font-semibold tracking-tight text-foreground">
+      <HomeLogo className="flex items-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] hover:translate-y-[-0.5px]">
+        <div className="flex size-7 items-center justify-center rounded-full bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)] font-black text-white text-xs select-none">
+          S
+        </div>
+        <span className="text-sm font-extrabold tracking-tight text-white uppercase">
           SARA
         </span>
       </HomeLogo>

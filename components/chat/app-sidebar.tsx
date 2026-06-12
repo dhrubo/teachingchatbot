@@ -166,6 +166,44 @@ export function AppSidebar({ user }: { user: User | undefined }) {
           ) : (
             <SidebarHistory user={user} />
           )}
+
+          {/* GCSE Domains Rollup Panel */}
+          <SidebarGroup className="mt-auto border-t border-sidebar-border pt-4">
+            <SidebarGroupContent>
+              <p className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-widest text-sidebar-foreground/45">
+                GCSE Progress
+              </p>
+              <div className="space-y-3 px-3">
+                <div>
+                  <div className="flex justify-between text-[11px] font-bold text-sidebar-foreground/70">
+                    <span>Numbers</span>
+                    <span>75%</span>
+                  </div>
+                  <div className="mt-1 h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-orange-500 to-amber-400" style={{ width: "75%" }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-[11px] font-bold text-sidebar-foreground/70">
+                    <span>Ratio & Proportion</span>
+                    <span>40%</span>
+                  </div>
+                  <div className="mt-1 h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-orange-500 to-amber-400" style={{ width: "40%" }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-[11px] font-bold text-sidebar-foreground/70">
+                    <span>Algebra</span>
+                    <span>20%</span>
+                  </div>
+                  <div className="mt-1 h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-orange-500 to-amber-400" style={{ width: "20%" }} />
+                  </div>
+                </div>
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
         </SidebarContent>
         <SidebarFooter className="border-t border-sidebar-border pt-2 pb-3">
           {user && <SidebarUserNav user={user} />}

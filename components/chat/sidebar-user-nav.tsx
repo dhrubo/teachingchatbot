@@ -58,11 +58,10 @@ export function SidebarUserNav({ user }: { user: User }) {
                 data-testid="user-nav-button"
               >
                 <div
-                  className="size-5 shrink-0 rounded-full ring-1 ring-sidebar-border/50"
-                  style={{
-                    background: `linear-gradient(135deg, oklch(0.35 0.08 ${emailToHue(user.email ?? "")}), oklch(0.25 0.05 ${emailToHue(user.email ?? "") + 40}))`,
-                  }}
-                />
+                  className="size-5 shrink-0 rounded-full flex items-center justify-center bg-gradient-to-tr from-orange-500 to-violet-600 ring-1 ring-white/10 text-[9px] font-black text-white uppercase select-none"
+                >
+                  {isGuest ? "G" : user?.email?.charAt(0) || "U"}
+                </div>
                 <span className="truncate text-[13px]" data-testid="user-email">
                   {isGuest ? "Guest" : user?.email}
                 </span>

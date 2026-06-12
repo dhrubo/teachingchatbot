@@ -132,44 +132,117 @@ export function SaraDashboard() {
   const stats = xpStreak;
   const hasProgressData = stats !== null && stats.xp > 0;
 
-  // Start a topic through the mission orchestrator (concept cards → footer →
-  // explicit Start Challenge Mode). NO LLM call, NO auto-challenge.
   function startMission(mission: MissionDefinition) {
     startTopic({ id: mission.id, title: mission.title, emoji: mission.emoji });
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8">
+    <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <motion.div
         animate={{ opacity: 1 }}
-        className="flex flex-col gap-10"
+        className="flex flex-col gap-8"
         initial={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* ---- Hero ---- */}
-        <section className="relative flex flex-col items-center py-10 text-center gap-4">
-          <div className="relative">
-            {/* Sparkles floating around the mascot with different delays */}
-            <span className="absolute -left-8 -top-4 text-xl animate-float select-none opacity-85" style={{ animationDuration: "3.5s" }}>✨</span>
-            <span className="absolute -right-8 -bottom-2 text-lg animate-float select-none opacity-75" style={{ animationDuration: "2.8s", animationDelay: "0.5s" }}>✨</span>
-            <span className="absolute -right-6 -top-6 text-sm animate-float select-none opacity-60" style={{ animationDuration: "4s", animationDelay: "1s" }}>✨</span>
-            <SaraMascot animated mood="happy" size={104} className="animate-float" />
-          </div>
-          <div className="max-w-xl">
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-              <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-violet-500 bg-clip-text text-transparent">
-                Learn Maths Without Feeling Stuck
+        {/* ---- AI Coach Bubble ---- */}
+        <section className="rounded-2xl border border-violet-500/15 bg-violet-950/15 p-4 text-center backdrop-blur-md">
+          <p className="text-xs font-medium italic text-violet-200">
+            "Welcome back! Let's explore fractions or solve some equations today."
+          </p>
+        </section>
+
+        {/* ---- Hero Row ---- */}
+        <section className="relative flex flex-col md:flex-row items-center justify-between py-6 gap-6">
+          <div className="flex-1 text-left">
+            <h1 className="text-3xl font-black tracking-tight sm:text-5xl leading-tight">
+              Learn Maths{" "}
+              <span className="glowing-sunset font-black block mt-1">
+                Without Feeling Stuck
               </span>
             </h1>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground/90 font-medium">
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground/90 font-medium max-w-md">
               SARA is your AI maths coach — tiny visual lessons, one challenge at
               a time, and progress that actually sticks.
             </p>
           </div>
+          <div className="shrink-0">
+            <SaraMascot animated mood="happy" size={130} />
+          </div>
         </section>
 
-        {/* ---- Pick / paste a topic (primary entry point) ---- */}
-        <TopicPasteBox />
+        {/* ---- Card Selection Grid ---- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Column 1: Paste-A-Topic */}
+          <div className="sara-glass-panel hover-sara-glass-panel rounded-2xl p-6 flex flex-col justify-between">
+            <div>
+              <h2 className="text-base font-bold text-foreground">
+                What do you want to learn?
+              </h2>
+              <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+                Pick a topic from <strong className="text-foreground">Choose a Topic</strong> at the top — or paste your school syllabus topics below to auto-match.
+              </p>
+            </div>
+            <div className="mt-4">
+              <TopicPasteBox />
+            </div>
+          </div>
+
+          {/* Column 2: What is SARA? & Level toggler */}
+          <div className="sara-glass-panel hover-sara-glass-panel rounded-2xl p-6 flex flex-col justify-between gap-6">
+            <div>
+              <h2 className="text-base font-bold text-foreground bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
+                What is SARA?
+              </h2>
+              <ul className="mt-4 space-y-2 text-xs text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <span>📖</span>
+                  <span>Short visual lessons — one concept at a time</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span>🎯</span>
+                  <span>Concept cards — reference whenever you need</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span>⚡</span>
+                  <span>Challenge mode — gamified lessons with local grading</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span>📊</span>
+                  <span>Progress tracking — GCSE alignment and analytics</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex items-center justify-start border-t border-white/5 pt-4">
+              <div className="flex gap-1 rounded-full border border-white/5 bg-white/5 p-1 backdrop-blur-md">
+                <button
+                  className={cn(
+                    "rounded-full px-5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all duration-300",
+                    year === "8"
+                      ? "bg-gradient-to-r from-orange-500 to-violet-600 text-white shadow-md shadow-orange-500/20 scale-105"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  )}
+                  onClick={() => setYear("8")}
+                  type="button"
+                >
+                  Year 8
+                </button>
+                <button
+                  className={cn(
+                    "rounded-full px-5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all duration-300",
+                    year === "9"
+                      ? "bg-gradient-to-r from-orange-500 to-violet-600 text-white shadow-md shadow-orange-500/20 scale-105"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  )}
+                  onClick={() => setYear("9")}
+                  type="button"
+                >
+                  Year 9
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* ---- PlayerStats (logged-in only) ---- */}
         {isLoggedIn && hasProgressData && stats && (
@@ -181,79 +254,10 @@ export function SaraDashboard() {
           />
         )}
 
-        {/* ---- "What is this?" ---- */}
-        <section className="rounded-2xl bg-indigo-950/25 border border-indigo-950/50 hover:border-violet-500/20 backdrop-blur-md hover:translate-y-[-2px] transition-all duration-300 hover:shadow-[0_0_20px_rgba(124,58,237,0.15)] p-5">
-          <h2 className="text-base font-semibold text-foreground bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
-            What is SARA?
-          </h2>
-          <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-            <li className="flex items-start gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500/10 text-xs">📖</span>
-              <span>
-                <strong className="text-indigo-200">
-                  Short visual lessons
-                </strong>{" "}
-                — one concept at a time, with diagrams and examples.
-              </span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-xs">🎯</span>
-              <span>
-                <strong className="text-indigo-200">Concept cards</strong> — key
-                ideas you can always come back to.
-              </span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-xs">⚡</span>
-              <span>
-                <strong className="text-indigo-200">Challenge mode</strong> —
-                answer questions, earn XP, unlock the next topic.
-              </span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-xs">📊</span>
-              <span>
-                <strong className="text-indigo-200">Progress tracking</strong> —
-                see how far you&apos;ve come and what&apos;s next.
-              </span>
-            </li>
-          </ul>
-        </section>
-
-        {/* ---- Year toggle ---- */}
-        <div className="flex items-center justify-center py-2">
-          <div className="flex gap-1.5 rounded-full border border-indigo-950/50 bg-indigo-950/20 p-1 backdrop-blur-md shadow-inner">
-            <button
-              className={cn(
-                "rounded-full px-6 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300",
-                year === "8"
-                  ? "bg-gradient-to-r from-orange-500 to-violet-600 text-white shadow-md shadow-orange-500/20 scale-105"
-                  : "text-muted-foreground hover:text-foreground hover:bg-indigo-950/40"
-              )}
-              onClick={() => setYear("8")}
-              type="button"
-            >
-              Year 8
-            </button>
-            <button
-              className={cn(
-                "rounded-full px-6 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300",
-                year === "9"
-                  ? "bg-gradient-to-r from-orange-500 to-violet-600 text-white shadow-md shadow-orange-500/20 scale-105"
-                  : "text-muted-foreground hover:text-foreground hover:bg-indigo-950/40"
-              )}
-              onClick={() => setYear("9")}
-              type="button"
-            >
-              Year 9
-            </button>
-          </div>
-        </div>
-
         {/* ---- Today's Mission ---- */}
         {todayMission && (
           <section>
-            <h2 className="mb-4 text-sm font-semibold text-foreground/80 tracking-wide uppercase">
+            <h2 className="mb-4 text-xs font-extrabold text-foreground/40 tracking-wider uppercase">
               Today&apos;s Mission
             </h2>
             <div className="group relative flex w-full flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl border border-orange-500/20 bg-indigo-950/25 p-5 text-left backdrop-blur-md transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:translate-y-[-2px]">
@@ -289,13 +293,14 @@ export function SaraDashboard() {
           </section>
         )}
 
+        <div className="my-2 h-px bg-white/5" />
+
         {/* ---- Mission Map ---- */}
         <section>
-          <h2 className="mb-4 text-sm font-semibold text-foreground/80 tracking-wide uppercase">
-            Your Learning Journey
+          <h2 className="mb-4 text-xs font-extrabold text-foreground/40 tracking-wider uppercase">
+            YOUR LEARNING JOURNEY
           </h2>
-          <div className="rounded-2xl bg-indigo-950/15 border border-indigo-950/50 p-6 backdrop-blur-md shadow-2xl relative overflow-hidden">
-            {/* Background glowing effects inside the card */}
+          <div className="sara-glass-panel rounded-2xl p-6 relative overflow-hidden">
             <div className="absolute -left-16 -top-16 size-32 rounded-full bg-orange-500/5 blur-3xl pointer-events-none" />
             <div className="absolute -right-16 -bottom-16 size-32 rounded-full bg-violet-500/5 blur-3xl pointer-events-none" />
 
@@ -310,13 +315,13 @@ export function SaraDashboard() {
 
         {/* ---- How It Works ---- */}
         <section>
-          <h2 className="mb-4 text-sm font-semibold text-foreground/80 tracking-wide uppercase">
+          <h2 className="mb-4 text-xs font-extrabold text-foreground/40 tracking-wider uppercase">
             How It Works
           </h2>
           <div className="grid grid-cols-2 gap-4">
             {HOW_IT_WORKS.map((item) => (
               <div
-                className="rounded-2xl bg-indigo-950/25 border border-indigo-950/50 hover:border-violet-500/20 backdrop-blur-md hover:translate-y-[-2px] transition-all duration-300 hover:shadow-[0_0_20px_rgba(124,58,237,0.15)] p-5"
+                className="rounded-2xl border border-white/5 bg-white/5 hover:border-white/10 backdrop-blur-md hover:translate-y-[-2px] transition-all duration-300 hover:shadow-[0_0_20px_rgba(124,58,237,0.15)] p-5"
                 key={item.title}
               >
                 <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-950/40 text-2xl shadow-inner">
@@ -333,12 +338,12 @@ export function SaraDashboard() {
           </div>
         </section>
 
-        {/* ---- What You'll Learn ---- */}
+        {/* ---- What You'll Learn (curriculum missions list) ---- */}
         <section>
-          <h2 className="mb-1 text-sm font-semibold text-foreground/80 tracking-wide uppercase">
+          <h2 className="mb-1 text-xs font-extrabold text-foreground/40 tracking-wider uppercase">
             What You&apos;ll Learn
           </h2>
-          <p className="mb-4 text-xs text-muted-foreground">
+          <p className="mb-4 text-[11px] text-muted-foreground">
             Year {year} maths, broken into bite-sized topics. Tap any to start.
           </p>
           <div className="flex flex-col gap-3">
@@ -353,12 +358,12 @@ export function SaraDashboard() {
               return (
                 <button
                   className={cn(
-                    "group relative flex flex-col gap-3 rounded-2xl border p-4 text-left backdrop-blur-md transition-all duration-300",
+                    "group relative flex flex-col gap-3 rounded-2xl border p-4 text-left backdrop-blur-md transition-all duration-300 sara-glass-panel",
                     isCompleted
                       ? "border-emerald-500/25 bg-emerald-500/5 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.1)]"
                       : isCurrent
                         ? "border-orange-500/25 bg-orange-500/5 hover:border-orange-500/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.1)]"
-                        : "border-indigo-950/40 bg-indigo-950/10 hover:border-indigo-500/30 hover:bg-indigo-950/20 hover:shadow-[0_0_15px_rgba(99,102,241,0.05)]"
+                        : "border-white/5 bg-white/5 hover:border-white/10 hover:shadow-[0_0_15px_rgba(99,102,241,0.05)]"
                   )}
                   key={mission.id}
                   onClick={() => startMission(mission)}
@@ -403,7 +408,7 @@ export function SaraDashboard() {
 
                   {/* Progress Indicator for curriculum list */}
                   {(isCompleted || isCurrent) && (
-                    <div className="mt-2 w-full pt-2 border-t border-indigo-950/10">
+                    <div className="mt-2 w-full pt-2 border-t border-white/5">
                       <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/75 mb-1.5 uppercase tracking-wider animate-none">
                         <span>{isCompleted ? "Completed" : "Active Progress"}</span>
                         <span>{progressPercentage}%</span>
