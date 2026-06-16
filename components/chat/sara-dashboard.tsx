@@ -194,7 +194,7 @@ export function SaraDashboard() {
         {/* ---- AI Coach Bubble ---- */}
         <section className="rounded-2xl border border-violet-500/15 bg-violet-950/15 p-4 text-center backdrop-blur-md">
           <p className="text-xs font-medium italic text-violet-200">
-            "Welcome back! Let's explore fractions or solve some equations today."
+            "Welcome back! Ready to explore something new today?"
           </p>
         </section>
 
@@ -359,7 +359,7 @@ export function SaraDashboard() {
                     <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider">
                       <span>⏱ ~{todayMission.estimatedMinutes} min</span>
                       <span>•</span>
-                      <span>{todayMission.gcseDomain?.replace(/_/g, " ") || "GCSE Maths"}</span>
+                      <span>{todayMission.gcseDomain?.replace(/_/g, " ") || "GCSE"}</span>
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 shrink-0">
