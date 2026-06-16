@@ -1,0 +1,927 @@
+{
+  "quizId": "geography_year8_home_quiz_001",
+  "title": "Year 8 Geography Mixed Quiz",
+  "subject": "Geography",
+  "year": 8,
+  "questionCount": 30,
+  "difficulty": "mixed",
+  "timeLimitMinutes": 30,
+  "launchLocation": "home_screen",
+  "homeScreenCta": {
+    "label": "Start Year 8 Geography Quiz",
+    "route": "/student/quiz/geography-year8-home-quiz-001",
+    "description": "30 mixed questions covering map skills, rivers, weather, settlement, coasts and ecosystems."
+  },
+  "mode": "quiz",
+  "hintsAllowed": true,
+  "aiTutorAllowed": true,
+  "immediateFeedback": true,
+  "postQuizAiAnalysis": true,
+  "tokenEfficiency": {
+    "aiUsedToGenerateQuiz": false,
+    "tokensUsed": 0,
+    "questionsServed": 30
+  },
+  "questions": [
+    {
+      "id": "geo_y8_008",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Map Skills",
+      "subtopic": "Direction",
+      "skill": "Use bearings",
+      "difficulty": 3,
+      "questionType": "multiple_choice",
+      "question": "A bearing is usually measured in which unit?",
+      "options": [
+        "Metres",
+        "Degrees",
+        "Kilograms",
+        "Litres"
+      ],
+      "correctAnswer": "Degrees",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Degrees.",
+      "tags": [
+        "geography",
+        "year_8",
+        "map_skills",
+        "direction"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_026",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Weather and Climate",
+      "subtopic": "Climate Graphs",
+      "skill": "Interpret climate graphs",
+      "difficulty": 3,
+      "questionType": "multiple_choice",
+      "question": "On a climate graph, what is usually shown by bars?",
+      "options": [
+        "Temperature",
+        "Rainfall",
+        "Population",
+        "Altitude"
+      ],
+      "correctAnswer": "Rainfall",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Rainfall.",
+      "tags": [
+        "geography",
+        "year_8",
+        "weather_and_climate",
+        "climate_graphs"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_048",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Coasts",
+      "subtopic": "Coastal Management",
+      "skill": "Groynes",
+      "difficulty": 3,
+      "questionType": "short_answer",
+      "question": "What do groynes help to do?",
+      "options": [],
+      "correctAnswer": "Trap sediment and build up beaches",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Trap sediment and build up beaches.",
+      "tags": [
+        "geography",
+        "year_8",
+        "coasts",
+        "coastal_management"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_017",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Rivers",
+      "subtopic": "Flooding",
+      "skill": "Human causes of flooding",
+      "difficulty": 3,
+      "questionType": "short_answer",
+      "question": "How can building on floodplains increase flood risk?",
+      "options": [],
+      "correctAnswer": "It creates impermeable surfaces and reduces space for water to spread out",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: It creates impermeable surfaces and reduces space for water to spread out.",
+      "tags": [
+        "geography",
+        "year_8",
+        "rivers",
+        "flooding"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_006",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Map Skills",
+      "subtopic": "Contour Lines",
+      "skill": "Interpret steepness",
+      "difficulty": 3,
+      "questionType": "multiple_choice",
+      "question": "What do close together contour lines usually mean?",
+      "options": [
+        "Flat land",
+        "A steep slope",
+        "A river valley",
+        "A city centre"
+      ],
+      "correctAnswer": "A steep slope",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: A steep slope.",
+      "tags": [
+        "geography",
+        "year_8",
+        "map_skills",
+        "contour_lines"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_029",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Weather and Climate",
+      "subtopic": "Extreme Weather",
+      "skill": "Storm impacts",
+      "difficulty": 3,
+      "questionType": "short_answer",
+      "question": "Name one impact of extreme weather on people.",
+      "options": [],
+      "correctAnswer": "Homes damaged, transport disrupted, injuries, deaths or power cuts",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Homes damaged, transport disrupted, injuries, deaths or power cuts.",
+      "tags": [
+        "geography",
+        "year_8",
+        "weather_and_climate",
+        "extreme_weather"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_009",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Map Skills",
+      "subtopic": "Distance",
+      "skill": "Measure distance using scale",
+      "difficulty": 3,
+      "questionType": "short_answer",
+      "question": "A road is 6 cm long on a map. The scale is 1 cm = 2 km. What is the real distance?",
+      "options": [],
+      "correctAnswer": "12 km",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: 12 km.",
+      "tags": [
+        "geography",
+        "year_8",
+        "map_skills",
+        "distance"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_004",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Map Skills",
+      "subtopic": "Scale",
+      "skill": "Understand map scale",
+      "difficulty": 2,
+      "questionType": "short_answer",
+      "question": "If 1 cm on a map represents 1 km in real life, how far is 4 cm on the map?",
+      "options": [],
+      "correctAnswer": "4 km",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: 4 km.",
+      "tags": [
+        "geography",
+        "year_8",
+        "map_skills",
+        "scale"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_043",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Coasts",
+      "subtopic": "Waves",
+      "skill": "Constructive waves",
+      "difficulty": 3,
+      "questionType": "multiple_choice",
+      "question": "What do constructive waves usually do?",
+      "options": [
+        "Destroy beaches",
+        "Build up beaches",
+        "Create earthquakes",
+        "Stop tides"
+      ],
+      "correctAnswer": "Build up beaches by depositing material",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Build up beaches by depositing material.",
+      "tags": [
+        "geography",
+        "year_8",
+        "coasts",
+        "waves"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_005",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Map Skills",
+      "subtopic": "Contour Lines",
+      "skill": "Interpret relief",
+      "difficulty": 2,
+      "questionType": "multiple_choice",
+      "question": "What do contour lines on a map show?",
+      "options": [
+        "Weather",
+        "Population",
+        "Height and shape of the land",
+        "Road traffic"
+      ],
+      "correctAnswer": "Height and shape of the land",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Height and shape of the land.",
+      "tags": [
+        "geography",
+        "year_8",
+        "map_skills",
+        "contour_lines"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_034",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Population and Settlement",
+      "subtopic": "Settlement Function",
+      "skill": "Understand function",
+      "difficulty": 2,
+      "questionType": "multiple_choice",
+      "question": "What does the function of a settlement mean?",
+      "options": [
+        "Its height above sea level",
+        "Its main purpose",
+        "Its weather",
+        "Its grid reference"
+      ],
+      "correctAnswer": "The main purpose or role of the settlement",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: The main purpose or role of the settlement.",
+      "tags": [
+        "geography",
+        "year_8",
+        "population_and_settlement",
+        "settlement_function"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_040",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Population and Settlement",
+      "subtopic": "Urban Planning",
+      "skill": "Explain solutions",
+      "difficulty": 4,
+      "questionType": "short_answer",
+      "question": "Explain how public transport can reduce urban problems.",
+      "options": [],
+      "correctAnswer": "It can reduce traffic congestion and air pollution by lowering car use",
+      "marks": 2,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: It can reduce traffic congestion and air pollution by lowering car use.",
+      "tags": [
+        "geography",
+        "year_8",
+        "population_and_settlement",
+        "urban_planning"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 15
+    },
+    {
+      "id": "geo_y8_036",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Population and Settlement",
+      "subtopic": "Migration",
+      "skill": "Define migration",
+      "difficulty": 2,
+      "questionType": "short_answer",
+      "question": "What is migration?",
+      "options": [],
+      "correctAnswer": "Movement of people from one place to another to live",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Movement of people from one place to another to live.",
+      "tags": [
+        "geography",
+        "year_8",
+        "population_and_settlement",
+        "migration"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_049",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Coasts",
+      "subtopic": "Longshore Drift",
+      "skill": "Sediment movement",
+      "difficulty": 4,
+      "questionType": "short_answer",
+      "question": "What is longshore drift?",
+      "options": [],
+      "correctAnswer": "The movement of sediment along a coastline by waves approaching at an angle",
+      "marks": 2,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: The movement of sediment along a coastline by waves approaching at an angle.",
+      "tags": [
+        "geography",
+        "year_8",
+        "coasts",
+        "longshore_drift"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 15
+    },
+    {
+      "id": "geo_y8_030",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Weather and Climate",
+      "subtopic": "Climate Change",
+      "skill": "Evidence and impacts",
+      "difficulty": 4,
+      "questionType": "short_answer",
+      "question": "Explain one possible impact of climate change on coastal areas.",
+      "options": [],
+      "correctAnswer": "Sea level rise can increase flooding and erosion in coastal areas",
+      "marks": 2,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Sea level rise can increase flooding and erosion in coastal areas.",
+      "tags": [
+        "geography",
+        "year_8",
+        "weather_and_climate",
+        "climate_change"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 15
+    },
+    {
+      "id": "geo_y8_003",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Map Skills",
+      "subtopic": "Compass Directions",
+      "skill": "Use compass points",
+      "difficulty": 1,
+      "questionType": "multiple_choice",
+      "question": "Which compass direction is directly opposite north?",
+      "options": [
+        "East",
+        "West",
+        "South",
+        "North-east"
+      ],
+      "correctAnswer": "South",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: South.",
+      "tags": [
+        "geography",
+        "year_8",
+        "map_skills",
+        "compass_directions"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_028",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Weather and Climate",
+      "subtopic": "Climate Factors",
+      "skill": "Altitude",
+      "difficulty": 3,
+      "questionType": "short_answer",
+      "question": "How does altitude usually affect temperature?",
+      "options": [],
+      "correctAnswer": "Temperature decreases as altitude increases",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Temperature decreases as altitude increases.",
+      "tags": [
+        "geography",
+        "year_8",
+        "weather_and_climate",
+        "climate_factors"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_055",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Ecosystems",
+      "subtopic": "Rainforests",
+      "skill": "Biodiversity",
+      "difficulty": 3,
+      "questionType": "short_answer",
+      "question": "Why do tropical rainforests have high biodiversity?",
+      "options": [],
+      "correctAnswer": "Warm, wet conditions support many different plants and animals",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Warm, wet conditions support many different plants and animals.",
+      "tags": [
+        "geography",
+        "year_8",
+        "ecosystems",
+        "rainforests"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_001",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Map Skills",
+      "subtopic": "Grid References",
+      "skill": "Use four-figure grid references",
+      "difficulty": 1,
+      "questionType": "multiple_choice",
+      "question": "What is a four-figure grid reference used to identify?",
+      "options": [
+        "A country",
+        "A square on a map",
+        "A river source",
+        "A climate zone"
+      ],
+      "correctAnswer": "A square on a map",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: A square on a map.",
+      "tags": [
+        "geography",
+        "year_8",
+        "map_skills",
+        "grid_references"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_042",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Coasts",
+      "subtopic": "Coastal Processes",
+      "skill": "Deposition",
+      "difficulty": 2,
+      "questionType": "multiple_choice",
+      "question": "What is deposition at the coast?",
+      "options": [
+        "Material is picked up",
+        "Material is dropped",
+        "Waves become taller",
+        "Cliffs collapse"
+      ],
+      "correctAnswer": "When material is dropped by the sea",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: When material is dropped by the sea.",
+      "tags": [
+        "geography",
+        "year_8",
+        "coasts",
+        "coastal_processes"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_010",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Map Skills",
+      "subtopic": "Relief",
+      "skill": "Physical geography interpretation",
+      "difficulty": 4,
+      "questionType": "short_answer",
+      "question": "Explain how contour lines can help someone plan a walking route.",
+      "options": [],
+      "correctAnswer": "They show height and steepness, helping walkers avoid steep slopes or choose easier routes",
+      "marks": 2,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: They show height and steepness, helping walkers avoid steep slopes or choose easier routes.",
+      "tags": [
+        "geography",
+        "year_8",
+        "map_skills",
+        "relief"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 15
+    },
+    {
+      "id": "geo_y8_047",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Coasts",
+      "subtopic": "Coastal Management",
+      "skill": "Sea walls",
+      "difficulty": 2,
+      "questionType": "multiple_choice",
+      "question": "What is the purpose of a sea wall?",
+      "options": [
+        "To increase rainfall",
+        "To protect the coast",
+        "To create earthquakes",
+        "To measure tides"
+      ],
+      "correctAnswer": "To protect the coast from wave erosion and flooding",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: To protect the coast from wave erosion and flooding.",
+      "tags": [
+        "geography",
+        "year_8",
+        "coasts",
+        "coastal_management"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_013",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Rivers",
+      "subtopic": "Erosion",
+      "skill": "Understand erosion",
+      "difficulty": 2,
+      "questionType": "short_answer",
+      "question": "What is erosion in a river?",
+      "options": [],
+      "correctAnswer": "The wearing away of rock and soil by river water",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: The wearing away of rock and soil by river water.",
+      "tags": [
+        "geography",
+        "year_8",
+        "rivers",
+        "erosion"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_054",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Ecosystems",
+      "subtopic": "Rainforests",
+      "skill": "Rainforest climate",
+      "difficulty": 2,
+      "questionType": "multiple_choice",
+      "question": "What is the climate of tropical rainforests usually like?",
+      "options": [
+        "Cold and dry",
+        "Hot and wet all year",
+        "Cold and wet",
+        "Hot and dry all year"
+      ],
+      "correctAnswer": "Hot and wet all year",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Hot and wet all year.",
+      "tags": [
+        "geography",
+        "year_8",
+        "ecosystems",
+        "rainforests"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_031",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Population and Settlement",
+      "subtopic": "Population Distribution",
+      "skill": "Define population distribution",
+      "difficulty": 2,
+      "questionType": "multiple_choice",
+      "question": "What does population distribution mean?",
+      "options": [
+        "How old people are",
+        "How people are spread out",
+        "How rich people are",
+        "How many babies are born"
+      ],
+      "correctAnswer": "How people are spread out across an area",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: How people are spread out across an area.",
+      "tags": [
+        "geography",
+        "year_8",
+        "population_and_settlement",
+        "population_distribution"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_039",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Population and Settlement",
+      "subtopic": "Urban Challenges",
+      "skill": "Problems in cities",
+      "difficulty": 3,
+      "questionType": "short_answer",
+      "question": "Name one challenge caused by rapid urban growth.",
+      "options": [],
+      "correctAnswer": "Traffic congestion, pollution, housing shortages or pressure on services",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Traffic congestion, pollution, housing shortages or pressure on services.",
+      "tags": [
+        "geography",
+        "year_8",
+        "population_and_settlement",
+        "urban_challenges"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_057",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Ecosystems",
+      "subtopic": "Deforestation",
+      "skill": "Impacts",
+      "difficulty": 3,
+      "questionType": "short_answer",
+      "question": "Name one environmental impact of deforestation.",
+      "options": [],
+      "correctAnswer": "Habitat loss, species extinction, soil erosion or increased carbon dioxide",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Habitat loss, species extinction, soil erosion or increased carbon dioxide.",
+      "tags": [
+        "geography",
+        "year_8",
+        "ecosystems",
+        "deforestation"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 10
+    },
+    {
+      "id": "geo_y8_012",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Rivers",
+      "subtopic": "River Features",
+      "skill": "Identify river mouth",
+      "difficulty": 1,
+      "questionType": "short_answer",
+      "question": "What is the mouth of a river?",
+      "options": [],
+      "correctAnswer": "Where a river flows into the sea, lake or another river",
+      "marks": 1,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Where a river flows into the sea, lake or another river.",
+      "tags": [
+        "geography",
+        "year_8",
+        "rivers",
+        "river_features"
+      ],
+      "estimatedTimeSeconds": 45,
+      "xp": 5
+    },
+    {
+      "id": "geo_y8_020",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Rivers",
+      "subtopic": "Processes",
+      "skill": "Apply river process understanding",
+      "difficulty": 4,
+      "questionType": "short_answer",
+      "question": "Explain why deposition often happens on the inside bend of a meander.",
+      "options": [],
+      "correctAnswer": "Water is slower on the inside bend, so it has less energy and drops sediment",
+      "marks": 2,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: Water is slower on the inside bend, so it has less energy and drops sediment.",
+      "tags": [
+        "geography",
+        "year_8",
+        "rivers",
+        "processes"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 15
+    },
+    {
+      "id": "geo_y8_059",
+      "subject": "Geography",
+      "yearGroups": [
+        8
+      ],
+      "keyStage": "KS3",
+      "topic": "Ecosystems",
+      "subtopic": "Adaptations",
+      "skill": "Plant adaptations",
+      "difficulty": 4,
+      "questionType": "short_answer",
+      "question": "Explain why rainforest plants often have drip-tip leaves.",
+      "options": [],
+      "correctAnswer": "They help water run off quickly, reducing damage and fungal growth",
+      "marks": 2,
+      "misconception": "May confuse related geography terms or processes.",
+      "hint": "Think about the key geography word in the question.",
+      "explanation": "The correct answer is: They help water run off quickly, reducing damage and fungal growth.",
+      "tags": [
+        "geography",
+        "year_8",
+        "ecosystems",
+        "adaptations"
+      ],
+      "estimatedTimeSeconds": 75,
+      "xp": 15
+    }
+  ]
+}

@@ -1,0 +1,307 @@
+[
+  {
+    "id": "geo_y8_021",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Weather",
+    "skill": "Define weather",
+    "difficulty": 1,
+    "questionType": "multiple_choice",
+    "question": "What is weather?",
+    "options": [
+      "Average conditions over 30 years",
+      "Day-to-day condition of the atmosphere",
+      "The height of land",
+      "The number of people in a place"
+    ],
+    "correctAnswer": "The day-to-day condition of the atmosphere",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The day-to-day condition of the atmosphere.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "weather"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_022",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Climate",
+    "skill": "Define climate",
+    "difficulty": 1,
+    "questionType": "short_answer",
+    "question": "What is climate?",
+    "options": [],
+    "correctAnswer": "The average weather conditions of a place over a long period of time",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The average weather conditions of a place over a long period of time.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "climate"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_023",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Temperature",
+    "skill": "Measurement",
+    "difficulty": 1,
+    "questionType": "multiple_choice",
+    "question": "What instrument is used to measure temperature?",
+    "options": [
+      "Anemometer",
+      "Thermometer",
+      "Rain gauge",
+      "Barometer"
+    ],
+    "correctAnswer": "Thermometer",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Thermometer.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "temperature"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_024",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Rainfall",
+    "skill": "Measurement",
+    "difficulty": 1,
+    "questionType": "multiple_choice",
+    "question": "What instrument is used to measure rainfall?",
+    "options": [
+      "Compass",
+      "Rain gauge",
+      "Barometer",
+      "Hygrometer"
+    ],
+    "correctAnswer": "Rain gauge",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Rain gauge.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "rainfall"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_025",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Wind",
+    "skill": "Measurement",
+    "difficulty": 2,
+    "questionType": "multiple_choice",
+    "question": "What does an anemometer measure?",
+    "options": [
+      "Wind speed",
+      "Rainfall",
+      "Temperature",
+      "Cloud cover"
+    ],
+    "correctAnswer": "Wind speed",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Wind speed.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "wind"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_026",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Climate Graphs",
+    "skill": "Interpret climate graphs",
+    "difficulty": 3,
+    "questionType": "multiple_choice",
+    "question": "On a climate graph, what is usually shown by bars?",
+    "options": [
+      "Temperature",
+      "Rainfall",
+      "Population",
+      "Altitude"
+    ],
+    "correctAnswer": "Rainfall",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Rainfall.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "climate_graphs"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_027",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Climate Factors",
+    "skill": "Latitude",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "Why are places near the equator usually warmer?",
+    "options": [],
+    "correctAnswer": "The Sun rays are more direct near the equator",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The Sun rays are more direct near the equator.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "climate_factors"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_028",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Climate Factors",
+    "skill": "Altitude",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "How does altitude usually affect temperature?",
+    "options": [],
+    "correctAnswer": "Temperature decreases as altitude increases",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Temperature decreases as altitude increases.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "climate_factors"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_029",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Extreme Weather",
+    "skill": "Storm impacts",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "Name one impact of extreme weather on people.",
+    "options": [],
+    "correctAnswer": "Homes damaged, transport disrupted, injuries, deaths or power cuts",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Homes damaged, transport disrupted, injuries, deaths or power cuts.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "extreme_weather"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_030",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Weather and Climate",
+    "subtopic": "Climate Change",
+    "skill": "Evidence and impacts",
+    "difficulty": 4,
+    "questionType": "short_answer",
+    "question": "Explain one possible impact of climate change on coastal areas.",
+    "options": [],
+    "correctAnswer": "Sea level rise can increase flooding and erosion in coastal areas",
+    "marks": 2,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Sea level rise can increase flooding and erosion in coastal areas.",
+    "tags": [
+      "geography",
+      "year_8",
+      "weather_and_climate",
+      "climate_change"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 15
+  }
+]

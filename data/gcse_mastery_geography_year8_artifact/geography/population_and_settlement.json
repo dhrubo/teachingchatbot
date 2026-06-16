@@ -1,0 +1,302 @@
+[
+  {
+    "id": "geo_y8_031",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Population Distribution",
+    "skill": "Define population distribution",
+    "difficulty": 2,
+    "questionType": "multiple_choice",
+    "question": "What does population distribution mean?",
+    "options": [
+      "How old people are",
+      "How people are spread out",
+      "How rich people are",
+      "How many babies are born"
+    ],
+    "correctAnswer": "How people are spread out across an area",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: How people are spread out across an area.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "population_distribution"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_032",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Population Density",
+    "skill": "Define density",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "What does population density measure?",
+    "options": [],
+    "correctAnswer": "The number of people living in a given area",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The number of people living in a given area.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "population_density"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_033",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Settlement Site",
+    "skill": "Physical factors",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "Name one physical factor that affects where settlements develop.",
+    "options": [],
+    "correctAnswer": "Water supply, flat land, fertile soil or shelter",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Water supply, flat land, fertile soil or shelter.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "settlement_site"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_034",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Settlement Function",
+    "skill": "Understand function",
+    "difficulty": 2,
+    "questionType": "multiple_choice",
+    "question": "What does the function of a settlement mean?",
+    "options": [
+      "Its height above sea level",
+      "Its main purpose",
+      "Its weather",
+      "Its grid reference"
+    ],
+    "correctAnswer": "The main purpose or role of the settlement",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The main purpose or role of the settlement.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "settlement_function"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_035",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Urbanisation",
+    "skill": "Define urbanisation",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "What is urbanisation?",
+    "options": [],
+    "correctAnswer": "The increase in the percentage of people living in towns and cities",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The increase in the percentage of people living in towns and cities.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "urbanisation"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_036",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Migration",
+    "skill": "Define migration",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "What is migration?",
+    "options": [],
+    "correctAnswer": "Movement of people from one place to another to live",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Movement of people from one place to another to live.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "migration"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_037",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Push and Pull Factors",
+    "skill": "Apply concepts",
+    "difficulty": 3,
+    "questionType": "multiple_choice",
+    "question": "Which is a pull factor?",
+    "options": [
+      "War",
+      "Drought",
+      "Better job opportunities",
+      "Flooding"
+    ],
+    "correctAnswer": "Better job opportunities",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Better job opportunities.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "push_and_pull_factors"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_038",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Megacities",
+    "skill": "Define megacity",
+    "difficulty": 3,
+    "questionType": "multiple_choice",
+    "question": "What is a megacity?",
+    "options": [
+      "A capital city",
+      "A city over 10 million people",
+      "Any city near the sea",
+      "A city with old buildings"
+    ],
+    "correctAnswer": "A city with more than 10 million people",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: A city with more than 10 million people.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "megacities"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_039",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Urban Challenges",
+    "skill": "Problems in cities",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "Name one challenge caused by rapid urban growth.",
+    "options": [],
+    "correctAnswer": "Traffic congestion, pollution, housing shortages or pressure on services",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Traffic congestion, pollution, housing shortages or pressure on services.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "urban_challenges"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_040",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Population and Settlement",
+    "subtopic": "Urban Planning",
+    "skill": "Explain solutions",
+    "difficulty": 4,
+    "questionType": "short_answer",
+    "question": "Explain how public transport can reduce urban problems.",
+    "options": [],
+    "correctAnswer": "It can reduce traffic congestion and air pollution by lowering car use",
+    "marks": 2,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: It can reduce traffic congestion and air pollution by lowering car use.",
+    "tags": [
+      "geography",
+      "year_8",
+      "population_and_settlement",
+      "urban_planning"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 15
+  }
+]

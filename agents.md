@@ -674,3 +674,131 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
     1.  **Graceful UX (`components/chat/challenge-mode.tsx`):** a 404 / no-question response now shows a friendly "Challenges for <topic> are coming soon — Choose another topic" screen instead of an infinite spinner (new `noQuestions` state).
     2.  **Authored 16 new archetypes (`data/question-archetypes/number-fractions-measures.json`)** covering the 6 empty missions: four-operations, fractions (add same-denominator, of-amount, multiply), perimeter/area (rectangle/triangle), volume/surface-area (cuboid/cube), Pythagoras (hypotenuse + shorter side via integer triples), and simultaneous equations (sum/difference elimination). All deterministic + locally gradeable.
 - **Verified:** generator smoke test (16 × 15 instances) → 0 unresolved placeholders, 0 self-grade failures; re-seeded → **55 archetypes total, all 13 active missions now have ≥1** (none empty). Live prod `/api/adaptive-challenge` returns 200 for percentages & ratio; the 6 newly-covered topics now resolve too. `pnpm test:unit` 104/104, `next build` clean, changed files lint-clean.
+
+---
+
+## Phase 42 Log: GCSE Mastery MVP Database Schema Updates
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **Modified `lib/db/schema.ts`**:
+       - Added new fields `selectedSubjects` (json array of strings, default `[]`) and `examBoard` (varchar 32, default `'Unspecified'`) to the `studentProfile` table.
+       - Defined `studentMisconception` table tracking skill misconceptions with fields: `id`, `studentId` (cascade delete reference), `skillSlug`, `misconception`, `count`, and `lastSeenAt`.
+       - Defined `aiCall` table tracking token usage with fields: `id`, `studentId` (set null reference), `purpose`, `modelUsed`, `promptTokens`, `completionTokens`, `estimatedTokensSaved`, `cachedResponseUsed`, and `createdAt`.
+       - Defined `weeklyReport` table for parent progress reporting with fields: `id`, `studentId` (cascade delete reference), `summaryText`, `startOfWeek`, `endOfWeek`, and `createdAt`.
+    2. **Generated Migration**: Generated Drizzle migration `0013_shallow_turbo.sql` using `pnpm db:generate`.
+    3. **Executed Migration**: Successfully ran migrations on the live database using `pnpm db:migrate`.
+    4. **Verified Code Safety**: Confirmed the entire codebase compiles cleanly with `npx tsc --noEmit` and all 104 unit tests pass with `pnpm test:unit`.
+
+---
+
+## Phase 43 Log: GCSE Mastery MVP Multi-Profile Support & Onboarding
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **Extended Student Profile Creation Query**:
+       - Updated `createStudent` inside `lib/db/queries/student.ts` to accept the new `selectedSubjects` and `examBoard` fields for insertions.
+    2. **Created Profile Management API Routes**:
+       - Created `/api/profiles` with a GET handler to fetch all student profiles for authenticated users along with the `activeProfile` derived from the `active_student_id` cookie, and a POST handler to create a new student profile and set the active cookie.
+       - Created `/api/profiles/active` with a POST handler to update or clear the `active_student_id` cookie HttpOnly.
+    3. **Authored OnboardingStepper Component**:
+       - Built `components/chat/onboarding-stepper.tsx`, a gorgeous 4-step modal workflow collecting Name, Year Group (Year 8/Year 9), GCSE Subjects, and Exam Board, submitting profile creation to `/api/profiles`.
+    4. **Authored ProfileSelector Component**:
+       - Built `components/chat/profile-selector.tsx`, featuring a Netflix-style design with playful hover transitions,circular profiles, "+ Add Student" button triggering the onboarding stepper, and links to the Guardian Dashboard.
+    5. **Integrated Profile Gate in ChatShell**:
+       - Modified `components/chat/shell.tsx` to read user session. If a regular authenticated user has no `activeProfile` selected, `<ProfileSelector />` is mounted, blocking learning/challenges until a student is chosen.
+    6. **Verified Code Safety**: Confirmed the codebase compiles with zero type errors (`npx tsc --noEmit`) and all 106 unit tests pass successfully.
+
+---
+
+## Phase 44 Log: GCSE Mastery MVP — Subject Selector, Socratic AI Hints & Error Explanation
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **Integrated Subject Selection & Year Group Toggles**:
+       - Overhauled `components/chat/sara-dashboard.tsx` with a beautifully styled row of GCSE Subject cards (GCSE Maths 📐 and GCSE Science 🧪) using active sunset indicator borders, glows, and keyframe hover animations.
+       - Integrated a conditional viewport rendering: switching to "Science" hides Maths cards and displays an interactive, highly polished placeholder card showcasing upcoming scientific modules with an organic CTA directing students to master their Maths skills.
+    2. **Engineered Socratic AI Hint System (`/api/ai/hint`)**:
+       - Created `/app/api/ai/hint/route.ts` API route utilizing the resilient `streamTextWithFallback` provider wrapper to generate encouraging Socratic hints (under 2 sentences) without revealing mathematical solutions.
+       - Registered `"hint"` as a telemetry tracking reason inside `lib/ai/stream-with-provider-fallback.ts` and logged tokens via the `logAICall` helper.
+       - Added the "💡 Get SARA Hint" trigger card inside the interactive fullscreen `components/chat/challenge-mode.tsx` quiz modal.
+    3. **Engineered Socratic Misconception & Error Explainer (`/api/ai/explain-error`)**:
+       - Created `/app/api/ai/explain-error/route.ts` leveraging structured model candidates to diagnose exactly which mathematical slip a student committed.
+       - Returns typesafe JSON with short misconception labels and warm corrections.
+       - Records/upserts the student error dynamically into the `studentMisconception` database table, incrementing counts on conflict.
+       - Pinned an "🧐 Ask SARA: Why was I wrong?" drawer trigger directly inside incorrect challenge-mode feedback cards.
+
+---
+
+## Phase 45 Log: GCSE Mastery MVP — Guardian Analytics, Heatmap & AI Efficiency Panel
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **Engineered Multi-Child Selector & Query Parameter Routing**:
+       - Overhauled the parent dashboard api `app/(parent)/api/dashboard/route.ts` to return all student profiles registered under the logged-in parent account.
+       - Enabled `studentId` query-param routing on GET requests, with automatic fallbacks to active cookies or first-child structures to preserve seamless multi-child data isolation.
+       - Toggling student avatars asynchronously POSTs to `/api/profiles/active` to sync the cookie, ensuring returning to the tutor chat launches that child's active session.
+    2. **Authored Syllabus Mastery Heatmap Grid**:
+       - Built an elegant parent component `components/guardian/mastery-heatmap.tsx` that maps the student's average `StudentSkillMastery` scores dynamically to active GCSE missions in the database.
+       - Visualizes progress with color-coded nodes matching the Sunset theme.
+    3. **Authored AI Efficiency Analytics Dashboard**:
+       - Designed `components/guardian/efficiency-dashboard.tsx` showing four interactive key-stats metrics cards on cost per learner, average tokens consumed, and tokens saved from template question deliveries.
+       - Displays the precise percentage of deterministically graded and served questions entirely free of AI API calls.
+    4. **Authored Guardian Goal-Setter Form**:
+       - Implemented a card form inside `app/(parent)/dashboard/page.tsx` permitting parents to assign GCSE Missions as custom learning goals.
+       - Created a secure POST endpoint `/app/api/guardian/goal/route.ts` to insert goals into the `studentGoal` database table.
+    5. **Verified Project Stability & Verification Checks**:
+       - Confirmed clean compilation with `npx tsc --noEmit` and passing unit-test suites with **108/108 passing tests** in local development.
+
+---
+
+## Phase 46 Log: Open Lessons API & Fast-Track Challenges
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **`/api/lessons` Endpoint Access**: Removed strict session checks on read-only static `GET` handler. Enables guest users to securely retrieve static curriculum datasets and populates the SARA student dashboard instantly upon guest onboarding.
+    2. **Fast-Track Direct Quiz Handler**: Built the `startMissionDirectQuiz(mission)` asynchronous function in `SaraDashboard` to fetch DB concept cards and programmatically fast-track the student straight into the 5-question adaptive assessment (Challenge Mode) bypassing concept slides with zero LLM API costs.
+    3. **Daily Mission "⚡ Fast-Track Quiz" Action Button**: Rendered a sunset-themed, tactile border button with a custom hover scale and glow transition next to the standard "Start/Continue →" button.
+    4. **Challenge Mode Hero Banner**: Added a premium, high-prominence violet glass full-width banner `"🏆 Challenge Mode: Year {year} {subject}"` above the Topic Map with glowing shadow borders and deep text descriptions.
+    5. **Verification & Testing**: Confirmed the entire workspace builds and compiles with zero type errors (`npx tsc --noEmit`) and all 108 unit tests pass successfully (`pnpm test:unit`).
+
+---
+
+## Phase 47 Log: GCSE Geography Year 8 Curriculum Import
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **Authored Geography Importer Script**: Created a robust, fully-typed TypeScript script at `/scripts/import-geography.ts` leveraging `drizzle-orm` and the custom Drizzle configuration.
+    2. **Grouped Geography JSON Datasets**: Loaded and parsed 6 source `.json` files (Coasts, Ecosystems, Map Skills, Population, Rivers, Weather & Climate) totaling 60 KS3 Geography Year 8 questions. Programmatically mapped them to structured **Missions** and **Lessons**.
+    3. **Seeded Custom Geography Concept Cards**: Idempotently cleared and seeded exactly 3 highly structured geographical analysis Concept Cards per Lesson (using fallback structures with custom geographical context and definitions).
+    4. **Upserted Question Archetypes**: Generated and populated 60 type-safe `QuestionArchetype` records with difficulty bands mapped cleanly to `must`, `should`, `could`, and `gcse_bridge` and acceptable answer options for multiple-choice entries.
+    5. **Verified Workspace Integrity**: Confirmed that type checking compiles with zero errors (`npx tsc --noEmit`) and all 108 unit tests pass perfectly with `pnpm test:unit`.
+
+---
+
+## Phase 48 Log: GCSE Geography Navigation Mega Menu Integration
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **Extended Subject-Year Topics Selector Hook**: Updated the `useSubjectYearTopics` hook inside `components/chat/topic-picker.tsx` to fully support dynamic SWR database fetches and fallback static definitions for the newly integrated `'geography'` subject.
+    2. **Designed Triple-Column Mega Menu**: Expanded the `PopoverContent` container in `components/chat/topic-picker.tsx` to support a wide triple-column layout (`w-[1100px] grid-cols-3 divide-x`).
+    3. **Added GCSE Geography Column**: Positioned **GCSE Geography 🌍** as a dedicated column inside the Mega Menu displaying all Year 8 geographical modules (Coasts, Rivers, Ecosystems, Map Skills, Climate, Settlement), fully aligned with SARA's emerald-themed active glows and sliding hover selections.
+    4. **Verified Integrity & Testing**: Verified that the entire project compiles with zero type errors (`npx tsc --noEmit`) and all **108 unit tests pass successfully**.
+
+---
+
+## Phase 49 Log: Homepage Redesign — Multi-Subject GCSE Tutor & Quiz Master
+
+- **Status:** Completed
+- **Goal:** Replace the maths-only homepage with a dynamic multi-subject GCSE Tutor & Quiz Master dashboard, supporting any subject that has missions seeded in the DB (Maths, Science, Geography).
+- **Actions Taken:**
+    1. **Added `GET /api/lessons?subjects=true` endpoint (`app/(chat)/api/lessons/route.ts`):** Returns distinct subjects from the `mission` table with their available year groups — fully dynamic, no hardcoded subject list. Query wrapped in try/catch. Added `subjectTitle()` helper and its inverse `subjectSlug()` for consistent mapping.
+    2. **Rewrote `components/chat/sara-dashboard.tsx`:** New hero copy ("Your GCSE Tutor & Quiz Master"), full-width search bar that finds live missions, dynamic subject tabs (Maths / Science / Geography) from the DB with `no-scrollbar` scrollable-on-mobile pills, year toggle per subject (only renders when >1 year available), and a grid of topic cards each with a "Quiz ⚡" fast-track button. AI coach bubble dropped.
+    3. **UX polish:** Loading state (pulsing cards), empty state ("No topics available for X Year Y yet."), error state ("Couldn't load topics — check your connection."), and `keepPreviousData: true` on SWR so the grid doesn't flash-empty on year/subject switch. Topic grid is 1-col on mobile, 2-col on `sm:`.
+    4. **Maths-specific copy cleanup:** Meta description changed from "Your AI maths coach for Year 8 & 9" to "Your AI tutor & quiz master for GCSE subjects." Remaining `"GCSE Maths"` fallbacks replaced with `"GCSE"`. AI coach bubble text made subject-agnostic. Challenge Mode banner now uses `subjectTitle(subject)` instead of hardcoded `"Maths"` / `"Science"` ternary.
+- **Verified:** `npx tsc --noEmit` clean; 108/108 unit tests pass; `next build` clean. Commits: `41d7bb1` (rewrite), `86374a3` (scrollbar fix), `e321d47` (copy cleanup).
+
+## Open Issues & Concerns (updated)
+
+- The `subjectTitle()` mapping is duplicated in `api/lessons/route.ts` and `sara-dashboard.tsx` — acceptable for a simple mapping in separate modules; extract to a shared lib if more subjects are added.
+

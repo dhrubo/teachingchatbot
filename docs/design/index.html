@@ -1,0 +1,2297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GCSE Mastery — Duolingo-style GCSE Learning Hub</title>
+  <meta name="description" content="Master your GCSEs through adaptive games, custom parent challenges, and AI tutor support." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..0,800;1,300..0,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================================
+       1. DESIGN SYSTEM & TOKENS (GCSE Mastery Space Sunset Theme)
+       ========================================================================= */
+    :root {
+      --bg: #120F35;                         /* Cosmic space deep violet */
+      --surface: rgba(255, 255, 255, 0.05);   /* Translucent glassmorphism panels */
+      --surface-solid: #15143C;              /* Dark solid container fallback */
+      --fg: #FFFFFF;                         /* High contrast crisp white typography */
+      --muted: rgba(255, 255, 255, 0.60);     /* Soft secondary text */
+      --border: rgba(255, 255, 255, 0.08);   /* Glowing separator line */
+      
+      --primary: #F97316;                    /* Sunset Coral */
+      --primary-hover: #ea580c;              /* Deep sunset hover */
+      --success: #10B981;                    /* Emerald Green for correct states */
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --warning: #F59E0B;                    /* Amber streak & flame color */
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --danger: #EF4444;                     /* Crimson Red for errors & quit triggers */
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --accent: #7C3AED;                     /* Royal Violet GCSE accent */
+      --accent-bg: rgba(124, 58, 237, 0.15);
+
+      --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --radius-full: 9999px;
+      
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.15);
+      --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.2);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: linear-gradient(135deg, #120F35 0%, #1A1648 40%, #2A1144 100%);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: 14.5px;
+      line-height: 1.5;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      outline: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-full);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .glassmorphism {
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* =========================================================================
+       2. REUSABLE COMPONENTS CSS UTILITIES
+       ========================================================================= */
+    
+    /* StreakBadge & XPBadge */
+    .StreakBadge, .XPBadge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-weight: 800;
+      font-family: var(--font-display);
+      font-size: 13px;
+      letter-spacing: -0.01em;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+    .StreakBadge {
+      background: rgba(245, 158, 11, 0.15);
+      color: #FBBF24;
+      border-color: rgba(245, 158, 11, 0.3);
+      animation: pulse-flame 2s infinite alternate;
+    }
+    .XPBadge {
+      background: rgba(249, 115, 22, 0.15);
+      color: #FB923C;
+      border-color: rgba(249, 115, 22, 0.3);
+    }
+
+    @keyframes pulse-flame {
+      0% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.2); }
+      100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.45); }
+    }
+
+    /* ProgressCard & SubjectCard */
+    .ProgressCard, .SubjectCard {
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .ProgressCard:hover, .SubjectCard:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* MasteryRing */
+    .MasteryRing {
+      position: relative;
+      width: 70px;
+      height: 70px;
+      display: grid;
+      place-items: center;
+    }
+    .MasteryRing svg {
+      transform: rotate(-90deg);
+      width: 70px;
+      height: 70px;
+    }
+    .MasteryRing circle {
+      fill: none;
+      stroke-width: 6;
+      stroke-linecap: round;
+    }
+    .MasteryRing .ring-track {
+      stroke: rgba(255, 255, 255, 0.1);
+    }
+    .MasteryRing .ring-progress {
+      stroke: var(--primary);
+      stroke-dasharray: 188.4; /* 2 * PI * 30 (radius=30) */
+      stroke-dashoffset: 188.4;
+      transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .MasteryRing .ring-text {
+      position: absolute;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 13.5px;
+      color: #FFFFFF;
+    }
+
+    /* TopicNode (Duolingo Style tree node) */
+    .TopicNode {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      z-index: 5;
+    }
+    .TopicNode .node-button {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: var(--surface-solid);
+      border: 4px solid var(--border);
+      box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3), var(--shadow-md);
+      display: grid;
+      place-items: center;
+      font-size: 30px;
+      transition: var(--transition);
+      position: relative;
+    }
+    .TopicNode.unlocked .node-button {
+      border-color: var(--primary);
+      background: var(--gradient-sara);
+      box-shadow: 0 8px 0 #9a3412, 0 10px 20px rgba(249, 115, 22, 0.35);
+    }
+    .TopicNode.active .node-button {
+      transform: scale(1.08);
+      border-color: #FEF3C7;
+      animation: pulse-active-node 1.5s infinite alternate;
+    }
+    .TopicNode.locked .node-button {
+      opacity: 0.55;
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+      cursor: not-allowed;
+    }
+    .TopicNode .node-button:active {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.1);
+    }
+    .TopicNode .node-label {
+      margin-top: 14px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 13.5px;
+      color: #FFFFFF;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      white-space: nowrap;
+    }
+    .TopicNode .node-percentage {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: var(--success);
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: var(--radius-full);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: var(--shadow-sm);
+    }
+
+    @keyframes pulse-active-node {
+      0% { box-shadow: 0 8px 0 #9a3412, 0 0 0 rgba(254, 243, 199, 0.2); }
+      100% { box-shadow: 0 8px 0 #9a3412, 0 0 16px rgba(254, 243, 199, 0.6); }
+    }
+
+    /* QuestionCard */
+    .QuestionCard {
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* HintPanel & FeedbackPanel */
+    .HintPanel {
+      background: rgba(124, 58, 237, 0.08);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 12px;
+      display: none;
+      animation: slide-down 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .FeedbackPanel {
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-top: 16px;
+      display: none;
+      animation: scale-up 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* GuardianSummaryCard & TokenEfficiencyCard */
+    .GuardianSummaryCard {
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      background: rgba(124, 58, 237, 0.05);
+      border: 1px dashed rgba(124, 58, 237, 0.3);
+    }
+    .TokenEfficiencyCard {
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    /* WeakTopicList */
+    .WeakTopicList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .WeakTopicList-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(239, 68, 68, 0.04);
+      border: 1px solid rgba(239, 68, 68, 0.1);
+      transition: var(--transition);
+    }
+    .WeakTopicList-item:hover {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    /* ClassHeatmap */
+    .ClassHeatmap-grid {
+      display: grid;
+      grid-template-columns: 140px repeat(5, 1fr);
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .ClassHeatmap-header {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      text-align: center;
+      padding: 4px;
+    }
+    .ClassHeatmap-header.align-left {
+      text-align: left;
+    }
+    .ClassHeatmap-row {
+      display: contents;
+    }
+    .ClassHeatmap-cell-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      padding: 6px 0;
+    }
+    .ClassHeatmap-cell-val {
+      height: 38px;
+      border-radius: var(--radius-sm);
+      display: grid;
+      place-items: center;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #FFFFFF;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      transition: var(--transition);
+    }
+    .ClassHeatmap-cell-val:hover {
+      transform: scale(1.05);
+      filter: brightness(1.15);
+      cursor: help;
+    }
+
+    @keyframes slide-down {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scale-up {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* =========================================================================
+       3. RESPONSIVE MAIN APP SHELL LAYOUT
+       ========================================================================= */
+    .app-header {
+      background: rgba(18, 15, 53, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .app-shell {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Premium Navigation Sidebar */
+    .sidebar-navigation {
+      width: 270px;
+      border-right: 1px solid var(--border);
+      background: rgba(18, 15, 53, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 10;
+      position: relative;
+    }
+
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 16px 12px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 16px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.65);
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #FFFFFF;
+    }
+    .nav-item.active {
+      background: rgba(249, 115, 22, 0.08);
+      color: var(--primary);
+      border-color: rgba(249, 115, 22, 0.15);
+    }
+
+    .nav-profile {
+      padding: 14px 16px;
+      background: rgba(18, 15, 53, 0.85);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .nav-profile:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Workspace Content Panes */
+    .workspace-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+      display: none; /* hidden by default */
+      animation: scale-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .screen-container.active {
+      display: block;
+    }
+
+    /* Sidebars */
+    .sidebar-right {
+      width: 310px;
+      border-left: 1px solid var(--border);
+      background: rgba(18, 15, 53, 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+      z-index: 10;
+      padding: 24px;
+      gap: 20px;
+    }
+
+    /* Grids & Layout helpers */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    /* Header controls */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 13.5px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-primary {
+      background: var(--gradient-sara);
+      color: #FFFFFF;
+      border: none;
+      box-shadow: 0 4px 14px rgba(249, 115, 22, 0.25);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 18px rgba(249, 115, 22, 0.35);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border);
+      color: #FFFFFF;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Form Fields */
+    .input-field {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      color: #FFFFFF;
+      font-family: inherit;
+      transition: var(--transition);
+      margin-bottom: 12px;
+    }
+    .input-field:focus {
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 0 10px rgba(249, 115, 22, 0.15);
+    }
+
+    /* Mobile bar */
+    .mobile-tab-bar {
+      display: none;
+    }
+
+    /* Text Glows */
+    .glowing-sunset {
+      background: linear-gradient(135deg, #F97316 20%, #F59E0B 50%, #D8B4FE 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .glowing-violet {
+      background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar-navigation, .sidebar-right {
+        display: none !important;
+      }
+      .mobile-tab-bar {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: rgba(18, 15, 53, 0.95);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-top: 1px solid var(--border);
+        z-index: 100;
+        justify-content: space-around;
+        align-items: center;
+      }
+      .mobile-tab-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        gap: 2px;
+      }
+      .mobile-tab-btn.active {
+        color: var(--primary);
+      }
+      .mobile-tab-btn span {
+        font-size: 18px;
+      }
+      .dashboard-grid, .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .screen-container {
+        padding: 16px 16px 80px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================================
+       APP HEADER
+       ========================================================================= -->
+  <header class="app-header">
+    <div class="brand-group">
+      <!-- Modern red S-Shield logo for GCSE Mastery -->
+      <div class="sara-logo-circle" style="width: 32px; height: 32px; background: #EF4444; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 0 12px rgba(239, 68, 68, 0.45);">
+        <svg width="14" height="18" viewBox="0 0 14 18" fill="none" style="margin-left: 1px;">
+          <path d="M12 4.5C12 2.5 10.3 1 8.5 1C6.7 1 5.5 2.5 5.5 4C5.5 5.5 6.5 6.5 8 7C10.5 7.8 12.5 9 12.5 12C12.5 15 10 17 7 17C3.5 17 1.5 14.5 1.5 12.5" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand-title" style="font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.02em;">
+        GCSE Mastery <span style="font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 6px; letter-spacing: 0.05em; text-transform: uppercase;">AQA Math</span>
+      </div>
+      
+      <!-- Action dropdown controllers -->
+      <div class="header-select-btn" onclick="switchScreen('screen-subject-map')" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-md); padding: 6px 12px; font-family: var(--font-display); font-weight: 700; color: #FFFFFF; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: var(--transition); margin-left: 12px;">
+        Choose a Topic <span style="font-size: 10px; opacity: 0.7;">▼</span>
+      </div>
+      
+      <div class="header-select-btn" onclick="openAuthModal('profile')" id="user-status-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-md); padding: 6px 12px; font-family: var(--font-display); font-weight: 700; color: #FFFFFF; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: var(--transition); margin-left: 8px;">
+        🔒 <span id="user-status-email" style="font-size: 11px; opacity: 0.8; font-weight: 600;">dhrubo@gmail.com</span> <span style="font-size: 10px; opacity: 0.7;">▼</span>
+      </div>
+    </div>
+    
+    <div class="stats-group">
+      <div class="stat-badge sound-toggle" onclick="toggleSound()" title="Toggle sounds" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); padding: 6px 12px; color: #FFFFFF; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--transition);">
+        <span id="sound-icon">🔊</span>
+      </div>
+      
+      <!-- Questions tracking indicator -->
+      <div class="stat-badge questions-left" id="header-limits-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: var(--radius-md); padding: 6px 12px; color: #10B981; font-size: 12px; font-weight: 700;">
+        Account: <strong id="header-limit-count" style="margin-left: 4px; color: #FFFFFF;">Unlimited Practice</strong>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       MAIN APP SHELL
+       ========================================================================= -->
+  <div class="app-shell">
+    
+    <!-- LEFT PERSISTENT NAVIGATION SIDEBAR (The GCSE Mastery Control Deck) -->
+    <aside class="sidebar-navigation">
+      <div class="nav-menu">
+        <div style="font-size: 11px; letter-spacing: 0.15em; color: var(--muted); font-weight: 800; padding: 0 16px 8px 16px; text-transform: uppercase;">STUDENT MENU</div>
+        <div class="nav-item active" id="nav-student-dashboard" onclick="switchScreen('screen-student-dashboard')">
+          <span>🎓</span> Student Dashboard
+        </div>
+        <div class="nav-item" id="nav-subject-map" onclick="switchScreen('screen-subject-map')">
+          <span>🗺️</span> Revision Map
+        </div>
+        <div class="nav-item" id="nav-lesson-quiz" onclick="startPracticeQuiz()">
+          <span>✏️</span> Lesson & Quiz
+        </div>
+        <div class="nav-item" id="nav-mistake-review" onclick="switchScreen('screen-mistake-review')">
+          <span>❌</span> Mistake Review
+        </div>
+
+        <div style="font-size: 11px; letter-spacing: 0.15em; color: var(--muted); font-weight: 800; padding: 24px 16px 8px 16px; text-transform: uppercase;">COMMUNITY HUB</div>
+        <div class="nav-item" id="nav-guardian-dashboard" onclick="switchScreen('screen-guardian-dashboard')">
+          <span>👨‍👩‍👦</span> Guardian Hub
+        </div>
+        <div class="nav-item" id="nav-create-challenge" onclick="switchScreen('screen-create-challenge')">
+          <span>🎯</span> Assign Challenge
+        </div>
+        <div class="nav-item" id="nav-teacher-dashboard" onclick="switchScreen('screen-teacher-dashboard')">
+          <span>🏫</span> Teacher Portal
+        </div>
+
+        <div style="font-size: 11px; letter-spacing: 0.15em; color: var(--muted); font-weight: 800; padding: 24px 16px 8px 16px; text-transform: uppercase;">SYSTEM ADMIN</div>
+        <div class="nav-item" id="nav-ai-efficiency" onclick="switchScreen('screen-ai-efficiency')">
+          <span>⚡</span> AI Stats Board
+        </div>
+      </div>
+
+      <!-- Quick Actions Reset -->
+      <div style="padding: 12px 16px; display: flex; gap: 8px;">
+        <button class="btn btn-secondary btn-sm" onclick="resetAllData()" style="width: 100%; border-style: dashed; font-size: 11px; color: rgba(255,255,255,0.4);">
+          ⚙️ Reset App Progress
+        </button>
+      </div>
+
+      <!-- Left Sidebar Profile Footer -->
+      <div class="nav-profile" onclick="openAuthModal('profile')">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; background: var(--gradient-sara); border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #FFFFFF; box-shadow: 0 2px 8px rgba(249,115,22,0.35);">
+            D
+          </div>
+          <div style="display: flex; flex-direction: column; text-align: left;">
+            <div id="sidebar-profile-username" style="font-family: var(--font-display); font-size: 13px; font-weight: 700; color: #FFFFFF;">dhrubo paul</div>
+            <div id="sidebar-profile-role" style="font-size: 11px; color: var(--primary); font-weight: 600;">Year 9 • GCSE Pathway</div>
+          </div>
+        </div>
+        <span style="font-size: 11px; color: rgba(255,255,255,0.4);">▲</span>
+      </div>
+    </aside>
+
+    <!-- CENTRAL WORKSPACE (Hosts all 8 dynamic screens) -->
+    <main class="workspace-pane">
+      
+      <!-- =========================================================================
+           SCREEN 1: STUDENT DASHBOARD
+           ========================================================================= -->
+      <div class="screen-container active" id="screen-student-dashboard">
+        <!-- Dashboard Greeting -->
+        <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 800; line-height: 1.25;">
+              Welcome back, <span class="glowing-sunset" id="dash-greeting-name">dhrubo</span>! 👋
+            </h2>
+            <p style="font-size: 14.5px; color: var(--muted); margin-top: 4px;">
+              Ready to crush today's learning objectives? SARA has prepared your revision path.
+            </p>
+          </div>
+          <!-- Quick Status badges -->
+          <div style="display: flex; gap: 10px;">
+            <div class="StreakBadge" id="dash-badge-streak">🔥 5 Days</div>
+            <div class="XPBadge" id="dash-badge-xp">⚡ 350 XP</div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Left Columns: Cards & Practice options -->
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            
+            <!-- Quick Continue card (Premium Duolingo Vibe) -->
+            <div class="ProgressCard glassmorphism" style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(249, 115, 22, 0.05) 100%); border-color: rgba(124, 58, 237, 0.3);">
+              <div style="flex: 1;">
+                <span style="font-size: 11px; font-weight: 800; color: #A78BFA; background: rgba(124, 58, 237, 0.2); padding: 3px 8px; border-radius: var(--radius-full); text-transform: uppercase;">Active Mission</span>
+                <h3 style="font-family: var(--font-display); font-size: 21px; font-weight: 800; margin-top: 10px;">Fractions Arithmetic</h3>
+                <p style="font-size: 13.5px; color: var(--muted); margin-top: 4px; max-width: 480px;">
+                  Learn to divide and multiply complex GCSE level fractions. Practice makes perfect.
+                </p>
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 16px;">
+                  <button class="btn btn-primary" onclick="startPracticeQuiz()">⚡ Continue Learning</button>
+                  <span style="font-size: 13px; color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                    🎯 Daily Goal: 40/50 XP reached
+                  </span>
+                </div>
+              </div>
+              
+              <!-- SVG Mascot mini profile floating right -->
+              <div style="width: 100px; height: 100px; display: grid; place-items: center;">
+                <svg width="80" height="80" viewBox="0 0 160 160">
+                  <circle cx="80" cy="80" r="70" fill="url(#aura)" opacity="0.4" />
+                  <g class="mascot-float">
+                    <circle cx="80" cy="60" r="18" fill="#141235" stroke="url(#bodyGrad)" stroke-width="3" />
+                    <circle cx="80" cy="60" r="5" fill="#FEF3C7" />
+                    <path d="M 62 88 L 98 88 L 108 120 L 52 120 Z" fill="url(#bodyGrad)" />
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Subject Cards Matrix -->
+            <div>
+              <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 800; margin-bottom: 12px;">Your GCSE Subjects</h3>
+              <div class="grid-3">
+                
+                <!-- Math Card -->
+                <div class="SubjectCard glassmorphism" style="border-left: 4px solid var(--primary);">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div>
+                      <h4 style="font-size: 16px; font-weight: 800;">GCSE Mathematics</h4>
+                      <span style="font-size: 11px; color: var(--muted);">AQA GCSE Syllabus</span>
+                    </div>
+                    <span style="font-size: 24px;">📐</span>
+                  </div>
+                  <!-- Mini Progress ring -->
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+                    <div class="MasteryRing">
+                      <svg><circle class="ring-track" cx="35" cy="35" r="30"></circle><circle class="ring-progress" style="stroke-dashoffset: 52.75;" cx="35" cy="35" r="30"></circle></svg>
+                      <div class="ring-text">72%</div>
+                    </div>
+                    <div>
+                      <div style="font-size: 13px; font-weight: 800;">Level 2 Revision</div>
+                      <div style="font-size: 11px; color: var(--muted);">3/5 topics mastered</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Science Card -->
+                <div class="SubjectCard glassmorphism" style="border-left: 4px solid var(--accent); opacity: 0.85;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div>
+                      <h4 style="font-size: 16px; font-weight: 800;">GCSE Chemistry</h4>
+                      <span style="font-size: 11px; color: var(--muted);">AQA Triple Award</span>
+                    </div>
+                    <span style="font-size: 24px;">🧪</span>
+                  </div>
+                  <!-- Mini Progress ring -->
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+                    <div class="MasteryRing">
+                      <svg><circle class="ring-track" cx="35" cy="35" r="30"></circle><circle class="ring-progress" style="stroke: var(--accent); stroke-dashoffset: 103.62;" cx="35" cy="35" r="30"></circle></svg>
+                      <div class="ring-text">45%</div>
+                    </div>
+                    <div>
+                      <div style="font-size: 13px; font-weight: 800;">Atomic Bonding</div>
+                      <div style="font-size: 11px; color: var(--muted);">Locked • Complete Maths level 2</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- English Card -->
+                <div class="SubjectCard glassmorphism" style="border-left: 4px solid var(--success); opacity: 0.75;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div>
+                      <h4 style="font-size: 16px; font-weight: 800;">GCSE English</h4>
+                      <span style="font-size: 11px; color: var(--muted);">AQA English Literature</span>
+                    </div>
+                    <span style="font-size: 24px;">📚</span>
+                  </div>
+                  <!-- Mini Progress ring -->
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+                    <div class="MasteryRing">
+                      <svg><circle class="ring-track" cx="35" cy="35" r="30"></circle><circle class="ring-progress" style="stroke: var(--success); stroke-dashoffset: 150.72;" cx="35" cy="35" r="30"></circle></svg>
+                      <div class="ring-text">20%</div>
+                    </div>
+                    <div>
+                      <div style="font-size: 13px; font-weight: 800;">Shakespearean Verse</div>
+                      <div style="font-size: 11px; color: var(--muted);">Locked • Complete Chemistry</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Weak Topic Practice List -->
+            <div>
+              <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 800; margin-bottom: 12px;">⚡ Weak Topic Practice (Boost Your Score)</h3>
+              <div class="WeakTopicList" id="dash-weak-topics">
+                <div class="WeakTopicList-item">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 20px; color: var(--danger);">📈</span>
+                    <div>
+                      <div style="font-weight: 800; font-size: 14px;">Decimals Division</div>
+                      <div style="font-size: 11px; color: var(--muted);">Topic mastery: 20% • Struggling on Dividing factors</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" onclick="startPracticeQuiz('Decimals')">Practice Now</button>
+                </div>
+
+                <div class="WeakTopicList-item" style="background: rgba(245, 158, 11, 0.04); border-color: rgba(245, 158, 11, 0.1);">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 20px; color: var(--warning);">⚡</span>
+                    <div>
+                      <div style="font-weight: 800; font-size: 14px;">Percentages GCSE Bridge</div>
+                      <div style="font-size: 11px; color: var(--muted);">Topic mastery: 40% • Attempted: 1 time</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" onclick="startPracticeQuiz('Percentages')">Practice Now</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Recent Achievements & Badges -->
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px;">
+              <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <span>🏆</span> Recent Achievements
+              </h3>
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="font-size: 24px; width: 44px; height: 44px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); display: grid; place-items: center;">🔥</div>
+                  <div>
+                    <div style="font-weight: 700; font-size: 13px;">Flame Starter</div>
+                    <div style="font-size: 10.5px; color: var(--muted);">Maintained a 5-day daily learning streak!</div>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="font-size: 24px; width: 44px; height: 44px; border-radius: 50%; background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.2); display: grid; place-items: center;">👑</div>
+                  <div>
+                    <div style="font-weight: 700; font-size: 13px;">Concept Master</div>
+                    <div style="font-size: 10.5px; color: var(--muted);">Reviewed over 10 distinct revision cards!</div>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="font-size: 24px; width: 44px; height: 44px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); display: grid; place-items: center;">🎓</div>
+                  <div>
+                    <div style="font-weight: 700; font-size: 13px;">GCSE Bridge-builder</div>
+                    <div style="font-size: 10.5px; color: var(--muted);">Solved 3 consecutive high-difficulty problems correctly.</div>
+                  </div>
+                </div>
+
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="exportProgressReport()" style="width: 100%; margin-top: 18px; font-weight: 800;">
+                🖨️ Export AQA Progress Transcript
+              </button>
+            </div>
+
+            <!-- Daily Goals Checklist -->
+            <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px;">
+              <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; margin-bottom: 14px;">🎯 Today's Checklist</h3>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px;">
+                  <input type="checkbox" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
+                  <span style="text-decoration: line-through; opacity: 0.6;">Review Fractions Study Deck</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px;">
+                  <input type="checkbox" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                  <span>Score 100% on Fractions Challenge</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px;">
+                  <input type="checkbox" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                  <span>Create/Request a Practice Challenge</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           SCREEN 2: SUBJECT MAP (GCSE Revision Path)
+           ========================================================================= -->
+      <div class="screen-container" id="screen-subject-map">
+        <div style="margin-bottom: 24px; text-align: center;">
+          <span style="font-size: 11px; font-weight: 800; color: var(--primary); background: rgba(249, 115, 22, 0.12); padding: 3px 10px; border-radius: var(--radius-full); text-transform: uppercase;">YOUR PATHWAY</span>
+          <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 800; margin-top: 6px;">GCSE Revision Road</h2>
+          <p style="font-size: 14.5px; color: var(--muted); margin-top: 4px; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Interactive learning nodes structured like a game. Clear unlocked sections, gain XP, and tackle the GCSE Boss Battle.
+          </p>
+        </div>
+
+        <!-- Subjects tab selector inside path view -->
+        <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 16px;">
+          <button class="btn btn-secondary btn-sm" style="border-radius: var(--radius-full); background: var(--gradient-sara); border: none;">📐 Mathematics</button>
+          <button class="btn btn-secondary btn-sm" style="border-radius: var(--radius-full);" onclick="showToast('Chemistry Map available next release!')">🧪 Chemistry</button>
+          <button class="btn btn-secondary btn-sm" style="border-radius: var(--radius-full);" onclick="showToast('English Map available next release!')">📚 English Literature</button>
+        </div>
+
+        <!-- Duolingo style tree connection layout -->
+        <div style="position: relative; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; align-items: center; padding-bottom: 60px;">
+          
+          <!-- Connecting vertical svg background thread lines -->
+          <svg style="position: absolute; top: 38px; bottom: 38px; width: 100px; left: 50%; transform: translateX(-50%); z-index: 1; pointer-events: none;">
+            <path d="M 50 0 Q 10 100 50 200 T 50 400 T 50 600 T 50 800" fill="none" stroke="rgba(249, 115, 22, 0.2)" stroke-width="6" stroke-dasharray="10, 10"></path>
+          </svg>
+
+          <!-- Node 1: Number Skills -->
+          <div class="TopicNode unlocked" onclick="startPracticeQuiz('Fractions')">
+            <span class="node-percentage">100%</span>
+            <button class="node-button">
+              <span>🔢</span>
+            </button>
+            <div class="node-label">Number Skills</div>
+          </div>
+
+          <!-- Node 2: Fractions (Active, In-Progress) -->
+          <div class="TopicNode unlocked active" style="margin-left: 80px;" onclick="startPracticeQuiz('Fractions')">
+            <span class="node-percentage">60%</span>
+            <button class="node-button">
+              <span>🍰</span>
+            </button>
+            <div class="node-label">Fractions Mastery</div>
+          </div>
+
+          <!-- Node 3: Decimals -->
+          <div class="TopicNode unlocked" style="margin-right: 80px;" onclick="startPracticeQuiz('Decimals')">
+            <span class="node-percentage">20%</span>
+            <button class="node-button">
+              <span>🔟</span>
+            </button>
+            <div class="node-label">Decimal Division</div>
+          </div>
+
+          <!-- Node 4: Algebra -->
+          <div class="TopicNode unlocked" onclick="startPracticeQuiz('Algebra')">
+            <span class="node-percentage">80%</span>
+            <button class="node-button">
+              <span>🧮</span>
+            </button>
+            <div class="node-label">Solving Equations</div>
+          </div>
+
+          <!-- Node 5: Percentages (Locked) -->
+          <div class="TopicNode locked" style="margin-left: 80px;" onclick="showToast('Review active topics to unlock Percentages!')">
+            <button class="node-button">
+              <span>🔒</span>
+            </button>
+            <div class="node-label">Percentages Revision</div>
+          </div>
+
+          <!-- Node 6: Ratios (Locked) -->
+          <div class="TopicNode locked" style="margin-right: 80px;" onclick="showToast('Topic locked')">
+            <button class="node-button">
+              <span>🔒</span>
+            </button>
+            <div class="node-label">Ratios & Scales</div>
+          </div>
+
+          <!-- BOSS BATTLE NODE (Glows vibrant red-coral) -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px; text-align: center; border: 1px solid var(--danger); background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(18, 15, 53, 0.6) 100%); margin-top: 24px; width: 100%; box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);">
+            <div style="font-size: 10px; font-weight: 800; color: #EF4444; background: rgba(239, 68, 68, 0.2); padding: 2px 8px; border-radius: var(--radius-full); display: inline-block; text-transform: uppercase; margin-bottom: 8px;">YEAR 9 EXAM BRIDGING BATTLE</div>
+            <h4 style="font-size: 16px; font-weight: 800;">⚔️ Topic Boss Battle</h4>
+            <p style="font-size: 11.5px; color: var(--muted); margin: 6px 0 12px 0;">
+              Clear the custom 10-question high-tier practice run to prove readiness for Year 10 GCSE mathematics!
+            </p>
+            <button class="btn btn-secondary btn-sm" onclick="showToast('Review all preceding topics to 80%+ to fight the Boss!')" style="width: 100%; font-weight: 800; border-color: rgba(239, 68, 68, 0.2); color: #EF4444;">
+              Challenge the Boss (Locked)
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           SCREEN 3: LESSON / QUIZ SCREEN (GCSE Challenge Module)
+           ========================================================================= -->
+      <div class="screen-container" id="screen-lesson-quiz">
+        <div style="max-width: 680px; margin: 0 auto;">
+          <!-- Quiz header / progress tracker -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button class="btn btn-secondary btn-sm" onclick="exitQuizChallenge()" style="padding: 6px 10px;">✕ Quit</button>
+              <div>
+                <h3 style="font-size: 16px; font-weight: 800;" id="quiz-topic-title">Fractions Practice Run</h3>
+                <span style="font-size: 11px; color: var(--muted);" id="quiz-q-difficulty">MUST LAYER (Year 8/9 baseline)</span>
+              </div>
+            </div>
+            <!-- Progress Bar -->
+            <div style="text-align: right; width: 140px;">
+              <div style="font-size: 11px; font-weight: 800; margin-bottom: 4px;" id="quiz-progress-text">Question 1 of 5</div>
+              <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: var(--radius-full); overflow: hidden;">
+                <div style="width: 20%; height: 100%; background: var(--gradient-sara); transition: width 0.3s;" id="quiz-progress-inner"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Question Card Component -->
+          <div class="QuestionCard glassmorphism" id="quiz-question-card">
+            <div style="font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 6px;" id="quiz-q-band-indicator">MUST (AQA GCSE FOUNDATION)</div>
+            <div style="font-size: 18px; font-weight: 800; color: #FFFFFF;" id="quiz-q-text-content">Simplify the fraction: 15 / 25</div>
+          </div>
+
+          <!-- Interactive options or short answers -->
+          <div id="quiz-inputs-box">
+            <!-- Programmatically populated with MCQs or inputs -->
+          </div>
+
+          <!-- SARA dynamic hints panel -->
+          <div class="HintPanel" id="quiz-hint-panel">
+            <div style="font-weight: 800; color: var(--color-brand-violet-light); font-size: 13.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+              <span>💡</span> SARA's Helpful Guidance
+            </div>
+            <div style="font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.45;" id="quiz-hint-text">
+              Divide both the numerator and denominator by their highest common factor (5).
+            </div>
+          </div>
+
+          <!-- Dynamic grading feedback panel -->
+          <div class="FeedbackPanel" id="quiz-feedback-panel">
+            <!-- Dynamically injected success/danger comments -->
+          </div>
+
+          <!-- Submit controllers -->
+          <div style="margin-top: 24px; display: flex; align-items: center; justify-content: space-between;">
+            <button class="btn btn-secondary" onclick="revealQuizHint()">💡 Ask SARA for Hint</button>
+            <button class="btn btn-primary" id="quiz-action-btn" onclick="submitQuizAnswer()">Check Answer</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Results Screen Overlay within Quiz container -->
+        <div id="quiz-results-screen" style="display: none; max-width: 580px; margin: 0 auto; text-align: center; animation: scale-up 0.3s;">
+          <div style="font-size: 60px; margin-bottom: 12px;">🏆</div>
+          <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 800;" id="quiz-results-title">Incredible Achievement!</h2>
+          <p style="font-size: 15px; color: var(--muted); margin-top: 4px;">You have successfully finished the practice revision run.</p>
+          
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 24px; margin: 24px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="border-right: 1px solid rgba(255,255,255,0.05); padding-right: 10px;">
+              <div style="font-size: 32px; font-weight: 800; color: var(--primary);" id="quiz-results-score">4 / 5</div>
+              <div style="font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; margin-top: 4px;">CORRECT ANSWERS</div>
+            </div>
+            <div>
+              <div style="font-size: 32px; font-weight: 800; color: var(--success);">+50 XP</div>
+              <div style="font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; margin-top: 4px;">REVISION REWARD</div>
+            </div>
+          </div>
+
+          <!-- Mistakes Summary inside results panel -->
+          <div id="quiz-results-mistakes-panel" style="text-align: left; margin-bottom: 24px;">
+            <h4 style="font-weight: 800; margin-bottom: 8px;">📝 Mistake Log Review:</h4>
+            <div id="quiz-results-mistakes-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Mistakes generated dynamically -->
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: center; gap: 14px;">
+            <button class="btn btn-secondary" onclick="switchScreen('screen-student-dashboard')">Go to Dashboard</button>
+            <button class="btn btn-primary" onclick="switchScreen('screen-mistake-review')">❌ Review Mistakes</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- =========================================================================
+           SCREEN 4: MISTAKE REVIEW SCREEN (Tackle weaknesses)
+           ========================================================================= -->
+      <div class="screen-container" id="screen-mistake-review">
+        <div style="margin-bottom: 24px;">
+          <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 800; line-height: 1.25;">
+            ❌ Mistake Locker & Misconceptions
+          </h2>
+          <p style="font-size: 14.5px; color: var(--muted); margin-top: 4px;">
+            Don't ignore failures—they are step-stones to GCSE success! Below SARA tracks and breaks down common misconceptions.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;" id="mistake-records-container">
+          <!-- Populated dynamically via renderMistakeScreen() -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--danger); background: var(--danger-bg); padding: 2px 8px; border-radius: var(--radius-full); text-transform: uppercase;">Topic: Fractions Addition</span>
+              <span style="font-size: 12px; color: var(--muted);">Missed on: Question 2</span>
+            </div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #FFFFFF;">Problem: Calculate 2/5 + 1/4</h3>
+            <div style="margin: 12px 0; padding: 12px; border-radius: var(--radius-md); background: rgba(0,0,0,0.15); font-family: var(--font-mono); font-size: 13px;">
+              Your Answer: <strong style="color: var(--danger);">3/9</strong> | Correct Answer: <strong style="color: var(--success);">13/20</strong>
+            </div>
+            <!-- Misconceptions alert -->
+            <div style="margin-top: 14px; padding: 14px; border-radius: var(--radius-md); background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.2);">
+              <div style="font-weight: 800; color: var(--color-brand-violet-light); font-size: 13.5px; margin-bottom: 4px;">
+                💡 SARA Misconception Breakdown:
+              </div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.45;">
+                You added the numerators (2+1 = 3) and added the denominators (5+4 = 9) directly. <strong>This is a classic fractions trap!</strong> You can only add fractions once they share a common denominator. For 5 and 4, the lowest common denominator is 20. Convert 2/5 to 8/20, and 1/4 to 5/20. Then add only the top values: 8 + 5 = 13. Answer is 13/20.
+              </p>
+            </div>
+            <!-- Retry Button and Mastery impact stats -->
+            <div style="margin-top: 18px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 12px; font-weight: 700; color: var(--success);">🎯 Correcting this: +15 GCSE Mastery Points</span>
+              <button class="btn btn-primary btn-sm" onclick="startPracticeQuiz('Fractions')">Retry Topic Challenge</button>
+            </div>
+          </div>
+
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--danger); background: var(--danger-bg); padding: 2px 8px; border-radius: var(--radius-full); text-transform: uppercase;">Topic: Decimal Arithmetic</span>
+              <span style="font-size: 12px; color: var(--muted);">Missed on: Question 4</span>
+            </div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #FFFFFF;">Problem: Calculate 1.2 × 0.4</h3>
+            <div style="margin: 12px 0; padding: 12px; border-radius: var(--radius-md); background: rgba(0,0,0,0.15); font-family: var(--font-mono); font-size: 13px;">
+              Your Answer: <strong style="color: var(--danger);">4.8</strong> | Correct Answer: <strong style="color: var(--success);">0.48</strong>
+            </div>
+            <div style="margin-top: 14px; padding: 14px; border-radius: var(--radius-md); background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.2);">
+              <div style="font-weight: 800; color: var(--color-brand-violet-light); font-size: 13.5px; margin-bottom: 4px;">
+                💡 SARA Misconception Breakdown:
+              </div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.45;">
+                Remember, when multiplying two decimal values, count the total number of decimal places in BOTH multiplying numbers. 1.2 (1 place) × 0.4 (1 place) = 2 places total in the final result. Multiply 12 by 4 = 48, then pull the decimal point back 2 places from the right: 0.48.
+              </p>
+            </div>
+            <div style="margin-top: 18px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 12px; font-weight: 700; color: var(--success);">🎯 Correcting this: +10 GCSE Mastery Points</span>
+              <button class="btn btn-primary btn-sm" onclick="startPracticeQuiz('Decimals')">Retry Topic Challenge</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           SCREEN 5: GUARDIAN DASHBOARD (Parent Progress Hub)
+           ========================================================================= -->
+      <div class="screen-container" id="screen-guardian-dashboard">
+        <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 800; line-height: 1.25;">
+              👨‍👩‍👦 Parent/Guardian Hub
+            </h2>
+            <p style="font-size: 14.5px; color: var(--muted); margin-top: 4px;">
+              Monitor study metrics, view SARA's Weekly AI summaries, and configure customized focus challenges for your child.
+            </p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="switchScreen('screen-create-challenge')">🎯 Create Focus Challenge</button>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Left Main Pane -->
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            
+            <!-- Student profile summary card -->
+            <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <span style="font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase;">Linked Profile</span>
+                <h3 style="font-family: var(--font-display); font-size: 19px; font-weight: 800; margin-top: 4px;" id="guard-student-name">dhrubo paul (Year 9 Maths)</h3>
+                <div style="display: flex; gap: 14px; margin-top: 10px; font-size: 13.5px;">
+                  <span>🔥 Streak: <strong>5 Days</strong></span>
+                  <span>⚡ Weekly XP: <strong>210 XP</strong></span>
+                  <span>✏️ Solved: <strong>45 Questions</strong></span>
+                </div>
+              </div>
+              <span style="font-size: 44px;">🛡️</span>
+            </div>
+
+            <!-- Weekly Progress Chart (Duolingo style dashboard metrics) -->
+            <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 24px;">
+              <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; margin-bottom: 16px;">📊 Weekly Answer Activity (Questions Completed)</h3>
+              <!-- Simple pure CSS horizontal graph -->
+              <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="width: 40px; font-size: 12px; font-weight: 700; color: var(--muted);">Mon</span>
+                  <div style="flex: 1; height: 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="width: 60%; height: 100%; background: var(--gradient-sara); text-align: right; padding-right: 8px; color: #fff; font-size: 10px; font-weight: 800; line-height: 16px;">15 Qs</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="width: 40px; font-size: 12px; font-weight: 700; color: var(--muted);">Tue</span>
+                  <div style="flex: 1; height: 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="width: 90%; height: 100%; background: var(--gradient-sara); text-align: right; padding-right: 8px; color: #fff; font-size: 10px; font-weight: 800; line-height: 16px;">25 Qs</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="width: 40px; font-size: 12px; font-weight: 700; color: var(--muted);">Wed</span>
+                  <div style="flex: 1; height: 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="width: 20%; height: 100%; background: var(--gradient-sara); text-align: right; padding-right: 8px; color: #fff; font-size: 10px; font-weight: 800; line-height: 16px;">5 Qs</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="width: 40px; font-size: 12px; font-weight: 700; color: var(--muted);">Thu</span>
+                  <div style="flex: 1; height: 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="width: 45%; height: 100%; background: var(--gradient-sara); text-align: right; padding-right: 8px; color: #fff; font-size: 10px; font-weight: 800; line-height: 16px;">12 Qs</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="width: 40px; font-size: 12px; font-weight: 700; color: var(--muted);">Fri</span>
+                  <div style="flex: 1; height: 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="width: 75%; height: 100%; background: var(--gradient-sara); text-align: right; padding-right: 8px; color: #fff; font-size: 10px; font-weight: 800; line-height: 16px;">20 Qs</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- GuardianSummaryCard: AI Weekly Summary -->
+            <div class="GuardianSummaryCard">
+              <h3 style="font-family: var(--font-display); font-size: 16.5px; font-weight: 800; color: var(--color-brand-violet-light); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>🧠</span> SARA Parent AI Weekly Insights
+              </h3>
+              <p style="font-size: 13.5px; line-height: 1.5; color: rgba(255,255,255,0.9);">
+                "This week dhrubo paul demonstrated **outstanding progress in algebraic equation solving** (+15% mastery), answering 25 equations with an 88% success rate. However, **decimal division remained a noticeable misconception barrier** where dhrubo keeps forgetting factor place movements. Practice time peaked on Tuesday (25 mins). 
+                <br><br>
+                <strong>My Recommendation:</strong> Assign the custom Decimals challenge challenge to lock in dividing structures. I have prepared a foundational practice draft below."
+              </p>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Strong/Weak topic summaries -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px;">
+              <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 800; margin-bottom: 12px;">📈 Top Strengths</h3>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                  <span>Solving Equations</span>
+                  <span style="color: var(--success); font-weight: 800;">80% Mastery</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                  <span>Fractions Simplify</span>
+                  <span style="color: var(--success); font-weight: 800;">72% Mastery</span>
+                </div>
+              </div>
+
+              <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 800; margin-top: 24px; margin-bottom: 12px;">📉 Improvement Focus</h3>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                  <span>Decimal division</span>
+                  <span style="color: var(--danger); font-weight: 800;">20% Mastery</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                  <span>Percentages Bridge</span>
+                  <span style="color: var(--warning); font-weight: 800;">40% Mastery</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Custom alert panel -->
+            <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px; border-color: rgba(245, 158, 11, 0.2); background: rgba(245, 158, 11, 0.03);">
+              <h4 style="font-size: 14px; font-weight: 800; color: var(--warning); margin-bottom: 6px;">⚠️ Pending Assignments</h4>
+              <p style="font-size: 12px; color: var(--muted); line-height: 1.4;">
+                Student has no active custom challenges assigned by you. Click the button above to build one in 10 seconds.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           SCREEN 6: CREATE CHALLENGE SCREEN (Assign custom quizzes)
+           ========================================================================= -->
+      <div class="screen-container" id="screen-create-challenge">
+        <div style="max-width: 600px; margin: 0 auto;">
+          <div style="margin-bottom: 24px; text-align: center;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--accent); background: var(--accent-bg); padding: 3px 10px; border-radius: var(--radius-full); text-transform: uppercase;">PARENT & TEACHER TOOLKIT</span>
+            <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 800; margin-top: 6px;">🎯 Create Custom GCSE Challenge</h2>
+            <p style="font-size: 14.5px; color: var(--muted); margin-top: 4px;">
+              Target weak skills directly. Configure, customize, and immediately push focused practice runs to the student dashboard.
+            </p>
+          </div>
+
+          <!-- Forms card -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 30px;">
+            <div class="grid-2">
+              <div>
+                <label style="font-size: 12.5px; font-weight: 800; color: var(--muted); display: block; margin-bottom: 6px;">Select Subject</label>
+                <select class="input-field" id="challenge-create-subject">
+                  <option value="maths">GCSE Mathematics</option>
+                  <option value="chemistry" disabled>GCSE Chemistry (Coming soon)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 12.5px; font-weight: 800; color: var(--muted); display: block; margin-bottom: 6px;">Select GCSE Topic</label>
+                <select class="input-field" id="challenge-create-topic">
+                  <option value="Fractions">Fractions Revision</option>
+                  <option value="Decimals">Decimals Division</option>
+                  <option value="Algebra">Solving Equations</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 12px;">
+              <div>
+                <label style="font-size: 12.5px; font-weight: 800; color: var(--muted); display: block; margin-bottom: 6px;">Number of Questions</label>
+                <select class="input-field" id="challenge-create-count">
+                  <option value="5">5 Questions Run</option>
+                  <option value="10">10 Questions Run</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 12.5px; font-weight: 800; color: var(--muted); display: block; margin-bottom: 6px;">Syllabus Difficulty</label>
+                <select class="input-field" id="challenge-create-difficulty">
+                  <option value="Foundation">AQA GCSE Foundation (Level 1-4)</option>
+                  <option value="Higher">AQA GCSE Higher (Level 5-9)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px;">
+              <label style="font-size: 12.5px; font-weight: 800; color: var(--muted); display: block; margin-bottom: 6px;">Target Due Date</label>
+              <input type="date" class="input-field" id="challenge-create-date" value="2026-06-21">
+            </div>
+
+            <!-- Toggle Hints options -->
+            <div style="margin-top: 14px; padding: 14px; border-radius: var(--radius-md); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-weight: 800; font-size: 13.5px;">🔑 Toggle SARA AI Guidance Hints</div>
+                <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Allow student to review math hints during the test.</div>
+              </div>
+              <label style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                <input type="checkbox" checked style="opacity: 0; width: 0; height: 0;" id="challenge-create-hints">
+                <span style="position: absolute; cursor: pointer; inset: 0; background: var(--primary); border-radius: 34px; transition: .4s;"></span>
+              </label>
+            </div>
+
+            <button class="btn btn-primary" onclick="assignCustomChallenge()" style="width: 100%; margin-top: 24px; font-size: 15px; padding: 12px;">
+              🚀 Assign Challenge to Student Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           SCREEN 7: TEACHER DASHBOARD (Classroom Overview)
+           ========================================================================= -->
+      <div class="screen-container" id="screen-teacher-dashboard">
+        <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 800; line-height: 1.25;">
+              🏫 Teacher Classroom Portal
+            </h2>
+            <p style="font-size: 14.5px; color: var(--muted); margin-top: 4px;">
+              AQA GCSE Maths Class: Year 9 Set 2 (28 Active Students). Detect learning heatmaps and class misconceptions.
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('Classroom practice assigned to all 28 students!')">📋 Assign Class Practice</button>
+        </div>
+
+        <!-- Heatmap Container (ClassHeatmap) -->
+        <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800;">🔥 Student GCSE Topic Heatmap</h3>
+            <div style="display: flex; gap: 12px; font-size: 11px; font-weight: 800;">
+              <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 12px; background: #10B981; border-radius: 2px;"></span> Mastered (80%+)</span>
+              <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 12px; background: #F59E0B; border-radius: 2px;"></span> Intermediate (50-80%)</span>
+              <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 12px; background: #EF4444; border-radius: 2px;"></span> Weak (&lt;50%)</span>
+            </div>
+          </div>
+
+          <!-- Map grid structure -->
+          <div class="ClassHeatmap-grid">
+            <!-- Headers -->
+            <div class="ClassHeatmap-header align-left">Student</div>
+            <div class="ClassHeatmap-header">Fractions</div>
+            <div class="ClassHeatmap-header">Decimals</div>
+            <div class="ClassHeatmap-header">Algebra</div>
+            <div class="ClassHeatmap-header">Percentages</div>
+            <div class="ClassHeatmap-header">Ratios</div>
+
+            <!-- Student 1 -->
+            <div class="ClassHeatmap-row">
+              <div class="ClassHeatmap-cell-name">dhrubo paul</div>
+              <div class="ClassHeatmap-cell-val" style="background: #10B981;">82%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #EF4444;">20%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #10B981;">80%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #F59E0B;">65%</div>
+              <div class="ClassHeatmap-cell-val" style="background: rgba(255,255,255,0.05); color: var(--muted); border: 1px dashed rgba(255,255,255,0.1);">N/A</div>
+            </div>
+
+            <!-- Student 2 -->
+            <div class="ClassHeatmap-row">
+              <div class="ClassHeatmap-cell-name">Sarah Jenkins</div>
+              <div class="ClassHeatmap-cell-val" style="background: #10B981;">95%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #10B981;">88%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #F59E0B;">72%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #10B981;">90%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #F59E0B;">60%</div>
+            </div>
+
+            <!-- Student 3 -->
+            <div class="ClassHeatmap-row">
+              <div class="ClassHeatmap-cell-name">Emily Watson</div>
+              <div class="ClassHeatmap-cell-val" style="background: #EF4444;">40%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #EF4444;">35%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #F59E0B;">50%</div>
+              <div class="ClassHeatmap-cell-val" style="background: rgba(255,255,255,0.05); color: var(--muted); border: 1px dashed rgba(255,255,255,0.1);">N/A</div>
+              <div class="ClassHeatmap-cell-val" style="background: rgba(255,255,255,0.05); color: var(--muted); border: 1px dashed rgba(255,255,255,0.1);">N/A</div>
+            </div>
+
+            <!-- Student 4 -->
+            <div class="ClassHeatmap-row">
+              <div class="ClassHeatmap-cell-name">James Carter</div>
+              <div class="ClassHeatmap-cell-val" style="background: #F59E0B;">62%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #EF4444;">48%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #10B981;">85%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #F59E0B;">55%</div>
+              <div class="ClassHeatmap-cell-val" style="background: #EF4444;">30%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Class AI insights -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px; border-color: rgba(124, 58, 237, 0.2); background: rgba(124, 58, 237, 0.04);">
+            <h3 style="font-family: var(--font-display); font-size: 16.5px; font-weight: 800; color: var(--color-brand-violet-light); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              <span>💡</span> SARA Classroom AI Insights & Trends
+            </h3>
+            <p style="font-size: 13.5px; line-height: 1.5; color: rgba(255,255,255,0.9);">
+              "Classroom trend analysis indicates **Decimals Division is a critical bottleneck** for 65% of your class (Set 2). The predominant misconception involves placing decimal factors in vertical division. Fractions addition has improved by 12% following Monday's exercises. 
+              <br><br>
+              <strong>Instructional Recommendation:</strong> Spend 10 minutes on decimal alignment exercises. Emily Watson is falling behind with declining study streak (0 days)."
+            </p>
+          </div>
+
+          <!-- Misconceptions panel -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px;">
+            <h3 style="font-family: var(--font-display); font-size: 16.5px; font-weight: 800; margin-bottom: 12px;">📊 Major Class Misconceptions</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="padding: 10px; border-radius: var(--radius-sm); background: rgba(239, 68, 68, 0.05); border-left: 3px solid var(--danger); font-size: 13px;">
+                <strong>Decimal Alignments:</strong> 60% of students multiplying factors fail to place factors.
+              </div>
+              <div style="padding: 10px; border-radius: var(--radius-sm); background: rgba(245, 158, 11, 0.05); border-left: 3px solid var(--warning); font-size: 13px;">
+                <strong>Fraction denominators:</strong> 35% of students are adding denominators.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           SCREEN 8: AI EFFICIENCY DASHBOARD (Admin Panel)
+           ========================================================================= -->
+      <div class="screen-container" id="screen-ai-efficiency">
+        <div style="margin-bottom: 24px;">
+          <span style="font-size: 11px; font-weight: 800; color: var(--success); background: var(--success-bg); padding: 3px 10px; border-radius: var(--radius-full); text-transform: uppercase;">ADMIN STATS BOARD</span>
+          <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 800; margin-top: 6px;">
+            ⚡ AI Efficiency & Token Savings
+          </h2>
+          <p style="font-size: 14.5px; color: var(--muted); margin-top: 4px;">
+            Credential proof of cost-efficiency. Monitor real-time local grading statistics, tokens bypassed, and active system cache ratios.
+          </p>
+        </div>
+
+        <!-- TokenEfficiencyCard Component -->
+        <div class="TokenEfficiencyCard" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 30px;">
+          <div style="flex: 1;">
+            <h3 style="font-family: var(--font-display); font-size: 19px; font-weight: 800; color: #10B981;">🌿 local Grading Bypass Rate: 91.5%</h3>
+            <p style="font-size: 13.5px; color: var(--muted); margin-top: 6px; line-height: 1.5; max-width: 580px;">
+              By compiling mathematical problem templates into deterministic local archetypes, SARA grades student challenge submissions on the browser client with <strong>zero LLM requests</strong>. Full LLM calls are strictly reserved for qualitative explanations.
+            </p>
+            
+            <!-- Comparison bar -->
+            <div style="margin-top: 18px;">
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px;">
+                <span style="color: #10B981;">Local Browser Grading (1,300 Questions)</span>
+                <span style="color: var(--danger);">LLM API calls (120 Calls)</span>
+              </div>
+              <div style="width: 100%; height: 14px; background: var(--danger); border-radius: var(--radius-full); overflow: hidden; display: flex;">
+                <div style="width: 91.5%; height: 100%; background: #10B981;"></div>
+              </div>
+            </div>
+          </div>
+          <span style="font-size: 50px;">💾</span>
+        </div>
+
+        <div class="grid-3" style="margin-bottom: 24px;">
+          <!-- Questions Served -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px;">
+            <div style="font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase;">Questions Served</div>
+            <div style="font-size: 28px; font-weight: 800; margin-top: 4px; color: #FFFFFF;">1,420</div>
+            <div style="font-size: 11px; color: var(--success); font-weight: 700; margin-top: 4px;">✓ 100% Correct Grading</div>
+          </div>
+
+          <!-- Saved Tokens -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px;">
+            <div style="font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase;">Estimated Tokens Saved</div>
+            <div style="font-size: 28px; font-weight: 800; margin-top: 4px; color: var(--primary);">850,000</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">Through local grading & caches</div>
+          </div>
+
+          <!-- Total Cost per Learner -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px;">
+            <div style="font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase;">Cost per Learner</div>
+            <div style="font-size: 28px; font-weight: 800; margin-top: 4px; color: var(--success);">£0.02</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">Average API expense per user</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Cache hit rate details -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px;">
+            <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 800; margin-bottom: 12px;">🔄 AI Response Cache Rates</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                <span>Total Explanations Cached</span>
+                <strong style="color: #FFFFFF;">320 Answers</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                <span>Cache Hit Ratio</span>
+                <strong style="color: var(--success);">78.3% Reused</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- LLM tokens and raw count -->
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 20px;">
+            <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 800; margin-bottom: 12px;">📊 Token Metrics breakdown</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                <span>Raw Tokens Utilized</span>
+                <strong style="color: var(--danger);">240,000 Tokens</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                <span>Saved cost equivalence</span>
+                <strong style="color: var(--success);">£142.00 saved</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- RIGHT SIDEBAR (Student progress details) -->
+    <aside class="sidebar-right" id="sidebar-right-pane">
+      
+      <!-- Mastery Progress panel -->
+      <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 18px; border-left: 3px solid var(--accent);">
+        <h3 style="font-family: var(--font-display); font-size: 15px; font-weight: 800; margin-bottom: 10px;">🏆 GCSE Progress rollup</h3>
+        <div style="font-size: 26px; font-weight: 800; color: #FFFFFF;" id="right-xp-progress">72% <span style="font-size: 13px; color: var(--muted); font-weight: normal;">Maths syllabus</span></div>
+        <div style="width: 100%; height: 5px; background: rgba(255,255,255,0.1); border-radius: var(--radius-full); overflow: hidden; margin-top: 8px;">
+          <div style="width: 72%; height: 100%; background: var(--gradient-sara);" id="right-xp-bar"></div>
+        </div>
+        <div style="font-size: 10.5px; color: var(--muted); margin-top: 6px;">AQA Year 9 Maths target complete.</div>
+      </div>
+
+      <!-- SARA Short-term Goals Card -->
+      <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 18px;">
+        <h3 style="font-family: var(--font-display); font-size: 15px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+          <span>🎯 Active Goals</span>
+          <span style="font-size: 11px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; color: var(--primary);" id="goals-count-badge">2 Goals</span>
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px;" id="right-goals-list">
+          <div style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: var(--radius-md);">
+            <div style="font-weight: 800; font-size: 12.5px; color: #FFFFFF;">Exam Prep: Practice fraction arithmetic</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 4px; display: flex; justify-content: space-between;">
+              <span>Due: 17 Jun 2026</span>
+              <span style="color: var(--success); font-weight: 800;">Med confidence</span>
+            </div>
+          </div>
+          
+          <div style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: var(--radius-md);">
+            <div style="font-weight: 800; font-size: 12.5px; color: #FFFFFF;">Exam Prep: Master Decimals division</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 4px; display: flex; justify-content: space-between;">
+              <span>Due: 24 Jun 2026</span>
+              <span style="color: var(--danger); font-weight: 800;">Low confidence</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Tips from AI tutor -->
+      <div style="background: rgba(124, 58, 237, 0.05); border: 1px dashed rgba(124, 58, 237, 0.2); border-radius: var(--radius-lg); padding: 18px;">
+        <h4 style="font-weight: 800; font-size: 13px; color: var(--color-brand-violet-light); margin-bottom: 4px;">🧠 SARA's Tips for dhrubo</h4>
+        <p style="font-size: 11.5px; color: var(--muted); line-height: 1.45;">
+          "Focus on multiplying denominators and aligning factors correctly! You are only 1 challenge away from leveling up."
+        </p>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- =========================================================================
+       MOBILE TAB BAR SKELETON
+       ========================================================================= -->
+  <nav class="mobile-tab-bar">
+    <button class="mobile-tab-btn active" onclick="switchScreen('screen-student-dashboard')">
+      <span>🎓</span> Dashboard
+    </button>
+    <button class="mobile-tab-btn" onclick="switchScreen('screen-subject-map')">
+      <span>🗺️</span> Map
+    </button>
+    <button class="mobile-tab-btn" onclick="startPracticeQuiz()">
+      <span>✏️</span> Practice
+    </button>
+    <button class="mobile-tab-btn" onclick="switchScreen('screen-guardian-dashboard')">
+      <span>👨‍👩‍👦</span> Parent
+    </button>
+  </nav>
+
+  <!-- =========================================================================
+       AUTH MODAL / LOGIN POPUPS
+       ========================================================================= -->
+  <div class="modal-overlay" id="auth-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 30px; width: 400px; text-align: center; position: relative;">
+      <h3 class="modal-title" style="font-family: var(--font-display); font-size: 22px; font-weight: 800;" id="auth-modal-title">Student Profile</h3>
+      <p style="font-size: 13px; color: var(--muted); margin-top: 4px; margin-bottom: 18px;" id="auth-modal-subtitle">Configure your student details below.</p>
+      
+      <div style="text-align: left;">
+        <label style="font-size: 11.5px; font-weight: 800; color: var(--muted);">Child's Name</label>
+        <input type="text" class="input-field" id="auth-input-name" value="dhrubo paul">
+        
+        <label style="font-size: 11.5px; font-weight: 800; color: var(--muted);">Current Year Group</label>
+        <select class="input-field" id="auth-input-level">
+          <option value="Year 8">Year 8 Maths</option>
+          <option value="Year 9" selected>Year 9 Maths</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="closeAuthModal()">
+        💾 Save Profile Metrics
+      </button>
+      <button class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 8px; border: none; background: transparent; color: var(--muted);" onclick="closeAuthModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Toast panel for notices -->
+  <div class="toast-container" id="toast-bin" style="position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px;"></div>
+
+  <!-- =========================================================================
+       JAVASCRIPT GAME SYSTEM ENGINE
+       ========================================================================= -->
+  <script>
+    // State stores matching GCSE learning metrics
+    let sessionState = {
+      isLoggedIn: true,
+      studentName: "dhrubo paul",
+      studentYear: "Year 9",
+      activeTopic: "Fractions",
+      xp: 350,
+      streak: 5,
+      level: 2,
+      badgesCount: 4,
+      soundEnabled: true,
+      activeScreen: "screen-student-dashboard"
+    };
+
+    const DB_ARCHETYPES = {
+      "Fractions": [
+        { id: "frac-1", q: "Simplify the fraction: 15 / 25", opts: ["3/5", "2/5", "3/4", "5/8"], ans: "3/5", band: "MUST", hint: "Divide both the numerator and denominator by their highest common factor (5)." },
+        { id: "frac-2", q: "Work out: 2/5 + 1/4", opts: ["3/9", "3/20", "13/20", "9/20"], ans: "13/20", band: "SHOULD", hint: "Find a common denominator first. For 5 and 4, it's 20. Change both fractions before adding." },
+        { id: "frac-3", q: "Calculate: 3/4 × 8/9", opts: ["6/12", "2/3", "24/36", "11/13"], ans: "2/3", band: "COULD", hint: "Multiply the numerators together, then the denominators. Then simplify." },
+        { id: "frac-4", q: "Express 7/8 as a decimal.", opts: ["0.75", "0.85", "0.875", "0.785"], ans: "0.875", band: "GCSE_BRIDGE", hint: "Divide 7 by 8. Use bus shelter method to divide." },
+        { id: "frac-5", q: "What fraction of a day is 6 hours in simplest form?", opts: ["1/4", "1/3", "1/6", "2/5"], ans: "1/4", band: "MUST", hint: "There are 24 hours in a day. Simplify 6/24." }
+      ],
+      "Decimals": [
+        { id: "dec-1", q: "Solve: 0.35 + 0.49", opts: ["0.74", "0.84", "0.94", "0.79"], ans: "0.84", band: "MUST", hint: "Align your decimal points in columns before adding." },
+        { id: "dec-2", q: "Work out: 1.2 × 0.4", opts: ["4.8", "0.48", "0.048", "48"], ans: "0.48", band: "SHOULD", hint: "Multiply as if they are whole numbers (12 × 4 = 48), then place the decimal point. There are two decimal places total in the question." },
+        { id: "dec-3", q: "Write 3/16 as a decimal.", opts: ["0.1875", "0.15", "0.18", "0.16"], ans: "0.1875", band: "COULD", hint: "Divide 3 by 16 step-by-step." },
+        { id: "dec-4", q: "Calculate: 7.2 ÷ 0.08", opts: ["90", "9", "0.9", "900"], ans: "90", band: "GCSE_BRIDGE", hint: "Multiply both numbers by 100 to clear the decimal from the divisor (720 ÷ 8)." },
+        { id: "dec-5", q: "Find the median of: 0.3, 0.25, 0.31, 0.29", opts: ["0.27", "0.295", "0.3", "0.28"], ans: "0.295", band: "GCSE_BRIDGE", hint: "Order the decimals from smallest to largest first, then find the middle. (0.25, 0.29, 0.3, 0.31)." }
+      ],
+      "Algebra": [
+        { id: "alg-1", q: "Solve for x: 3x - 5 = 16", opts: ["x = 5", "x = 7", "x = 6", "x = 9"], ans: "x = 7", band: "MUST", hint: "Add 5 to both sides, then divide by 3." },
+        { id: "alg-2", q: "Expand: 4(3y + 2)", opts: ["12y + 2", "12y + 8", "7y + 6", "12y - 8"], ans: "12y + 8", band: "SHOULD", hint: "Multiply 4 by both terms inside the bracket." },
+        { id: "alg-3", q: "Factorise fully: 15a - 10", opts: ["5(3a - 2)", "5(3a - 5)", "3(5a - 2)", "2(7a - 5)"], ans: "5(3a - 2)", band: "SHOULD", hint: "Find the highest common factor of 15 and 10, which is 5. Divide terms by 5." },
+        { id: "alg-4", q: "Simplify: x(x + 4) - 3(x - 2)", opts: ["x² + x - 6", "x² + x + 6", "x² + 7x + 6", "x² - 3x + 4"], ans: "x² + x + 6", band: "COULD", hint: "Expand both brackets separately, then collect like terms. Remember -3 × -2 = +6." },
+        { id: "alg-5", q: "Solve: (2a / 3) + 4 = 10", opts: ["a = 9", "a = 6", "a = 12", "a = 15"], ans: "a = 9", band: "GCSE_BRIDGE", hint: "Subtract 4 from both sides (2a/3 = 6), then multiply by 3 (2a = 18), then divide by 2." }
+      ]
+    };
+
+    // Active Quiz Run State
+    let quizRun = {
+      topic: "Fractions",
+      questions: [],
+      currentIdx: 0,
+      userAnswers: [],
+      score: 0,
+      mistakesSpotted: [],
+      hintRevealedOnCurrent: false
+    };
+
+    // =========================================================================
+    // AUDIO SYNTHESIZER (Web Audio API)
+    // =========================================================================
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (!sessionState.soundEnabled) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        const now = audioCtx.currentTime;
+        
+        if (type === "click") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(150, now + 0.1);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === "correct") {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+          osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === "mistake") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.setValueAtTime(180, now + 0.15);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === "fanfare") {
+          // Success scale
+          const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+          notes.forEach((freq, idx) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.type = "triangle";
+            o.frequency.setValueAtTime(freq, now + idx * 0.1);
+            g.gain.setValueAtTime(0.12, now + idx * 0.1);
+            g.gain.linearRampToValueAtTime(0, now + idx * 0.1 + 0.35);
+            o.start(now + idx * 0.1);
+            o.stop(now + idx * 0.1 + 0.35);
+          });
+        }
+      } catch (e) {
+        console.log("Audio contexts pending interaction...");
+      }
+    }
+
+    function toggleSound() {
+      sessionState.soundEnabled = !sessionState.soundEnabled;
+      const icon = document.getElementById("sound-icon");
+      if (icon) icon.textContent = sessionState.soundEnabled ? "🔊" : "🔇";
+      showToast(sessionState.soundEnabled ? "Sound enabled!" : "Sound muted.");
+    }
+
+    // =========================================================================
+    // DYNAMIC SCREEN MANAGER
+    // =========================================================================
+    function switchScreen(screenId) {
+      playSound("click");
+      sessionState.activeScreen = screenId;
+
+      // Deactivate all screens
+      const containers = document.querySelectorAll(".screen-container");
+      containers.forEach(el => el.classList.remove("active"));
+
+      // Activate selected screen
+      const activeEl = document.getElementById(screenId);
+      if (activeEl) {
+        activeEl.classList.add("active");
+      }
+
+      // Sync Left Sidebar Nav Menu
+      const navItems = document.querySelectorAll(".nav-item");
+      navItems.forEach(el => el.classList.remove("active"));
+      
+      const matchedNavItem = document.getElementById(`nav-${screenId.replace('screen-', '')}`);
+      if (matchedNavItem) {
+        matchedNavItem.classList.add("active");
+      }
+
+      // Conditional right sidebar displays
+      const rightSidebar = document.getElementById("sidebar-right-pane");
+      if (rightSidebar) {
+        if (screenId === "screen-student-dashboard" || screenId === "screen-lesson-quiz") {
+          rightSidebar.style.display = "flex";
+        } else {
+          rightSidebar.style.display = "none";
+        }
+      }
+
+      // If opening mistake review, re-render mistake panels
+      if (screenId === "screen-mistake-review") {
+        renderMistakeScreen();
+      }
+    }
+
+    function showToast(text) {
+      const bin = document.getElementById("toast-bin");
+      const toast = document.createElement("div");
+      toast.className = "glassmorphism";
+      toast.style.padding = "10px 18px";
+      toast.style.borderRadius = "var(--radius-md)";
+      toast.style.color = "#FFFFFF";
+      toast.style.fontSize = "13px";
+      toast.style.fontWeight = "700";
+      toast.style.borderLeft = "4px solid var(--primary)";
+      toast.style.animation = "slide-down 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.25)";
+      toast.innerHTML = text;
+      
+      bin.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transition = "opacity 0.25s";
+        setTimeout(() => toast.remove(), 250);
+      }, 3000);
+    }
+
+    // =========================================================================
+    // THE DYNAMIC PRACTICE & ADAPTIVE QUIZ ENGINE
+    // =========================================================================
+    function startPracticeQuiz(topic = "Fractions") {
+      sessionState.activeTopic = topic;
+      const questionsPool = DB_ARCHETYPES[topic] || DB_ARCHETYPES["Fractions"];
+      
+      // Initialize active quiz state
+      quizRun = {
+        topic: topic,
+        questions: questionsPool,
+        currentIdx: 0,
+        userAnswers: [],
+        score: 0,
+        mistakesSpotted: [],
+        hintRevealedOnCurrent: false
+      };
+
+      // Set up UI values
+      document.getElementById("quiz-topic-title").textContent = `${topic} Revision Quiz`;
+      document.getElementById("quiz-results-screen").style.display = "none";
+      
+      // Reset full quiz main view
+      const screenMain = document.getElementById("screen-lesson-quiz");
+      screenMain.querySelectorAll(":scope > div").forEach(child => {
+        if(child.id !== "quiz-results-screen") child.style.display = "block";
+      });
+
+      renderActiveQuizQuestion();
+      switchScreen("screen-lesson-quiz");
+    }
+
+    function renderActiveQuizQuestion() {
+      const qObj = quizRun.questions[quizRun.currentIdx];
+      if (!qObj) return;
+
+      // Update progress metrics
+      const currentNo = quizRun.currentIdx + 1;
+      const totalNo = quizRun.questions.length;
+      const percent = (currentNo / totalNo) * 100;
+      
+      document.getElementById("quiz-progress-text").textContent = `Question ${currentNo} of ${totalNo}`;
+      document.getElementById("quiz-progress-inner").style.width = `${percent}%`;
+      
+      document.getElementById("quiz-q-difficulty").textContent = `SYLLABUS FOCUS: ${qObj.band} LEVEL`;
+      document.getElementById("quiz-q-band-indicator").textContent = `${qObj.band} (AQA GCSE MATHEMATICS)`;
+      document.getElementById("quiz-q-text-content").textContent = qObj.q;
+
+      // Hide Hint & Feedback panels
+      document.getElementById("quiz-hint-panel").style.display = "none";
+      document.getElementById("quiz-feedback-panel").style.display = "none";
+      quizRun.hintRevealedOnCurrent = false;
+
+      // Reset Action Button text
+      document.getElementById("quiz-action-btn").textContent = "Check Answer";
+      document.getElementById("quiz-action-btn").setAttribute("onclick", "submitQuizAnswer()");
+
+      // Populate interactive choices inputs
+      const container = document.getElementById("quiz-inputs-box");
+      container.innerHTML = "";
+
+      // Render Multiple Choice Grid
+      const grid = document.createElement("div");
+      grid.className = "grid-2";
+      grid.style.marginTop = "16px";
+
+      qObj.opts.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "btn btn-secondary";
+        btn.style.textAlign = "left";
+        btn.style.justifyContent = "flex-start";
+        btn.style.padding = "14px";
+        btn.style.fontSize = "14.5px";
+        btn.style.borderRadius = "var(--radius-md)";
+        btn.innerHTML = opt;
+        btn.onclick = () => {
+          // Deselect others
+          grid.querySelectorAll(".btn").forEach(b => {
+            b.classList.remove("btn-primary");
+            b.classList.add("btn-secondary");
+            b.style.borderColor = "var(--border)";
+          });
+          // Highlight selected option
+          btn.classList.remove("btn-secondary");
+          btn.classList.add("btn-primary");
+          btn.style.borderColor = "var(--primary)";
+          
+          playSound("click");
+        };
+        grid.appendChild(btn);
+      });
+
+      container.appendChild(grid);
+    }
+
+    function revealQuizHint() {
+      playSound("click");
+      const panel = document.getElementById("quiz-hint-panel");
+      const hintText = document.getElementById("quiz-hint-text");
+      const qObj = quizRun.questions[quizRun.currentIdx];
+
+      hintText.textContent = qObj.hint;
+      panel.style.display = "block";
+      quizRun.hintRevealedOnCurrent = true;
+    }
+
+    function submitQuizAnswer() {
+      // Find selected answer
+      const inputsBox = document.getElementById("quiz-inputs-box");
+      const selectedBtn = inputsBox.querySelector(".btn-primary");
+      
+      if (!selectedBtn) {
+        showToast("Please choose an answer first!");
+        return;
+      }
+
+      const userAnswer = selectedBtn.textContent.trim();
+      const qObj = quizRun.questions[quizRun.currentIdx];
+      const isCorrect = (userAnswer === qObj.ans);
+
+      // Lock options interaction
+      inputsBox.querySelectorAll("button").forEach(b => b.disabled = true);
+
+      // FeedbackPanel Display
+      const feedback = document.getElementById("quiz-feedback-panel");
+      feedback.style.display = "block";
+
+      if (isCorrect) {
+        playSound("correct");
+        quizRun.score++;
+        feedback.className = "FeedbackPanel";
+        feedback.style.background = "var(--success-bg)";
+        feedback.style.border = "1px solid rgba(16, 185, 129, 0.3)";
+        feedback.innerHTML = `
+          <div style="font-weight: 800; color: var(--success); font-size: 15px;">✓ Correct! Excellent work!</div>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.9); margin-top: 4px;">SARA: Spot on. You have earned +10 Revision XP!</div>
+        `;
+      } else {
+        playSound("mistake");
+        // Log mistake
+        quizRun.mistakesSpotted.push({
+          q: qObj.q,
+          userAns: userAnswer,
+          correctAns: qObj.ans,
+          hint: qObj.hint
+        });
+
+        feedback.className = "FeedbackPanel";
+        feedback.style.background = "var(--danger-bg)";
+        feedback.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+        feedback.innerHTML = `
+          <div style="font-weight: 800; color: var(--danger); font-size: 15px;">✕ Incomplete or Incorrect</div>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.9); margin-top: 4px;">
+            Correct Answer: <strong>${qObj.ans}</strong><br>
+            SARA Misconception Guide: ${qObj.hint}
+          </div>
+        `;
+      }
+
+      // Convert action trigger to Next Question
+      const actionBtn = document.getElementById("quiz-action-btn");
+      actionBtn.textContent = "Next Question →";
+      actionBtn.setAttribute("onclick", "advanceQuizRun()");
+    }
+
+    function advanceQuizRun() {
+      playSound("click");
+      quizRun.currentIdx++;
+
+      if (quizRun.currentIdx < quizRun.questions.length) {
+        renderActiveQuizQuestion();
+      } else {
+        finishQuizRun();
+      }
+    }
+
+    function finishQuizRun() {
+      playSound("fanfare");
+      
+      // Hide standard quiz content
+      const screenMain = document.getElementById("screen-lesson-quiz");
+      screenMain.querySelectorAll(":scope > div").forEach(child => {
+        if(child.id !== "quiz-results-screen") child.style.display = "none";
+      });
+
+      // Show results
+      const results = document.getElementById("quiz-results-screen");
+      results.style.display = "block";
+
+      // Populate results
+      document.getElementById("quiz-results-score").textContent = `${quizRun.score} / ${quizRun.questions.length}`;
+      
+      const xpReward = quizRun.score * 10;
+      sessionState.xp += xpReward;
+      sessionState.streak++;
+
+      // Update visual stats inside right sidebar
+      updateDashboardStats();
+
+      // Render mistakes review summary inside results panel
+      const mistakesList = document.getElementById("quiz-results-mistakes-list");
+      mistakesList.innerHTML = "";
+
+      if (quizRun.mistakesSpotted.length === 0) {
+        mistakesList.innerHTML = `
+          <div style="padding: 12px; border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.08); color: var(--success); font-weight: 700; text-align: center;">
+            🌟 Perfect Run! Zero mistakes recorded. You are a Master!
+          </div>
+        `;
+      } else {
+        quizRun.mistakesSpotted.forEach(item => {
+          const block = document.createElement("div");
+          block.style.background = "rgba(255,255,255,0.02)";
+          block.style.border = "1px solid var(--border)";
+          block.style.padding = "10px";
+          block.style.borderRadius = "var(--radius-md)";
+          block.innerHTML = `
+            <div style="font-weight: 700; font-size: 13px; color: #FFFFFF;">Q: ${item.q}</div>
+            <div style="font-size: 11px; margin-top: 4px; color: var(--muted);">
+              Your Answer: <span style="color: var(--danger); font-weight: 700;">${item.userAns}</span> | Correct: <span style="color: var(--success); font-weight: 700;">${item.correctAns}</span>
+            </div>
+          `;
+          mistakesList.appendChild(block);
+        });
+      }
+    }
+
+    function exitQuizChallenge() {
+      playSound("click");
+      if (confirm("Are you sure you want to exit the practice run? Progress for this run will not be saved.")) {
+        switchScreen("screen-student-dashboard");
+      }
+    }
+
+    // =========================================================================
+    // MISTAKE REVIEW SCREEN DYNAMIC RENDERING
+    // =========================================================================
+    function renderMistakeScreen() {
+      const container = document.getElementById("mistake-records-container");
+      container.innerHTML = "";
+
+      if (quizRun.mistakesSpotted.length === 0) {
+        container.innerHTML = `
+          <div class="glassmorphism" style="border-radius: var(--radius-lg); padding: 40px; text-align: center;">
+            <div style="font-size: 50px; margin-bottom: 12px;">🌟</div>
+            <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #FFFFFF;">Your Mistake Locker is Empty!</h3>
+            <p style="font-size: 14px; color: var(--muted); margin-top: 4px;">
+              Outstanding! SARA has logged no misconceptions for your profile recently. Keep up the high score.
+            </p>
+            <button class="btn btn-primary" style="margin-top: 20px;" onclick="switchScreen('screen-student-dashboard')">Return to Dashboard</button>
+          </div>
+        `;
+      } else {
+        quizRun.mistakesSpotted.forEach((item, idx) => {
+          const card = document.createElement("div");
+          card.className = "glassmorphism";
+          card.style.borderRadius = "var(--radius-lg)";
+          card.style.padding = "24px";
+          card.style.marginBottom = "16px";
+          card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--danger); background: var(--danger-bg); padding: 2px 8px; border-radius: var(--radius-full); text-transform: uppercase;">Topic: ${sessionState.activeTopic}</span>
+              <span style="font-size: 12px; color: var(--muted);">Recorded this session</span>
+            </div>
+            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF;">Problem: ${item.q}</h3>
+            <div style="margin: 12px 0; padding: 12px; border-radius: var(--radius-md); background: rgba(0,0,0,0.15); font-family: var(--font-mono); font-size: 13px;">
+              Your Answer: <strong style="color: var(--danger);">${item.userAns}</strong> | Correct Answer: <strong style="color: var(--success);">${item.correctAns}</strong>
+            </div>
+            <div style="margin-top: 14px; padding: 14px; border-radius: var(--radius-md); background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.2);">
+              <div style="font-weight: 800; color: var(--color-brand-violet-light); font-size: 13.5px; margin-bottom: 4px;">
+                💡 SARA's Misconception Guide:
+              </div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.45;">
+                "${item.hint}" Practice this topic once more to clear this misconception!
+              </p>
+            </div>
+            <div style="margin-top: 18px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 12px; font-weight: 700; color: var(--success);">🎯 Correcting this: +15 GCSE Mastery Points</span>
+              <button class="btn btn-primary btn-sm" onclick="startPracticeQuiz('${sessionState.activeTopic}')">Retry Challenge Now</button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+    }
+
+    // =========================================================================
+    // ASSIGN CHALLENGE (Guardian & Teacher Actions)
+    // =========================================================================
+    function assignCustomChallenge() {
+      playSound("fanfare");
+
+      const subject = document.getElementById("challenge-create-subject").value;
+      const topic = document.getElementById("challenge-create-topic").value;
+      const count = document.getElementById("challenge-create-count").value;
+      const diff = document.getElementById("challenge-create-difficulty").value;
+      const dateVal = document.getElementById("challenge-create-date").value;
+
+      // Create a goals entry represent custom challenge
+      const listContainer = document.getElementById("right-goals-list");
+      const block = document.createElement("div");
+      block.style.padding = "10px";
+      block.style.background = "rgba(245, 158, 11, 0.05)";
+      block.style.border = "1px solid rgba(245, 158, 11, 0.2)";
+      block.style.borderRadius = "var(--radius-md)";
+      block.style.animation = "slide-down 0.25s";
+      block.innerHTML = `
+        <div style="font-weight: 800; font-size: 12.5px; color: #FFFFFF;">🎯 Guardian Task: ${topic} (${count} Qs)</div>
+        <div style="font-size: 10px; color: var(--muted); margin-top: 4px; display: flex; justify-content: space-between;">
+          <span>Due: ${dateVal}</span>
+          <span style="color: var(--primary); font-weight: 800;">${diff}</span>
+        </div>
+      `;
+
+      listContainer.prepend(block);
+      
+      // Update counters
+      const countBadge = document.getElementById("goals-count-badge");
+      if(countBadge) {
+        countBadge.textContent = "3 Goals";
+      }
+
+      showToast(`🎯 Challenge successfully assigned to student dashboard! Due date: ${dateVal}`);
+      
+      // Auto-switch back to student dashboard to preview the assigned goal
+      setTimeout(() => {
+        switchScreen("screen-student-dashboard");
+      }, 1000);
+    }
+
+    // =========================================================================
+    // RE-POPULATE DYNAMIC WIDGETS
+    // =========================================================================
+    function updateDashboardStats() {
+      // Update streaks badges & XP metrics
+      document.getElementById("dash-badge-streak").textContent = `🔥 ${sessionState.streak} Days`;
+      document.getElementById("dash-badge-xp").textContent = `⚡ ${sessionState.xp} XP`;
+      
+      const email = sessionState.studentName.includes('@') ? sessionState.studentName : `${sessionState.studentName.toLowerCase().replace(/\s+/g, '')}@gmail.com`;
+      document.getElementById("sidebar-profile-username").textContent = sessionState.studentName;
+      document.getElementById("user-status-email").textContent = email;
+      document.getElementById("dash-greeting-name").textContent = sessionState.studentName;
+      
+      // Progress bar calculations
+      document.getElementById("right-xp-progress").innerHTML = `75% <span style="font-size: 13px; color: var(--muted); font-weight: normal;">Maths syllabus</span>`;
+      document.getElementById("right-xp-bar").style.width = "75%";
+    }
+
+    function resetAllData() {
+      if (confirm("Are you sure you want to reset all GCSE Mastery student metrics, streaks, XP, and mistake logs back to defaults?")) {
+        playSound("mistake");
+        sessionState = {
+          isLoggedIn: true,
+          studentName: "dhrubo paul",
+          studentYear: "Year 9",
+          activeTopic: "Fractions",
+          xp: 300,
+          streak: 1,
+          level: 1,
+          badgesCount: 1,
+          soundEnabled: true,
+          activeScreen: "screen-student-dashboard"
+        };
+        quizRun.mistakesSpotted = [];
+        updateDashboardStats();
+        showToast("All student data successfully reset back to baseline.");
+        switchScreen("screen-student-dashboard");
+      }
+    }
+
+    // Modal Control Panel
+    function openAuthModal(mode) {
+      playSound("click");
+      document.getElementById("auth-modal").style.display = "flex";
+    }
+    function closeAuthModal() {
+      playSound("click");
+      const name = document.getElementById("auth-input-name").value;
+      const yr = document.getElementById("auth-input-level").value;
+      
+      sessionState.studentName = name;
+      sessionState.studentYear = yr;
+      
+      updateDashboardStats();
+      document.getElementById("auth-modal").style.display = "none";
+      showToast("Profile changes updated successfully!");
+    }
+
+    function exportProgressReport() {
+      playSound("fanfare");
+      showToast("Preparing custom revision report transcript... Opening print dialogue.");
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+
+    // Window Onload initialization
+    window.onload = function() {
+      updateDashboardStats();
+      showToast("GCSE Mastery Revision Coach Ready! Let's revise maths.");
+    };
+  </script>
+</body>
+</html>

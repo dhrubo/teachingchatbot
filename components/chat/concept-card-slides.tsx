@@ -17,6 +17,7 @@ type ConceptCardSlidesProps = {
   onCardSeen?: () => void;
   onBack?: () => void;
   onHelp?: () => void;
+  onSkipToQuiz?: () => void;
 };
 
 export function ConceptCardSlides({
@@ -25,6 +26,7 @@ export function ConceptCardSlides({
   onChooseAnother,
   onCardSeen,
   onHelp,
+  onSkipToQuiz,
 }: ConceptCardSlidesProps) {
   const [index, setIndex] = useState(0);
   const card = cards[index];
@@ -46,20 +48,32 @@ export function ConceptCardSlides({
   return (
     <div className="flex flex-col gap-4 py-4">
       {/* Progress dots */}
-      <div className="flex items-center justify-center gap-2">
-        {cards.map((dot, i) => (
-          <div
-            className={cn(
-              "h-2 rounded-full transition-all duration-300",
-              i === index
-                ? "w-6 bg-[image:var(--gradient-sunset)]"
-                : i < index
-                  ? "w-2 bg-orange-500/40"
-                  : "w-2 bg-indigo-500/20"
-            )}
-            key={dot.id}
-          />
-        ))}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {cards.map((dot, i) => (
+            <div
+              className={cn(
+                "h-2 rounded-full transition-all duration-300",
+                i === index
+                  ? "w-6 bg-[image:var(--gradient-sunset)]"
+                  : i < index
+                    ? "w-2 bg-orange-500/40"
+                    : "w-2 bg-indigo-500/20"
+              )}
+              key={dot.id}
+            />
+          ))}
+        </div>
+        {onSkipToQuiz && (
+          <Button
+            className="rounded-full border border-orange-500/30 text-orange-400 bg-orange-500/5 hover:bg-orange-500/15 hover:border-orange-500/50 hover:shadow-[0_0_12px_rgba(249,115,22,0.25)] text-xs font-semibold px-3 py-1 h-auto transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
+            onClick={onSkipToQuiz}
+            size="sm"
+            variant="outline"
+          >
+            Skip to Quiz ⚡
+          </Button>
+        )}
       </div>
 
       {/* Card */}

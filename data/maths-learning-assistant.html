@@ -1,0 +1,3925 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SARA — Smart AI Reasoning Assistant</title>
+  <meta name="description" content="Learn bright. Level up. — Your AI maths coach for Year 8 & 9." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..0,800;1,300..0,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================================
+       1. DESIGN SYSTEM & TOKENS (SARA Deep Violet & Sunset Theme)
+       ========================================================================= */
+    :root {
+      /* SARA Space & Sunset Palette (encouraging, dark space aesthetic) */
+      --bg: #1E1B4B;                         /* Deep violet night base */
+      --surface: rgba(255, 255, 255, 0.05);   /* Translucent glassmorphic panels */
+      --surface-solid: #15143C;              /* Dark solid container fallback */
+      --fg: #FFFFFF;                         /* Crisp primary white text */
+      --muted: rgba(255, 255, 255, 0.6);     /* Soft secondary text */
+      --border: rgba(255, 255, 255, 0.08);   /* Delicate glass separators */
+      
+      /* Coral/Amber Action Colors (Sunset theme) */
+      --primary: #F97316;                    /* Coral primary action */
+      --primary-hover: #ea580c;              /* Deep sunset coral */
+      --success: #10B981;                    /* Emerald green for correct answers & completed states */
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --warning: #F59E0B;                    /* Amber golden for streaks and goals */
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --danger: #EF4444;                     /* Crimson red for errors and exit routes */
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --accent: #7C3AED;                     /* Violet accent for GCSE domain tags */
+      --accent-bg: rgba(124, 58, 237, 0.15);
+
+      --color-brand-violet: #7C3AED;
+      --color-brand-violet-light: #A78BFA;
+      --color-brand-violet-dark: #4C1D95;
+      --gradient-sara: linear-gradient(135deg, #F97316, #7C3AED);
+      --gradient-sara-reverse: linear-gradient(135deg, #7C3AED, #F97316);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.06);
+
+      /* Typography */
+      --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      /* Radii */
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --radius-full: 9999px;
+      
+      /* Shadows */
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.15);
+      --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.2);
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Reset & General base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: linear-gradient(135deg, #120F35 0%, #1A1648 40%, #2A1144 100%);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-full);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Glassmorphic overlay utility backdrop blurs */
+    .sidebar-left, .sidebar-right, .app-header, .chat-bubble, .concept-card, .modal-container, .btn-secondary, .study-gate-banner, .goal-card, .chat-input-bar {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    /* Transparent workspaces so background gradient shines through */
+    .workspace-pane {
+      background: transparent !important;
+    }
+
+    /* High contrast color overrides for specific panels */
+    .chat-bubble-wrapper.student .chat-bubble {
+      background: var(--primary);
+      color: #FFFFFF !important;
+      border-color: var(--primary);
+    }
+    .chat-bubble-wrapper.student .chat-text code {
+      background: rgba(0, 0, 0, 0.2) !important;
+      color: #FFFFFF !important;
+    }
+
+    /* =========================================================================
+       2. TOP STATS BAR & NAVIGATION
+       ========================================================================= */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 50;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      background: var(--accent-bg);
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      letter-spacing: 0.05em;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-title span {
+      color: var(--primary);
+    }
+
+    .stats-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .stat-badge.sound-toggle {
+      cursor: pointer;
+      user-select: none;
+      transition: var(--transition);
+    }
+    .stat-badge.sound-toggle:hover {
+      background: var(--border);
+    }
+
+    .stat-badge.questions-left {
+      color: var(--danger);
+      background: var(--danger-bg);
+      border-color: oklch(88% 0.04 28);
+    }
+
+    .stat-badge.logged-in {
+      color: var(--success);
+      background: var(--success-bg);
+      border-color: oklch(88% 0.04 142);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--surface);
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--fg);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: var(--surface);
+    }
+    .btn-success:hover {
+      background: oklch(60% 0.15 142);
+    }
+
+    /* =========================================================================
+       3. RESPONSIVE SHELL (3-COLUMN DESKTOP / TABBED MOBILE)
+       ========================================================================= */
+    .app-shell {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Left Sidebar: Student log, Topics, GCSE rollup */
+    .sidebar-left {
+      width: 320px;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    /* Center Pane: Workspace */
+    .workspace-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Right Sidebar: Exam goals & ready metrics */
+    .sidebar-right {
+      width: 300px;
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    /* Mobile Navigation Tabs bar (Visible only on mobile/tablet viewport) */
+    .mobile-tabs {
+      display: none;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      height: 60px;
+      flex-shrink: 0;
+      z-index: 40;
+    }
+
+    .mobile-tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .mobile-tab-btn.active {
+      color: var(--primary);
+    }
+
+    .mobile-tab-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    /* =========================================================================
+       4. COMPONENT: PROFILE & GUEST WELCOME CARDS
+       ========================================================================= */
+    .card-padding {
+      padding: 20px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 20px;
+    }
+
+    .profile-card {
+      background: var(--accent-bg);
+      border: 1px solid oklch(88% 0.04 260);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .profile-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+    }
+
+    .profile-status .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .profile-status.logged-in-status {
+      color: var(--success);
+    }
+    .profile-status.logged-in-status .dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px oklch(66% 0.16 142 / 0.2);
+    }
+
+    .profile-name {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--fg);
+    }
+
+    .profile-level {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* =========================================================================
+       5. COMPONENT: ACTIVE TOPICS LIST (With 5-active constraint)
+       ========================================================================= */
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--fg);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 20px 20px 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topics-counter {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+
+    .topics-counter.limit-reached {
+      color: var(--danger);
+      background: var(--danger-bg);
+      font-weight: 700;
+    }
+
+    .topic-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 20px 20px 20px;
+    }
+
+    .topic-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      cursor: pointer;
+      background: var(--surface);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .topic-item:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .topic-item.active-topic {
+      border-color: var(--primary);
+      background: oklch(98% 0.015 250);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .topic-item.archived {
+      opacity: 0.55;
+      background: var(--bg);
+    }
+
+    .topic-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topic-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--fg);
+    }
+
+    .topic-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+
+    .topic-badge.not_started { background: var(--bg); color: var(--muted); }
+    .topic-badge.in_progress { background: var(--accent-bg); color: var(--accent); }
+    .topic-badge.mastered { background: var(--success-bg); color: var(--success); }
+
+    .topic-progress-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .progress-bar-outer {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      background: var(--primary);
+      border-radius: var(--radius-full);
+      transition: width 0.4s ease;
+    }
+
+    .mastery-score {
+      display: flex;
+      gap: 2px;
+    }
+
+    .score-star {
+      width: 10px;
+      height: 10px;
+      fill: oklch(85% 0.015 250);
+    }
+
+    .score-star.earned {
+      fill: var(--warning);
+    }
+
+    .topic-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    /* =========================================================================
+       6. COMPONENT: GCSE DOMAIN ROLLUP (AQA Maths Categories)
+       ========================================================================= */
+    .domain-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 0 20px 20px 20px;
+    }
+
+    .domain-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .domain-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .domain-title {
+      color: var(--fg);
+    }
+
+    .domain-percent {
+      font-family: var(--font-mono);
+      color: var(--muted);
+    }
+
+    /* =========================================================================
+       7. COMPONENT: GOALS & EXAM PREP MANAGER
+       ========================================================================= */
+    .goals-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0 20px;
+    }
+
+    .goal-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .goal-card:hover {
+      box-shadow: var(--shadow-sm);
+    }
+
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .goal-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--fg);
+    }
+
+    .goal-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+    }
+
+    .goal-tag.exam-prep {
+      background: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .goal-tag.short-term {
+      background: var(--accent-bg);
+      color: var(--accent);
+    }
+
+    .goal-desc {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .goal-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .goal-date {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .goal-confidence {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+    .goal-confidence.high { background: var(--success-bg); color: var(--success); }
+    .goal-confidence.med { background: var(--warning-bg); color: var(--warning); }
+    .goal-confidence.low { background: var(--danger-bg); color: var(--danger); }
+
+    .add-goal-form {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-field {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 13px;
+      background: var(--bg);
+      transition: var(--transition);
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: var(--surface);
+    }
+
+    /* =========================================================================
+       8. COMPONENT: TAB SYSTEM IN MAIN WORKSPACE (Chat vs Study Deck)
+       ========================================================================= */
+    .workspace-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .workspace-tabs {
+      display: flex;
+      gap: 16px;
+      height: 100%;
+    }
+
+    .workspace-tab {
+      height: 100%;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 0 4px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .workspace-tab:hover {
+      color: var(--fg);
+    }
+
+    .workspace-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .workspace-tab .badge {
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-mono);
+    }
+
+    .workspace-tab.active .badge {
+      background: var(--accent-bg);
+      color: var(--accent);
+    }
+
+    .tab-content {
+      flex: 1;
+      display: none;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* =========================================================================
+       9. WORKSPACE: TUTOR GUIDED CHAT PANE
+       ========================================================================= */
+    .chat-history {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chat-bubble-wrapper {
+      display: flex;
+      gap: 12px;
+      max-width: 80%;
+    }
+
+    .chat-bubble-wrapper.student {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .tutor-avatar {
+      width: 36px;
+      height: 36px;
+      background: var(--accent-bg);
+      border: 1.5px solid var(--accent);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--accent);
+    }
+
+    .chat-bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .chat-bubble-wrapper.student .chat-bubble {
+      background: var(--primary);
+      color: var(--surface);
+      border-color: var(--primary);
+    }
+
+    .chat-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .chat-bubble-wrapper.student .chat-meta {
+      color: oklch(92% 0.03 255);
+      text-align: right;
+    }
+
+    .chat-text {
+      font-size: 14.5px;
+      line-height: 1.6;
+    }
+
+    .chat-text h3 {
+      font-family: var(--font-display);
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .chat-text p {
+      margin-bottom: 8px;
+    }
+    .chat-text p:last-child {
+      margin-bottom: 0;
+    }
+
+    .chat-text ul {
+      margin-left: 18px;
+      margin-bottom: 8px;
+    }
+
+    .chat-text code {
+      font-family: var(--font-mono);
+      background: var(--bg);
+      padding: 2px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+    }
+
+    .chat-bubble-wrapper.student .chat-text code {
+      background: rgba(28, 27, 26, 0.15);
+      color: var(--surface);
+    }
+
+    /* Interactive message options/buttons (e.g., inside tutor guidance) */
+    .chat-options-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .chat-input-bar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .chat-input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .chat-input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-size: 14.5px;
+      padding-right: 48px;
+      transition: var(--transition);
+      background: var(--bg);
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px oklch(56% 0.21 255 / 0.15);
+    }
+
+    .btn-send {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--primary);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    .btn-send:hover {
+      background: var(--accent-bg);
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding: 4px 8px;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: typingPulse 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingPulse {
+      0%, 100% { transform: translateY(0); opacity: 0.4; }
+      50% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* =========================================================================
+       10. WORKSPACE: CONCEPT CARDS REVIEW (The Challenge Mode Gatekeeper)
+       ========================================================================= */
+    .study-deck-layout {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      overflow-y: auto;
+      align-items: center;
+    }
+
+    .concept-progress-header {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .concept-title-main {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .concept-cards-holder {
+      width: 100%;
+      max-width: 600px;
+      height: 380px;
+      perspective: 1000px;
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .concept-card {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      opacity: 0;
+      transform: scale(0.95) translateZ(-50px);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .concept-card.active {
+      opacity: 1;
+      transform: scale(1) translateZ(0);
+      pointer-events: auto;
+      z-index: 5;
+    }
+
+    .concept-card.previous {
+      opacity: 0;
+      transform: translateX(-120%) rotate(-10deg);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .concept-card-num {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--accent-bg);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      align-self: flex-start;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+
+    .concept-card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    .concept-headline {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.3;
+      color: var(--fg);
+    }
+
+    .concept-explanation {
+      font-size: 15px;
+      color: oklch(35% 0.015 250);
+      line-height: 1.6;
+    }
+
+    /* Interactive sandbox widget inside concept cards */
+    .sandbox-widget {
+      border: 1px dashed var(--primary);
+      background: oklch(98% 0.015 250);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .fraction-sandbox-display {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .sandbox-svg {
+      width: 100px;
+      height: 100px;
+    }
+
+    .sandbox-labels {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .sandbox-fraction-math {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .sandbox-fraction-math span {
+      padding: 2px 8px;
+    }
+    .sandbox-fraction-math .numerator { border-bottom: 2px solid var(--fg); }
+
+    .sandbox-slider {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+
+    .concept-nav-controls {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 600px;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .study-gate-banner {
+      width: 100%;
+      max-width: 600px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .study-gate-banner.unlocked {
+      border-color: var(--success);
+      background: var(--success-bg);
+    }
+
+    .gate-status-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .gate-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--border);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .study-gate-banner.unlocked .gate-icon {
+      background: var(--success);
+      color: var(--surface);
+    }
+
+    .gate-message-holder {
+      flex: 1;
+    }
+
+    .gate-title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--fg);
+    }
+
+    .gate-desc {
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .study-gate-banner.unlocked .gate-desc {
+      color: oklch(45% 0.04 142);
+    }
+
+    .challenge-action-group {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .challenge-action-group .btn {
+      flex: 1;
+    }
+
+    /* =========================================================================
+       11. WORKSPACE: CHALLENGE MODE (Full-Screen Focus Overlay)
+       ========================================================================= */
+    .challenge-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--surface);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+    }
+
+    .challenge-overlay.active {
+      display: flex;
+    }
+
+    .challenge-top-nav {
+      height: 64px;
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .challenge-title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .challenge-band {
+      background: var(--accent-bg);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .challenge-quit {
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 24px;
+      font-weight: 300;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      transition: var(--transition);
+    }
+
+    .challenge-quit:hover {
+      background: var(--bg);
+      color: var(--fg);
+    }
+
+    .challenge-progress-bar-container {
+      width: 300px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .challenge-progress-num {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .challenge-content-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      overflow-y: auto;
+    }
+
+    .challenge-card {
+      width: 100%;
+      max-width: 680px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .challenge-question-header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .challenge-q-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .challenge-question-text {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.4;
+      color: var(--fg);
+    }
+
+    .challenge-diagram-holder {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .challenge-options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .challenge-option-btn {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      text-align: left;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .challenge-option-btn:hover {
+      border-color: var(--primary);
+      background: oklch(98% 0.015 250);
+    }
+
+    .challenge-option-btn.selected {
+      border-color: var(--primary);
+      background: oklch(96% 0.025 255);
+    }
+
+    .challenge-option-indicator {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .challenge-option-btn.selected .challenge-option-indicator {
+      border-color: var(--primary);
+      background: var(--primary);
+      box-shadow: inset 0 0 0 3px var(--surface);
+    }
+
+    .numeric-input-wrapper {
+      display: flex;
+      gap: 12px;
+    }
+
+    .numeric-answer-input {
+      flex: 1;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      font-size: 18px;
+      font-family: var(--font-mono);
+      background: var(--bg);
+    }
+
+    .numeric-answer-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: var(--surface);
+    }
+
+    .challenge-action-footer {
+      height: 80px;
+      border-top: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .grading-state-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .grading-state-row.correct { color: var(--success); }
+    .grading-state-row.incorrect { color: var(--danger); }
+
+    /* =========================================================================
+       12. CHALLENGE: RESULTS CARD SCREEN
+       ========================================================================= */
+    .results-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .results-card {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .results-congrats {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--fg);
+    }
+
+    .results-score-wheel {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 10px solid var(--border);
+      border-top-color: var(--success);
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--fg);
+      position: relative;
+    }
+
+    .results-stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .res-stat-pill {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: var(--radius-md);
+    }
+
+    .res-stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .res-stat-val {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--fg);
+      margin-top: 4px;
+    }
+
+    .mistakes-review-container {
+      text-align: left;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      background: var(--bg);
+    }
+
+    .mistakes-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--danger);
+    }
+
+    .mistake-list-item {
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 0;
+    }
+    .mistake-list-item:last-child {
+      border: none;
+    }
+
+    /* =========================================================================
+       13. MODALS, TOASTS & INTERFACE UTILITIES
+       ========================================================================= */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 27, 26, 0.4);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-container {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--fg);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: var(--fg);
+      color: var(--surface);
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes toastSlideIn {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Print styling */
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        overflow: visible !important;
+        height: auto !important;
+      }
+      .app-header, .sidebar-left, .sidebar-right, .workspace-header, .chat-input-bar, .mobile-tabs, .concept-nav-controls {
+        display: none !important;
+      }
+      .workspace-pane {
+        overflow: visible !important;
+        display: block !important;
+      }
+      .tab-content.active {
+        display: block !important;
+        overflow: visible !important;
+      }
+      .print-certificate-page {
+        display: block !important;
+        page-break-before: always;
+        border: 10px double #1c1b1a;
+        padding: 40px;
+        margin: 40px auto;
+        max-width: 800px;
+        text-align: center;
+        background: white !important;
+        color: black !important;
+      }
+    }
+
+    .print-certificate-page {
+      display: none;
+    }
+
+    /* Media query to manage the 3 columns collapse */
+    @media (max-width: 1024px) {
+      .sidebar-right {
+        display: none; /* Collapses exam list on medium screens */
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-left {
+        display: none; /* We collapse all sidebars into mobile tabs view */
+      }
+      .mobile-tabs {
+        display: flex;
+      }
+      .sidebar-left.mobile-active, .sidebar-right.mobile-active {
+        display: flex !important;
+        position: absolute;
+        inset: 0;
+        width: 100% !important;
+        z-index: 30;
+      }
+    }
+
+    /* =========================================================================
+       SARA REBRAND & DASHBOARD OVERLAY STYLES
+       ========================================================================= */
+    .sara-dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      padding: 30px;
+      overflow-y: auto;
+      flex: 1;
+      height: 100%;
+    }
+
+    .coach-bubble {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.25);
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      color: #FEF3C7;
+      font-style: italic;
+      font-size: 14.5px;
+      box-shadow: var(--shadow-sm);
+    }
+    .coach-bubble-icon {
+      font-size: 18px;
+    }
+
+    .dashboard-hero {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding: 10px 0;
+    }
+    .mascot-container {
+      width: 130px;
+      height: 130px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .hero-text h2 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+    .hero-text p {
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.7);
+      max-width: 500px;
+    }
+
+    /* Mascot animations */
+    .mascot-float {
+      animation: floatAnim 4s ease-in-out infinite;
+    }
+    .mascot-aura {
+      animation: pulseAura 4s ease-in-out infinite;
+      transform-origin: center;
+    }
+    .mascot-halo {
+      animation: rotateHalo 8s linear infinite;
+      transform-origin: 80px 35px;
+    }
+    .mascot-core {
+      animation: pulseCore 2s ease-in-out infinite;
+    }
+
+    .float-sym {
+      font-weight: bold;
+    }
+    .sym-1 { animation: floatSym1 5s ease-in-out infinite; transform-origin: 35px 55px; }
+    .sym-2 { animation: floatSym2 6s ease-in-out infinite; transform-origin: 125px 58px; }
+    .sym-3 { animation: floatSym3 4.5s ease-in-out infinite; transform-origin: 30px 105px; }
+    .sym-4 { animation: floatSym4 5.5s ease-in-out infinite; transform-origin: 128px 112px; }
+
+    @keyframes floatAnim {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes pulseAura {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    @keyframes rotateHalo {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes pulseCore {
+      0%, 100% { fill: #FEF3C7; r: 5px; }
+      50% { fill: #FBBF24; r: 6.5px; }
+    }
+    @keyframes floatSym1 {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      50% { transform: translate(-3px, -5px) rotate(8deg); }
+    }
+    @keyframes floatSym2 {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      50% { transform: translate(4px, -3px) rotate(-10deg); }
+    }
+    @keyframes floatSym3 {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      50% { transform: translate(-4px, 4px) rotate(-8deg); }
+    }
+    @keyframes floatSym4 {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      50% { transform: translate(3px, 3px) rotate(12deg); }
+    }
+
+    /* PlayerStats grid */
+    .player-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(249, 115, 22, 0.25);
+      box-shadow: var(--shadow-md);
+    }
+    .stat-icon {
+      font-size: 24px;
+    }
+    .stat-val {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+    .stat-lbl {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Featured Mission Card */
+    .featured-mission {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+      border: 1px solid rgba(249, 115, 22, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+    }
+    .featured-mission::before {
+      content: "";
+      position: absolute;
+      top: -30px;
+      right: -30px;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.2) 0%, rgba(249, 115, 22, 0) 70%);
+      pointer-events: none;
+    }
+    .f-mission-info {
+      flex: 1;
+    }
+    .f-mission-tag {
+      display: inline-block;
+      background: rgba(249, 115, 22, 0.2);
+      color: #FBBF24;
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+    }
+    .f-mission-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+    }
+    .f-mission-desc {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 16px;
+    }
+    .f-mission-progress {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 400px;
+    }
+    .f-progress-bar-outer {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .f-progress-bar-inner {
+      height: 100%;
+      background: var(--gradient-sara);
+      border-radius: var(--radius-full);
+      box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+    }
+    .f-progress-lbl {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: bold;
+    }
+
+    /* Topic Map Grid */
+    .dashboard-section-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-top: 10px;
+    }
+    .topics-map-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .topic-map-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .topic-map-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(124, 58, 237, 0.35);
+      box-shadow: var(--shadow-md);
+    }
+    .topic-map-card.locked {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .topic-map-card.locked:hover {
+      transform: none;
+      border-color: var(--border);
+      box-shadow: none;
+    }
+    .tm-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tm-emoji-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .tm-emoji {
+      font-size: 20px;
+    }
+    .tm-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+    .tm-lock-icon {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+    .tm-status {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Scrollbar override for dashboard */
+    .sara-dashboard::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Sidebar list overrides to prevent light themes leaking */
+    .topic-item.active-topic {
+      background: rgba(124, 58, 237, 0.1) !important;
+      border-color: var(--primary) !important;
+    }
+    .topic-item.archived {
+      background: rgba(255, 255, 255, 0.02) !important;
+    }
+    .sandbox-widget {
+      background: rgba(255, 255, 255, 0.03) !important;
+      border-color: var(--primary) !important;
+    }
+    .modal-container {
+      background: #141235 !important;
+      border: 1px solid var(--border) !important;
+      box-shadow: var(--shadow-lg) !important;
+    }
+    .input-field {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid var(--border) !important;
+      color: #FFFFFF !important;
+    }
+    .input-field:focus {
+      border-color: var(--primary) !important;
+    }
+
+    /* Media query for SARA Dashboard mobile views */
+    @media (max-width: 768px) {
+      .player-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .topics-map-grid {
+        grid-template-columns: 1fr;
+      }
+      .dashboard-hero {
+        flex-direction: column;
+        text-align: center;
+        gap: 16px;
+      }
+    }
+  
+    /* Glowing Sunset Text */
+    .glowing-sunset {
+      background: linear-gradient(135deg, #F97316 20%, #FBBF24 50%, #A78BFA 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+      text-shadow: 0 0 15px rgba(249, 115, 22, 0.2);
+    }
+    
+    /* Double Column Dashboard Grid */
+    .dashboard-two-col {
+      display: grid;
+      grid-template-cols: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .dashboard-two-col {
+        grid-template-cols: 1fr;
+      }
+    }
+    
+    /* Sleek card custom styling */
+    .dashboard-card-custom {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-md);
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .dashboard-card-custom:hover {
+      border-color: rgba(249, 115, 22, 0.2);
+      box-shadow: 0 8px 32px rgba(249, 115, 22, 0.04);
+      transform: translateY(-2px);
+    }
+    
+    .dashboard-card-custom h3 {
+      font-family: var(--font-display);
+      font-size: 16.5px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+    }
+    
+    .dashboard-card-custom p {
+      font-size: 13.5px;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.5;
+    }
+    
+    .dashboard-textarea {
+      width: 100%;
+      height: 90px;
+      background: rgba(18, 15, 53, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      color: #FFFFFF;
+      font-family: var(--font-body);
+      font-size: 13.5px;
+      resize: none;
+      margin-top: 12px;
+      outline: none;
+      transition: var(--transition);
+    }
+    .dashboard-textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(249, 115, 22, 0.15);
+    }
+    
+    .dashboard-bullet-list {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .dashboard-bullet-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13.5px;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.4;
+    }
+    
+    .sidebar-footer:hover {
+      background: rgba(255, 255, 255, 0.04) !important;
+    }
+    .header-select-btn:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+    .sidebar-btn-new:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(249, 115, 22, 0.3) !important;
+      transform: translateY(-1px);
+    }
+    .sidebar-btn-delete:hover {
+      color: #EF4444 !important;
+      background: rgba(239, 68, 68, 0.06) !important;
+    }
+    </style>
+    
+</head>
+<body>
+
+  <!-- =========================================================================
+       APP HEADER
+       ========================================================================= -->
+  <header class="app-header" style="background: rgba(18, 15, 53, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100;">
+    <div class="brand-group" style="display: flex; align-items: center; gap: 8px;">
+      <!-- Elegant circular logo representing SARA -->
+      <div class="sara-logo-circle" style="width: 32px; height: 32px; background: #EF4444; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 0 12px rgba(239, 68, 68, 0.45);">
+        <svg width="14" height="18" viewBox="0 0 14 18" fill="none" style="margin-left: 1px;">
+          <path d="M12 4.5C12 2.5 10.3 1 8.5 1C6.7 1 5.5 2.5 5.5 4C5.5 5.5 6.5 6.5 8 7C10.5 7.8 12.5 9 12.5 12C12.5 15 10 17 7 17C3.5 17 1.5 14.5 1.5 12.5" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand-title" style="font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.02em;">
+        SARA
+      </div>
+      
+      <!-- Top selectors from screenshot -->
+      <div class="header-select-btn" onclick="startNewMission()" id="choose-topic-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-md); padding: 6px 12px; font-family: var(--font-display); font-weight: 700; color: #FFFFFF; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: var(--transition); margin-left: 12px;">
+        Choose a Topic <span style="font-size: 10px; opacity: 0.7;">▼</span>
+      </div>
+      
+      <div class="header-select-btn" onclick="openAuthModal('login')" id="user-status-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-md); padding: 6px 12px; font-family: var(--font-display); font-weight: 700; color: #FFFFFF; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: var(--transition); margin-left: 8px;">
+        🔒 <span id="user-status-email" style="font-size: 11px; opacity: 0.8; font-weight: 600;">guest@sara.com</span> <span style="font-size: 10px; opacity: 0.7;">▼</span>
+      </div>
+    </div>
+    
+    <div class="stats-group" style="display: flex; align-items: center; gap: 12px;">
+      <div class="stat-badge sound-toggle" onclick="toggleSound()" title="Toggle sounds" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); padding: 6px 12px; color: #FFFFFF; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--transition);">
+        <span id="sound-icon">🔊</span>
+      </div>
+      
+      <!-- Questions tracking indicator -->
+      <div class="stat-badge questions-left" id="header-limits-badge" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); border-radius: var(--radius-md); padding: 6px 12px; color: #EF4444; font-size: 12px; font-weight: 700;">
+        Guest Limit: <strong id="header-limit-count" style="margin-left: 4px;">5</strong>/5
+      </div>
+    </div>
+
+    <!-- Hidden standard buttons in favor of SARA header selectors -->
+    <div class="header-actions" id="header-auth-actions" style="display: none;">
+      <button class="btn btn-sm btn-secondary" onclick="openAuthModal('login')">Sign In</button>
+      <button class="btn btn-sm btn-primary" onclick="openAuthModal('register')">Register</button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       MAIN APP SHELL
+       ========================================================================= -->
+  <div class="app-shell">
+    
+    <!-- LEFT SIDEBAR: PROFILE, ACTIVE TOPICS, GCSE DOMAINS -->
+    <aside class="sidebar-left" id="sidebar-left-pane">
+      <!-- Will be fully populated dynamically via renderLeftSidebar() on load -->
+    </aside>
+
+    <!-- CENTER PANE: WORKSPACE (Tutor chat vs Concept Card StudyDeck) -->
+    <main class="workspace-pane">
+      <div class="workspace-header">
+        <div class="workspace-tabs">
+          <button class="workspace-tab active" id="tab-chat-btn" onclick="switchWorkspaceTab('chat')">
+            Guided Tutor Chat
+          </button>
+          <button class="workspace-tab" id="tab-study-btn" onclick="switchWorkspaceTab('study')">
+            Study Deck <span class="badge" id="study-deck-card-counter">0/3</span>
+          </button>
+        </div>
+        
+        <div class="header-actions">
+          <button class="btn btn-sm btn-secondary" onclick="exportProgressReport()">🖨️ PDF Report</button>
+        </div>
+      </div>
+
+      <!-- TUTOR GUIDED CHAT PANEL -->
+      <div class="tab-content active" id="workspace-tab-chat">
+        
+        <!-- SARA DASHBOARD PANEL -->
+        <div class="sara-dashboard" id="sara-dashboard">
+          <!-- Coach Bubble -->
+          <div class="coach-bubble">
+            <div class="coach-bubble-icon">✨</div>
+            <div class="coach-bubble-text" id="dashboard-coach-msg">
+              "Learn bright. Level up. Ready for today's GCSE revision mission? Let's conquer algebra and fractions!" — SARA
+            </div>
+          </div>
+
+          <!-- Hero Row with Mascot & Header from screenshot -->
+          <div class="dashboard-hero" style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 12px 0;">
+            <div class="hero-text" style="flex: 1;">
+              <h2 style="font-family: var(--font-display); font-size: 32px; font-weight: 800; line-height: 1.25; margin-bottom: 8px;">
+                Learn Maths <span class="glowing-sunset">Without Feeling Stuck</span>
+              </h2>
+              <p style="font-size: 15px; color: rgba(255, 255, 255, 0.7); max-width: 600px; margin-top: 8px; line-height: 1.5;">
+                SARA is your AI maths coach — tiny visual lessons, one challenge at a time, and progress that actually sticks.
+              </p>
+            </div>
+            
+            <div class="mascot-container" style="width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <!-- Minimal Geometric SARA Mascot -->
+              <svg class="sara-mascot" viewBox="0 0 160 160" width="130" height="130">
+                <defs>
+                  <radialGradient id="aura" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.6" />
+                    <stop offset="100%" stop-color="#F97316" stop-opacity="0" />
+                  </radialGradient>
+                  <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#F97316" />
+                    <stop offset="100%" stop-color="#7C3AED" />
+                  </linearGradient>
+                  <linearGradient id="haloGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#FEF3C7" />
+                    <stop offset="100%" stop-color="#7C3AED" />
+                  </linearGradient>
+                </defs>
+                <circle cx="80" cy="80" r="70" fill="url(#aura)" class="mascot-aura" />
+                <g class="mascot-float">
+                  <ellipse cx="80" cy="35" rx="32" ry="8" fill="none" stroke="url(#haloGrad)" stroke-width="2.5" class="mascot-halo" />
+                  <circle cx="80" cy="35" r="3" fill="#FBBF24" />
+                  <circle cx="80" cy="60" r="18" fill="#141235" stroke="url(#bodyGrad)" stroke-width="3" />
+                  <circle cx="80" cy="60" r="5" fill="#FEF3C7" class="mascot-core" />
+                  <path d="M 62 88 L 98 88 L 108 120 L 52 120 Z" fill="url(#bodyGrad)" rx="8" />
+                  <line x1="90" y1="98" x2="118" y2="80" stroke="#FEF3C7" stroke-width="3.5" stroke-linecap="round" />
+                  <polygon points="118,80 124,72 126,82" fill="#FBBF24" />
+                  <text x="35" y="55" class="float-sym sym-1" fill="#FEF3C7" font-size="16" font-family="var(--font-mono)">π</text>
+                  <text x="125" y="58" class="float-sym sym-2" fill="#7C3AED" font-size="18" font-family="var(--font-mono)">∑</text>
+                  <text x="30" y="105" class="float-sym sym-3" fill="#F97316" font-size="15" font-family="var(--font-mono)">√</text>
+                  <text x="128" y="112" class="float-sym sym-4" fill="#FBBF24" font-size="14" font-family="var(--font-mono)">%</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Double Column Grid for Screenshot Cards -->
+          <div class="dashboard-two-col">
+            <!-- Card 1: What do you want to learn? -->
+            <div class="dashboard-card-custom">
+              <div>
+                <h3>What do you want to learn?</h3>
+                <p>Pick a topic from <strong style="color: var(--primary);">Choose a Topic</strong> at the top — or paste your topic list below and we'll match it for you.</p>
+                <textarea class="dashboard-textarea" id="dashboard-search-textarea" placeholder="e.g. Calculate percentages, Share in a ratio, Solve equations, Perimeter of shapes..."></textarea>
+              </div>
+              <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
+                <button class="btn btn-primary" onclick="handleDashboardSearch()" style="background: var(--gradient-sara); border: none; font-family: var(--font-display); font-weight: 700; box-shadow: 0 4px 12px rgba(249,115,22,0.3); border-radius: var(--radius-md); padding: 8px 16px;">
+                  Find my topics
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 2: What is SARA? -->
+            <div class="dashboard-card-custom">
+              <div>
+                <h3>What is SARA?</h3>
+                <ul class="dashboard-bullet-list">
+                  <li class="dashboard-bullet-item">
+                    <span style="font-size: 16px;">📖</span>
+                    <span><strong>Short visual lessons</strong> — one concept at a time, with diagrams and examples.</span>
+                  </li>
+                  <li class="dashboard-bullet-item">
+                    <span style="font-size: 16px;">🎯</span>
+                    <span><strong>Concept cards</strong> — key ideas you can always come back to.</span>
+                  </li>
+                  <li class="dashboard-bullet-item">
+                    <span style="font-size: 16px;">⚡</span>
+                    <span><strong>Challenge mode</strong> — answer questions, earn XP, unlock the next topic.</span>
+                  </li>
+                  <li class="dashboard-bullet-item">
+                    <span style="font-size: 16px;">📊</span>
+                    <span><strong>Progress tracking</strong> — see how far you've come and what's next.</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <!-- Year Pills from screenshot -->
+              <div style="display: flex; gap: 10px; margin-top: 16px;">
+                <button class="year-pill active" id="pill-y8" onclick="selectDashboardYear('Year 8')" style="background: var(--gradient-sara); border: none; color: #FFFFFF; font-family: var(--font-display); font-weight: 800; padding: 6px 16px; border-radius: var(--radius-full); font-size: 11px; cursor: pointer; transition: var(--transition); letter-spacing: 0.05em; box-shadow: 0 2px 8px rgba(249,115,22,0.3);">
+                  YEAR 8
+                </button>
+                <button class="year-pill" id="pill-y9" onclick="selectDashboardYear('Year 9')" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.6); font-family: var(--font-display); font-weight: 700; padding: 6px 16px; border-radius: var(--radius-full); font-size: 11px; cursor: pointer; transition: var(--transition); letter-spacing: 0.05em;">
+                  YEAR 9
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section header: YOUR LEARNING JOURNEY -->
+          <div class="dashboard-section-title" style="margin-top: 32px; font-size: 13px; font-weight: 800; letter-spacing: 0.15em; color: rgba(255,255,255,0.4); text-transform: uppercase;">
+            YOUR LEARNING JOURNEY
+          </div>
+
+          <!-- PlayerStats Row (4 columns) -->
+          <div class="player-stats">
+            <div class="stat-card">
+              <div class="stat-icon">🔥</div>
+              <div class="stat-body">
+                <div class="stat-val" id="dash-stat-streak">3 Days</div>
+                <div class="stat-lbl">Daily Streak</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">⚡</div>
+              <div class="stat-body">
+                <div class="stat-val" id="dash-stat-xp">350 XP</div>
+                <div class="stat-lbl">Revision XP</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🎯</div>
+              <div class="stat-body">
+                <div class="stat-val" id="dash-stat-level">Lvl 2</div>
+                <div class="stat-lbl">GCSE Standing</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🏆</div>
+              <div class="stat-body">
+                <div class="stat-val" id="dash-stat-badges">4 Badges</div>
+                <div class="stat-lbl">GCSE Milestones</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Featured Mission Card -->
+          <div class="featured-mission" id="featured-mission-container">
+            <!-- Loaded dynamically from JS -->
+          </div>
+
+          <!-- Topics Grid Map (TopicMap) -->
+          <div class="dashboard-section-title">Select revision mission</div>
+          <div class="topics-map-grid" id="topics-map-grid">
+            <!-- Unlocked and locked topics injected here -->
+          </div>
+        </div>
+        <div class="chat-history" id="chat-feed" style="display: none;">
+          <!-- Chat messages dynamically injected -->
+        </div>
+
+        <div class="chat-input-bar" style="display: none;">
+          <div class="chat-input-wrapper">
+            <input type="text" class="chat-input" id="chat-input-field" placeholder="Ask SARA anything maths… 🧮" onkeydown="if(event.key === 'Enter') handleUserSendMessage()">
+            <button class="btn-send" onclick="handleUserSendMessage()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONCEPT DECK REVIEW PANE -->
+      <div class="tab-content" id="workspace-tab-study">
+        <div class="study-deck-layout">
+          <div class="concept-progress-header">
+            <div class="concept-title-main" id="study-topic-title">Fractions Revision</div>
+            <div class="topics-counter" id="study-progress-counter">Card 1 of 3</div>
+          </div>
+
+          <!-- Concept Cards Flip/Slide Holder -->
+          <div class="concept-cards-holder" id="concept-cards-stack">
+            <!-- Cards will be populated dynamically -->
+          </div>
+
+          <!-- Card Controls -->
+          <div class="concept-nav-controls">
+            <button class="btn btn-secondary" id="concept-prev-btn" onclick="navigateConceptCards(-1)" disabled>Previous</button>
+            <button class="btn btn-primary" id="concept-next-btn" onclick="navigateConceptCards(1)">Next Card</button>
+          </div>
+
+          <!-- Challenge gate block -->
+          <div class="study-gate-banner" id="challenge-gate-banner">
+            <div class="gate-status-row">
+              <div class="gate-icon" id="gate-icon-indicator">🔒</div>
+              <div class="gate-message-holder">
+                <div class="gate-title" id="gate-main-title">Challenge Mode Locked</div>
+                <div class="gate-desc" id="gate-sub-title">Review all 3 study cards above to unlock the practice run!</div>
+              </div>
+            </div>
+            <div class="challenge-action-group" id="challenge-action-container">
+              <button class="btn btn-primary" id="btn-start-challenge-trigger" disabled onclick="launchChallengeMode()">Start Challenge Mode (Adaptive Run)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT SIDEBAR: EXAM PREP & REALTIME PROGRESS GOALS -->
+    <aside class="sidebar-right" id="sidebar-right-pane">
+      <div class="section-title">
+        <span>GCSE Goals & Prep</span>
+      </div>
+
+      <!-- Add Goal Mini Form -->
+      <div class="add-goal-form">
+        <input type="text" class="input-field" id="new-goal-desc" placeholder="Goal (e.g., Exam Prep: Decimals)">
+        <input type="date" class="input-field" id="new-goal-date" value="2026-06-17">
+        <button class="btn btn-sm btn-primary" style="width:100%" onclick="addNewGoal()">Add Goal Focus</button>
+      </div>
+
+      <div class="divider" style="margin: 10px 20px;"></div>
+
+      <div class="goals-list" id="sidebar-goals-list">
+        <!-- Goal Cards Injected via JS -->
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- MOBILE FOOTER NAVIGATION TABS -->
+  <nav class="mobile-tabs">
+    <button class="mobile-tab-btn active" id="m-tab-chat" onclick="handleMobileNav('chat')">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+      Tutor
+    </button>
+    <button class="mobile-tab-btn" id="m-tab-topics" onclick="handleMobileNav('topics')">
+      <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0-2-.9-2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg>
+      Topics
+    </button>
+    <button class="mobile-tab-btn" id="m-tab-goals" onclick="handleMobileNav('goals')">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      Goals
+    </button>
+  </nav>
+
+  <!-- =========================================================================
+       CHALLENGE OVERLAY (FULL SCREEN FOCUS)
+       ========================================================================= -->
+  <div class="challenge-overlay" id="challenge-overlay">
+    <div class="challenge-top-nav">
+      <div class="challenge-title">
+        <span class="challenge-band" id="challenge-domain-tag">AQA GCSE MATHS</span>
+        <span id="challenge-topic-name">Decimals Mastery Challenge</span>
+      </div>
+
+      <div class="challenge-progress-bar-container">
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" id="challenge-progress-bar" style="width: 20%;"></div>
+        </div>
+        <div class="challenge-progress-num" id="challenge-progress-fraction">Question 1 of 5</div>
+      </div>
+
+      <button class="challenge-quit" onclick="confirmQuitChallenge()">&times;</button>
+    </div>
+
+    <!-- MAIN INTERACTIVE CHALLENGE WRAPPER -->
+    <div class="challenge-content-body">
+      
+      <!-- FOCUS WORKSPACE CARD -->
+      <div class="challenge-card" id="challenge-interactive-card">
+        <!-- Question headers -->
+        <div class="challenge-question-header">
+          <div class="challenge-q-eyebrow" id="challenge-q-difficulty">DIFFICULTY: MUST (TARGET YEAR 8/9 BASELINE)</div>
+          <div class="challenge-question-text" id="challenge-q-text">Calculate: 0.35 + 0.49</div>
+        </div>
+
+        <!-- Optional interactive graphics, charts, fraction displays -->
+        <div class="challenge-diagram-holder" id="challenge-diagram-container">
+          <!-- Dynamic visual aid SVGs injected here -->
+        </div>
+
+        <!-- Inputs / Options grid -->
+        <div class="challenge-options-grid" id="challenge-inputs-container">
+          <!-- Populated with either choice buttons or free form text -->
+        </div>
+      </div>
+
+      <!-- FULL SCREEN ADAPTIVE RESULTS SUMMARY PANEL -->
+      <div class="results-screen" id="challenge-results-panel">
+        <div class="results-card">
+          <div class="results-congrats" id="results-congrats-heading">Incredible Effort! 🌟</div>
+          
+          <div class="results-score-wheel" id="results-wheel-score">4/5</div>
+          
+          <div class="results-stats-row">
+            <div class="res-stat-pill">
+              <div class="res-stat-label">Mastery Growth</div>
+              <div class="res-stat-val" id="results-stat-mastery">+1 Level</div>
+            </div>
+            <div class="res-stat-pill">
+              <div class="res-stat-label">Revision XP</div>
+              <div class="res-stat-val">+150 XP</div>
+            </div>
+          </div>
+
+          <!-- Dynamic Mistakes Review Panel -->
+          <div class="mistakes-review-container" id="results-mistakes-panel">
+            <div class="mistakes-title">⚠️ Common Exam Patterns Spotted:</div>
+            <div id="results-mistakes-list">
+              <!-- Mistake breakdowns -->
+            </div>
+          </div>
+
+          <div class="challenge-action-group">
+            <button class="btn btn-secondary" onclick="closeChallengeMode('keep_learning')">Review Mistakes & Learn</button>
+            <button class="btn btn-primary" onclick="closeChallengeMode('next_mission')">Next Revision Mission</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CHALLENGE GRADING & CONTROLS BAR -->
+    <div class="challenge-action-footer">
+      <div id="challenge-grading-status-box">
+        <!-- Instant feedback ("Correct!", "Ah, remember that ...") -->
+      </div>
+      <button class="btn btn-primary" id="challenge-next-action-btn" onclick="handleChallengeActionSubmit()">Check Answer</button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: REGISTRATION & LOGIN (SESSION CONTINUITY GATES)
+       ========================================================================= -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title" id="auth-modal-title">Create your SARA account</h3>
+        <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+      </div>
+      
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 8px;" id="auth-modal-subtitle">
+        Preserves your current chat revision history and tracks GCSE scores!
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div id="auth-modal-name-group">
+          <label style="font-size: 12px; font-weight: 700; color: var(--fg);">Your Name</label>
+          <input type="text" class="input-field" id="auth-input-name" placeholder="Name">
+        </div>
+        
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: var(--fg);">School Year Level</label>
+          <select class="input-field" id="auth-input-level">
+            <option value="Year 8">Year 8 (Age 12-13)</option>
+            <option value="Year 9">Year 9 (Age 13-14 / GCSE Prep)</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: var(--fg);">Create Password</label>
+          <input type="password" class="input-field" id="auth-input-pass" placeholder="••••••••" value="RevisionPass">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; margin-top: 8px;" id="auth-modal-submit-btn" onclick="submitAuthForm()">
+        Save & Continue Revision
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST ALERTS OVERLAY -->
+  <div class="toast-container" id="toast-bin"></div>
+
+  <!-- =========================================================================
+       PRINT CERTIFICATE PAGE (Hidden offline backup)
+       ========================================================================= -->
+  <div class="print-certificate-page" id="printable-certificate">
+    <h1 style="font-size: 36px; margin-bottom: 20px; font-family: sans-serif;">AQA GCSE MATHS CERTIFICATE</h1>
+    <h2 style="font-size: 24px; color: #555;">OF ACHIEVEMENT IN REVISION</h2>
+    <div style="margin: 40px 0; border-top: 1px solid #1c1b1a; border-bottom: 1px solid #1c1b1a; padding: 20px 0;">
+      <p style="font-size: 18px;">This document certifies that</p>
+      <h3 style="font-size: 32px; margin: 16px 0;" id="cert-student-name">Student Name</h3>
+      <p style="font-size: 16px;">has completed active topic revisions and qualified for GCSE ready status in</p>
+      <h4 style="font-size: 24px; margin: 12px 0;" id="cert-topic-name">Maths</h4>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 60px;">
+      <div>
+        <p><strong>AQA GCSE Prep Tracker</strong></p>
+        <p id="cert-date">Date Issued: 11 June 2026</p>
+      </div>
+      <div>
+        <p><strong>Assistant Coach Signature</strong></p>
+        <p style="font-family: cursive; font-size: 20px; margin-top: 4px;">SARA — GCSE Tutor Coach</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       JAVASCRIPT GAME SYSTEM ENGINE
+       ========================================================================= */ -->
+  <script>
+    // =========================================================================
+    // STATE STORES (Tracks Guest counters, registration triggers, local database)
+    // =========================================================================
+    const DB_ARCHETYPES = {
+      "Fractions": [
+        { id: "frac-1", q: "Simplify the fraction: 15 / 25", opts: ["3/5", "2/5", "3/4", "5/8"], ans: "3/5", band: "must", hint: "Divide both the numerator and denominator by their highest common factor (5)." },
+        { id: "frac-2", q: "Work out: 2/5 + 1/4", opts: ["3/9", "3/20", "13/20", "9/20"], ans: "13/20", band: "should", hint: "Find a common denominator first. For 5 and 4, it's 20. Change both fractions before adding." },
+        { id: "frac-3", q: "Calculate: 3/4 × 8/9", opts: ["6/12", "2/3", "24/36", "11/13"], ans: "2/3", band: "could", hint: "Multiply the numerators together, then the denominators. Then simplify." },
+        { id: "frac-4", q: "Express 7/8 as a decimal.", opts: ["0.75", "0.85", "0.875", "0.785"], ans: "0.875", band: "gcse_bridge", hint: "Divide 7 by 8. Use bus shelter method to divide." },
+        { id: "frac-5", q: "What fraction of a day is 6 hours in simplest form?", opts: ["1/4", "1/3", "1/6", "2/5"], ans: "1/4", band: "must", hint: "There are 24 hours in a day. Simplify 6/24." }
+      ],
+      "Decimals": [
+        { id: "dec-1", q: "Solve: 0.35 + 0.49", opts: ["0.74", "0.84", "0.94", "0.79"], ans: "0.84", band: "must", hint: "Align your decimal points in columns before adding." },
+        { id: "dec-2", q: "Work out: 1.2 × 0.4", opts: ["4.8", "0.48", "0.048", "48"], ans: "0.48", band: "should", hint: "Multiply as if they are whole numbers (12 × 4 = 48), then place the decimal point. There are two decimal places total in the question." },
+        { id: "dec-3", q: "Write 3/16 as a decimal.", opts: ["0.1875", "0.15", "0.18", "0.16"], ans: "0.1875", band: "could", hint: "Divide 3 by 16 step-by-step." },
+        { id: "dec-4", q: "Calculate: 7.2 ÷ 0.08", opts: ["90", "9", "0.9", "900"], ans: "90", band: "gcse_bridge", hint: "Multiply both numbers by 100 to clear the decimal from the divisor (720 ÷ 8)." },
+        { id: "dec-5", q: "Find the median of: 0.3, 0.25, 0.31, 0.29", opts: ["0.27", "0.295", "0.3", "0.28"], ans: "0.295", band: "gcse_bridge", hint: "Order the decimals from smallest to largest first, then find the middle. (0.25, 0.29, 0.3, 0.31)." }
+      ],
+      "Algebra": [
+        { id: "alg-1", q: "Simplify: 4a + 3b - 2a + b", opts: ["2a + 4b", "2a + 2b", "6a + 4b", "2a + 3b"], ans: "2a + 4b", band: "must", hint: "Group like terms. Add 'a' values together and 'b' values together." },
+        { id: "alg-2", q: "Expand: 3(2x - 5)", opts: ["6x - 5", "6x - 15", "5x - 15", "6x + 15"], ans: "6x - 15", band: "should", hint: "Multiply the number outside the bracket by each term inside." },
+        { id: "alg-3", q: "Solve for x: 5x + 3 = 28", opts: ["x = 5", "x = 6.2", "x = 4", "x = 5.5"], ans: "x = 5", band: "could", hint: "Subtract 3 from both sides, then divide by 5." },
+        { id: "alg-4", q: "Factorise completely: 6x² + 9x", opts: ["3x(2x + 3)", "3(2x² + 3x)", "x(6x + 9)", "3x(2x + 9)"], ans: "3x(2x + 3)", band: "gcse_bridge", hint: "Find the highest common factor for 6x² and 9x. The HCF of coefficients is 3, and variables is x." },
+        { id: "alg-5", q: "Substitute p = 4 and q = -2 into: p² + 3q", opts: ["10", "22", "13", "16"], ans: "10", band: "should", hint: "Substitute the numbers into the expression: (4)² + 3(-2) = 16 - 6." }
+      ]
+    };
+
+    const CONCEPT_CARDS_CONTENT = {
+      "Fractions": [
+        { num: "Card 1 of 3", headline: "Understanding Fractions", text: "A fraction represents a part of a whole. The top number is the <strong>Numerator</strong> (how many parts we have) and the bottom is the <strong>Denominator</strong> (how many parts the whole is split into). Try the slider below to change the shaded parts of the fraction:", showSlider: true, denom: 8 },
+        { num: "Card 2 of 3", headline: "Equivalent & Simplifying Fractions", text: "Equivalent fractions represent the same size even if they look different. For example, <strong>2/4</strong>, <strong>3/6</strong>, and <strong>4/8</strong> are all equivalent to <strong>1/2</strong>.<br><br>To simplify a fraction, divide both numbers by their Highest Common Factor (HCF) until you cannot divide them any further.", showSlider: false },
+        { num: "Card 3 of 3", headline: "Adding & Subtracting Fractions", text: "You can only add or subtract fractions when their denominators are <strong>exactly the same</strong>.<br><br><strong>Step 1:</strong> Find the Lowest Common Multiple (LCM) of the denominators.<br><strong>Step 2:</strong> Multiply both numerator and denominator to get equivalent fractions with the common denominator.<br><strong>Step 3:</strong> Add or subtract the numerators. Keep the denominator the same!", showSlider: false }
+      ],
+      "Decimals": [
+        { num: "Card 1 of 3", headline: "Understanding Decimal Place Value", text: "Decimals use place values less than 1. The first digit to the right of the decimal point is <strong>tenths (1/10)</strong>, the next is <strong>hundredths (1/100)</strong>, and the third is <strong>thousandths (1/1000)</strong>.<br><br>Adding zeros to the end of a decimal (like changing 0.5 to 0.50) does not change its value but helps align columns!", showSlider: false },
+        { num: "Card 2 of 3", headline: "Multiplying Decimals Safely", text: "The safest way to multiply decimals is to ignore the decimal points first and multiply as whole numbers.<br><br><strong>Step 1:</strong> 1.2 × 0.4 becomes 12 × 4 = 48.<br><strong>Step 2:</strong> Count the total decimal places in the original numbers (1.2 has one, 0.4 has one, total is 2).<br><strong>Step 3:</strong> Put that many decimal places back in the answer: 48 becomes <strong>0.48</strong>.", showSlider: false },
+        { num: "Card 3 of 3", headline: "Converting Fractions to Decimals", text: "To turn any fraction into a decimal, just divide the top number by the bottom number. For example, to write 3/8 as a decimal, calculate 3 ÷ 8 using column division (the bus shelter method):<br><br><code>8 ) 3.000 = 0.375</code>. This works for every single fraction!", showSlider: false }
+      ],
+      "Algebra": [
+        { num: "Card 1 of 3", headline: "Simplifying Algebraic Expressions", text: "Simplifying means grouping 'like terms'. You can add or subtract terms only if they have the exact same letters.<br><br>In the expression: <code>3x + 5y + 2x - 2y</code>, we group the x terms: <code>3x + 2x = 5x</code>, and the y terms: <code>5y - 2y = 3y</code>. The simplified answer is <code>5x + 3y</code>.", showSlider: false },
+        { num: "Card 2 of 3", headline: "Expanding Brackets", text: "Expanding a bracket means multiplying the term on the outside by <strong>every single term</strong> inside the brackets.<br><br>For example, to expand <code>4(3a - 2)</code>:<br>Multiply 4 by 3a = <code>12a</code>.<br>Multiply 4 by -2 = <code>-8</code>.<br>The expanded answer is <code>12a - 8</code>.", showSlider: false },
+        { num: "Card 3 of 3", headline: "Solving Equations", text: "Solving an equation means finding the value of the letter. The gold rule is: <strong>whatever you do to one side, you must do to the other side</strong>.<br><br>To solve <code>2x + 7 = 15</code>:<br>Subtract 7 from both sides: <code>2x = 8</code>.<br>Divide both sides by 2: <code>x = 4</code>.", showSlider: false }
+      ]
+    };
+
+    let sessionState = {
+      isLoggedIn: false,
+      studentName: "Guest student",
+      studentYear: "Year 8",
+      guestQuestionsUsed: 0,
+      maxGuestQuestions: 5,
+      activeTopic: "Fractions",
+      currentCardIndex: 0,
+      cardsReviewed: { "Fractions": 0, "Decimals": 0, "Algebra": 0 },
+      isChallengeUnlocked: { "Fractions": false, "Decimals": false, "Algebra": false },
+      
+      // SARA Rebrand Player metrics
+      xp: 350,
+      streak: 3,
+      level: 2,
+      badgesCount: 4,
+
+      // Topics list: organised under maths topic, max 5 active limit
+      topics: [
+        { id: "Fractions", name: "Fractions", status: "in_progress", score: 3, percent: 60, domain: "Number", active: true },
+        { id: "Decimals", name: "Decimals", status: "in_progress", score: 1, percent: 20, domain: "Number", active: true },
+        { id: "Algebra", name: "Algebra", status: "in_progress", score: 4, percent: 80, domain: "Algebra", active: true },
+        { id: "Percentages", name: "Percentages", status: "not_started", score: 0, percent: 0, domain: "Number", active: false },
+        { id: "Ratios", name: "Ratios", status: "not_started", score: 0, percent: 0, domain: "Ratio", active: false }
+      ],
+      
+      // Short term GCSE goals
+      goals: [
+        { id: 1, topic: "Fractions", desc: "Exam Prep: Practice fraction arithmetic (addition/multiplication)", date: "17 June 2026", status: "active", confidence: "med" },
+        { id: 2, topic: "Decimals", desc: "Exam Prep: Master division of decimals by small whole numbers", date: "24 June 2026", status: "active", confidence: "low" }
+      ],
+
+      soundEnabled: true,
+      chatMessages: [], isLoggedIn: true
+    };
+
+    // Active Challenge Tracking
+    let activeChallenge = {
+      topic: null,
+      questions: [],
+      currentIdx: 0,
+      userAnswers: [],
+      score: 0,
+      difficultyPath: [], // Tracks "must" -> "should" -> etc.
+      mistakesSpotted: [],
+      lastAnswerCorrect: null
+    };
+
+    // =========================================================================
+    // AUDIO SYNTHESIZER (HTML5 Web Audio API)
+    // =========================================================================
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (!sessionState.soundEnabled) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === "click") {
+          // Sharp little click chirp
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === "correct") {
+          // Friendly double ding
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.setValueAtTime(0.12, now + 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === "incorrect") {
+          // Buzz mistake sound
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(140, now);
+          osc.frequency.linearRampToValueAtTime(100, now + 0.25);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === "fanfare") {
+          // Major chord win chime
+          const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+          notes.forEach((freq, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.type = "triangle";
+            o.frequency.setValueAtTime(freq, now + i * 0.1);
+            g.gain.setValueAtTime(0.08, now + i * 0.1);
+            g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.4);
+            o.start(now + i * 0.1);
+            o.stop(now + i * 0.1 + 0.4);
+          });
+        }
+      } catch (e) {
+        console.warn("Audio context blocked or unsupported", e);
+      }
+    }
+
+    function toggleSound() {
+      sessionState.soundEnabled = !sessionState.soundEnabled;
+      document.getElementById("sound-icon").textContent = sessionState.soundEnabled ? "🔊" : "🔇";
+      showToast(sessionState.soundEnabled ? "Sound effects enabled!" : "Sounds muted.");
+      playSound("click");
+    }
+
+    // =========================================================================
+    // RENDER LAYOUTS, TOASTS & ACTIONS
+    // =========================================================================
+    function showToast(text, duration = 3000) {
+      const bin = document.getElementById("toast-bin");
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.innerHTML = `<span>⚡</span> ${text}`;
+      bin.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    function switchWorkspaceTab(tab) {
+      playSound("click");
+      document.getElementById("tab-chat-btn").classList.toggle("active", tab === "chat");
+      document.getElementById("tab-study-btn").classList.toggle("active", tab === "study");
+      document.getElementById("workspace-tab-chat").classList.toggle("active", tab === "chat");
+      document.getElementById("workspace-tab-study").classList.toggle("active", tab === "study");
+      
+      if (tab === "study") {
+        renderStudyDeck();
+      }
+    }
+
+    function handleMobileNav(view) {
+      playSound("click");
+      // Reset active tabs
+      document.getElementById("m-tab-chat").classList.toggle("active", view === "chat");
+      document.getElementById("m-tab-topics").classList.toggle("active", view === "topics");
+      document.getElementById("m-tab-goals").classList.toggle("active", view === "goals");
+
+      const left = document.getElementById("sidebar-left-pane");
+      const right = document.getElementById("sidebar-right-pane");
+
+      if (view === "chat") {
+        left.classList.remove("mobile-active");
+        right.classList.remove("mobile-active");
+      } else if (view === "topics") {
+        left.classList.add("mobile-active");
+        right.classList.remove("mobile-active");
+      } else if (view === "goals") {
+        left.classList.remove("mobile-active");
+        right.classList.add("mobile-active");
+      }
+    }
+
+    // =========================================================================
+    // AUTH MODAL & CONTINUITY MANAGEMENT
+    // =========================================================================
+    function openAuthModal(mode) {
+      playSound("click");
+      const modal = document.getElementById("auth-modal");
+      const title = document.getElementById("auth-modal-title");
+      const nameGroup = document.getElementById("auth-modal-name-group");
+      
+      modal.classList.add("active");
+      if (mode === 'login') {
+        title.textContent = "Sign In to MathsRevision";
+        nameGroup.style.display = "none";
+      } else {
+        title.textContent = "Create your SARA account";
+        nameGroup.style.display = "block";
+      }
+    }
+
+    function closeAuthModal() {
+      document.getElementById("auth-modal").classList.remove("active");
+    }
+
+    function submitAuthForm() {
+      const nameInput = document.getElementById("auth-input-name").value.trim() || "Explorer";
+      const yearSelect = document.getElementById("auth-input-level").value;
+      
+      // Update session state keeping current history intact!
+      sessionState.isLoggedIn = true;
+      sessionState.studentName = nameInput;
+      sessionState.studentYear = yearSelect;
+      
+      // Hide limiting widgets
+      document.getElementById("header-limits-badge").style.display = "none";
+      document.getElementById("header-auth-actions").innerHTML = `
+        <div class="stat-badge logged-in">👨‍🎓 Logged In: ${nameInput}</div>
+      `;
+
+      closeAuthModal();
+      renderLeftSidebar();
+      renderDashboard(); // Refresh metrics on the rebrand dashboard
+      showToast(`Welcome back, ${nameInput}! Preserved your live revision chat.`, 4000);
+      playSound("fanfare");
+      
+      // In-chat celebration from tutor
+      appendMessage("tutor", `Fantastic, ${nameInput}! Account active. Your Year level is set to **${yearSelect}**, which maps directly to **AQA GCSE GCSE Bridge** revision targets. I've stored your topics. Let's conquer the exam! 🌟`);
+    }
+
+    // =========================================================================
+    // GOALS & EXAM PREP MANAGER
+    // =========================================================================
+    function renderGoals() {
+      const list = document.getElementById("sidebar-goals-list");
+      list.innerHTML = "";
+      
+      sessionState.goals.forEach(g => {
+        const card = document.createElement("div");
+        card.className = "goal-card";
+        card.innerHTML = `
+          <div class="goal-header">
+            <span class="goal-title">${g.topic} Focus</span>
+            <span class="goal-tag exam-prep">AQA Prep</span>
+          </div>
+          <div class="goal-desc">${g.desc}</div>
+          <div class="goal-footer">
+            <div class="goal-date">📅 ${g.date}</div>
+            <div class="goal-confidence ${g.confidence}">${g.confidence.toUpperCase()} CONF</div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function addNewGoal() {
+      const desc = document.getElementById("new-goal-desc").value.trim();
+      const date = document.getElementById("new-goal-date").value;
+      
+      if (!desc) {
+        showToast("Please write a goal focus description.");
+        return;
+      }
+      
+      const newG = {
+        id: Date.now(),
+        topic: sessionState.activeTopic,
+        desc: desc,
+        date: date ? new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : "June 2026",
+        status: "active",
+        confidence: "med"
+      };
+      
+      sessionState.goals.unshift(newG);
+      document.getElementById("new-goal-desc").value = "";
+      renderGoals();
+      showToast("Short-term exam goal logged!");
+      playSound("click");
+    }
+
+    // =========================================================================
+    // PROGRESS & DOMAIN MATRIX (AQA GCSE Categories)
+    // =========================================================================
+    function populateDomainsList() {
+      // Calculates rollup from active topics based on status/score
+      const domains = {
+        "Number": { total: 3, done: 0, percent: 0 },
+        "Algebra": { total: 1, done: 0, percent: 0 },
+        "Ratio": { total: 1, done: 0, percent: 0 },
+        "Geometry": { total: 0, done: 0, percent: 0 },
+        "Probability": { total: 0, done: 0, percent: 0 },
+        "Statistics": { total: 0, done: 0, percent: 0 }
+      };
+
+      sessionState.topics.forEach(t => {
+        if (domains[t.domain]) {
+          if (t.status === 'mastered') domains[t.domain].done += 1;
+          else if (t.status === 'in_progress') domains[t.domain].done += 0.5;
+        }
+      });
+
+      const list = document.getElementById("sidebar-domain-list");
+      if (!list) return;
+      list.innerHTML = "";
+
+      Object.keys(domains).forEach(domName => {
+        const dom = domains[domName];
+        const pct = dom.total > 0 ? Math.round((dom.done / dom.total) * 100) : 0;
+        
+        const item = document.createElement("div");
+        item.className = "domain-item";
+        item.innerHTML = `
+          <div class="domain-meta">
+            <span class="domain-title">${domName}</span>
+            <span class="domain-percent">${pct}%</span>
+          </div>
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner" style="width: ${pct}%; background-color: var(--accent);"></div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // =========================================================================
+    // ACTIVE TOPICS SYSTEM (Max 5 active limits logic)
+    // =========================================================================
+    function countActiveTopics() {
+      return sessionState.topics.filter(t => t.active).length;
+    }
+
+    function populateTopicsList() {
+      const list = document.getElementById("sidebar-topic-list");
+      if (!list) return;
+      list.innerHTML = "";
+      
+      const activeCount = countActiveTopics();
+      const counterEl = document.getElementById("active-topics-counter");
+      if (counterEl) {
+        counterEl.textContent = `${activeCount}/5`;
+        counterEl.classList.toggle("limit-reached", activeCount >= 5);
+      }
+
+      sessionState.topics.forEach(t => {
+        const item = document.createElement("div");
+        item.className = `topic-item ${sessionState.activeTopic === t.id ? 'active-topic' : ''} ${!t.active ? 'archived' : ''}`;
+        
+        // Stars representing mastery score
+        let starsHtml = "";
+        for (let i = 1; i <= 5; i++) {
+          starsHtml += `<svg class="score-star ${i <= t.score ? 'earned' : ''}" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
+        }
+
+        item.innerHTML = `
+          <div class="topic-header" onclick="selectTopic('${t.id}')">
+            <span class="topic-name">${t.name}</span>
+            <span class="topic-badge ${t.status}">${t.status.toUpperCase().replace('_', ' ')}</span>
+          </div>
+          <div class="topic-progress-row">
+            <div class="progress-bar-outer">
+              <div class="progress-bar-inner" style="width: ${t.percent}%"></div>
+            </div>
+            <span>${t.percent}%</span>
+          </div>
+          <div class="topic-header" style="margin-top: 4px;">
+            <div class="mastery-score">${starsHtml}</div>
+            <div class="topic-actions">
+              ${t.active ? 
+                `<button class="btn btn-sm btn-secondary" style="padding: 2px 6px; font-size:10px" onclick="toggleArchiveTopic('${t.id}', event)">Archive</button>` :
+                `<button class="btn btn-sm btn-primary" style="padding: 2px 6px; font-size:10px" onclick="toggleArchiveTopic('${t.id}', event)">Unarchive</button>`
+              }
+            </div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // Dynamic Left Sidebar routing (Logged In vs Guest Mode)
+    function renderLeftSidebar() {
+      const pane = document.getElementById("sidebar-left-pane");
+      if (!pane) return;
+
+      const activeTopicObj = sessionState.topics.find(t => t.id === sessionState.activeTopic) || sessionState.topics[0];
+      const percent = activeTopicObj ? activeTopicObj.percent : 0;
+      const remaining = Math.max(0, sessionState.maxGuestQuestions - sessionState.guestQuestionsUsed);
+      
+      const email = sessionState.isLoggedIn ? (sessionState.studentName.includes('@') ? sessionState.studentName : `${sessionState.studentName.toLowerCase().replace(/\s+/g, '')}@gmail.com`) : "guest@sara.com";
+      const role = sessionState.isLoggedIn ? `${sessionState.studentYear} Student` : "Guest Explorer";
+
+      pane.innerHTML = `
+        <!-- TOP SIDEBAR BUTTONS -->
+        <div style="padding: 16px 16px 4px 16px; display: flex; flex-direction: column; gap: 8px;">
+          <button class="sidebar-btn-new" onclick="startNewMission()" style="width: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); padding: 10px 14px; font-family: var(--font-display); font-weight: 700; color: #FFFFFF; font-size: 14px; cursor: pointer; transition: var(--transition); box-shadow: var(--shadow-sm); outline: none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path>
+            </svg>
+            New mission
+          </button>
+          
+          <button class="sidebar-btn-delete" onclick="resetAllData()" style="width: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 10px; background: transparent; border: none; padding: 6px 14px; font-family: var(--font-display); font-weight: 600; color: rgba(255, 255, 255, 0.5); font-size: 13px; cursor: pointer; transition: var(--transition); border-radius: var(--radius-md); outline: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Delete all
+          </button>
+        </div>
+
+        <div class="divider" style="margin: 0 16px 12px 16px; opacity: 0.2;"></div>
+
+        <!-- HISTORY SECTION (Maths Topics list) -->
+        <div style="padding: 0 16px 4px 16px;">
+          <div class="section-title" style="font-size: 11px; letter-spacing: 0.15em; color: rgba(255, 255, 255, 0.4); margin-bottom: 0px; font-weight: 800; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;">
+            <span>HISTORY</span>
+            <span class="topics-counter" id="active-topics-counter" style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: var(--radius-sm); font-size: 10px; color: var(--primary);">0/5</span>
+          </div>
+        </div>
+
+        <!-- TOPIC LIST WRAPPER -->
+        <div class="topic-list" id="sidebar-topic-list" style="flex: 1; padding: 0 12px; overflow-y: auto; margin-bottom: 12px;">
+          <!-- Topic items injected via JS -->
+        </div>
+
+        <!-- GCSE DOMAINS PANELS -->
+        <div class="divider" style="margin: 0 16px 12px 16px; opacity: 0.15;"></div>
+        <div style="padding: 0 16px 80px 16px;" id="sidebar-domains-wrapper">
+          <div class="section-title" style="font-size: 11px; letter-spacing: 0.15em; color: rgba(255, 255, 255, 0.4); margin-bottom: 8px; font-weight: 800; text-transform: uppercase;">GCSE DOMAINS</div>
+          <div class="domain-list" id="sidebar-domain-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- GCSE Domains injected via JS -->
+          </div>
+        </div>
+
+        <!-- PROFILE FOOTER BAR -->
+        <div class="sidebar-footer" id="sidebar-profile-footer" onclick="openAuthModal('${sessionState.isLoggedIn ? 'profile' : 'login'}')" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 14px 16px; background: rgba(18, 15, 53, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: space-between; z-index: 20; cursor: pointer; transition: var(--transition);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 28px; height: 28px; background: var(--gradient-sara); border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #FFFFFF; box-shadow: 0 2px 8px rgba(249,115,22,0.3);">
+              ${email.charAt(0).toUpperCase()}
+            </div>
+            <div style="display: flex; flex-direction: column; text-align: left;">
+              <div id="footer-username" style="font-family: var(--font-display); font-size: 13.5px; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">${email}</div>
+              <div id="footer-role" style="font-size: 10.5px; color: var(--primary); font-weight: 600;">${role}</div>
+            </div>
+          </div>
+          <span style="font-size: 11px; color: rgba(255, 255, 255, 0.4); padding: 4px;">▲</span>
+        </div>
+      `;
+
+      // Re-populate the lists inside our newly constructed sidebar!
+      populateTopicsList();
+      populateDomainsList();
+      
+      // Update header profile email text if element exists
+      const headerEmail = document.getElementById("user-status-email");
+      if (headerEmail) {
+        headerEmail.textContent = email;
+      }
+    }
+
+    // Backward compatible bindings
+    function renderDomains() {
+      renderLeftSidebar();
+    }
+    function renderTopics() {
+      renderLeftSidebar();
+    }
+
+    // SARA Dynamic Dashboard rendering & state engine
+    function renderDashboard() {
+      const dash = document.getElementById("sara-dashboard");
+      if (!dash) return;
+
+      // 1. Update general metrics
+      const streakEl = document.getElementById("dash-stat-streak");
+      if (streakEl) streakEl.textContent = `${sessionState.streak} Days`;
+
+      const xpEl = document.getElementById("dash-stat-xp");
+      if (xpEl) xpEl.textContent = `${sessionState.xp} XP`;
+
+      const lvlEl = document.getElementById("dash-stat-level");
+      if (lvlEl) lvlEl.textContent = `Lvl ${sessionState.level}`;
+
+      const badgesEl = document.getElementById("dash-stat-badges");
+      if (badgesEl) badgesEl.textContent = `${sessionState.badgesCount} Badges`;
+
+      // 2. Render featured mission card
+      const featContainer = document.getElementById("featured-mission-container");
+      if (featContainer) {
+        const featTopic = sessionState.topics.find(t => t.id === sessionState.activeTopic) || sessionState.topics[0];
+        const emojiMap = { "Fractions": "🍰", "Decimals": "🔢", "Algebra": "📐", "Percentages": "📈", "Ratios": "⚖️" };
+        const descMap = {
+          "Fractions": "Master dividing, adding, and simplifying GCSE fractions.",
+          "Decimals": "Conquer decimal place value, long division, and calculations.",
+          "Algebra": "Understand groupings, expanding brackets, and solving algebraic equations."
+        };
+        
+        featContainer.innerHTML = `
+          <div class="f-mission-info">
+            <span class="f-mission-tag">🔥 FEATURED MISSION</span>
+            <div class="f-mission-title">${emojiMap[featTopic.id] || "🎯"} GCSE ${featTopic.name} Revision</div>
+            <div class="f-mission-desc">${descMap[featTopic.id] || "Track your progress towards GCSE ready standing!"}</div>
+            
+            <div class="f-mission-progress">
+              <div class="f-progress-bar-outer">
+                <div class="f-progress-bar-inner" style="width: ${featTopic.percent}%"></div>
+              </div>
+              <span class="f-progress-lbl">${featTopic.percent}% Mastered</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="background: var(--gradient-sara); border: none; font-family: var(--font-display); font-weight:700; box-shadow:0 4px 12px rgba(249,115,22,0.3);" onclick="startMission('${featTopic.id}')">
+            Continue Mission 🚀
+          </button>
+        `;
+      }
+
+      // 3. Render Topics Map Grid (TopicMap)
+      const mapGrid = document.getElementById("topics-map-grid");
+      if (mapGrid) {
+        mapGrid.innerHTML = "";
+        const emojiMap = { "Fractions": "🍰", "Decimals": "🔢", "Algebra": "📐", "Percentages": "📈", "Ratios": "⚖️" };
+        const statusLabels = { "in_progress": "IN PROGRESS", "not_started": "NOT STARTED", "mastered": "MASTERED ✅" };
+        
+        sessionState.topics.forEach(t => {
+          const card = document.createElement("div");
+          if (t.active) {
+            card.className = "topic-map-card";
+            card.onclick = () => startMission(t.id);
+            
+            card.innerHTML = `
+              <div class="tm-header">
+                <div class="tm-emoji-title">
+                  <span class="tm-emoji">${emojiMap[t.id] || "🎯"}</span>
+                  <span class="tm-title">${t.name}</span>
+                </div>
+                <span class="tm-status" style="color: ${t.status === 'mastered' ? 'var(--success)' : 'var(--muted)'}; font-weight:700; font-size:11px;">${statusLabels[t.status] || t.status.toUpperCase()}</span>
+              </div>
+              <div class="progress-container" style="margin-top: 4px;">
+                <div class="f-progress-bar-outer" style="height: 6px; background: rgba(255, 255, 255, 0.1);">
+                  <div class="f-progress-bar-inner" style="width: ${t.percent}%"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:4px; font-weight:600;">
+                  <span>Score: ${t.score}/5</span>
+                  <span>${t.percent}%</span>
+                </div>
+              </div>
+            `;
+          } else {
+            card.className = "topic-map-card locked";
+            card.innerHTML = `
+              <div class="tm-header">
+                <div class="tm-emoji-title">
+                  <span class="tm-emoji">${emojiMap[t.id] || "🎯"}</span>
+                  <span class="tm-title" style="color: rgba(255,255,255,0.4)">${t.name}</span>
+                </div>
+                <span class="tm-lock-icon" style="font-size:11px; font-weight:700;">🔒 LOCKED</span>
+              </div>
+              <div style="font-size:11px; color:rgba(255,255,255,0.35); font-style:italic; margin-top: 4px;">Archive active topics to unlock new GCSE domains.</div>
+            `;
+          }
+          mapGrid.appendChild(card);
+        });
+      }
+    }
+
+    // Transitions from SARA Dashboard to active guided learning chat
+    function startMission(topicId) {
+      playSound("click");
+      const targetTopic = sessionState.topics.find(t => t.id === topicId);
+      if (!targetTopic) return;
+      if (!targetTopic.active) {
+        showToast("This topic is currently archived. Unarchive it first to start revising.");
+        return;
+      }
+      
+      sessionState.activeTopic = topicId;
+      sessionState.currentCardIndex = 0;
+      
+      // Clear old messages and initialize the custom rebranded guided learning dialog
+      sessionState.chatMessages = [];
+      const feed = document.getElementById("chat-feed");
+      if (feed) feed.innerHTML = "";
+      
+      let initText = "";
+      if (topicId === "Fractions") {
+        initText = `Hello! I'm SARA, your GCSE Maths companion for **Fractions**. Let's start with a quick revision puzzle! Can you try this?<br><br><strong>Work out: <code>2/5 + 1/4</code></strong><br><em>Type your answer, or ask SARA for a hint if you need.</em>`;
+      } else if (topicId === "Decimals") {
+        initText = `Hello! I'm SARA, your GCSE Maths companion for **Decimals**. Let's start with a quick revision puzzle! Can you try this?<br><br><strong>Work out: <code>0.35 + 0.49</code></strong><br><em>Type your answer, or ask SARA for a hint if you need.</em>`;
+      } else if (topicId === "Algebra") {
+        initText = `Hello! I'm SARA, your GCSE Maths companion for **Algebra**. Let's start with a quick simplified equation! Can you solve this?<br><br><strong>Group like terms: <code>4a + 3b - 2a + b</code></strong><br><em>Type your answer, or ask SARA for a hint if you need.</em>`;
+      } else {
+        initText = `Perfect! We are now revising **${topicId}** together. Check the **Study Deck** tab for custom notes and visual explainers first, then we can run a Challenge Mode check!`;
+      }
+      
+      sessionState.chatMessages.push({ sender: "tutor", text: initText });
+      appendMessage("tutor", initText);
+      
+      // Update UI panels & sidebars
+      renderLeftSidebar();
+      document.getElementById("study-topic-title").textContent = `${topicId} GCSE Revision`;
+      renderStudyDeck();
+      
+      // Slide/Fade out SARA Dashboard & display the chat interfaces
+      const dashboard = document.getElementById("sara-dashboard");
+      if (dashboard) dashboard.style.display = "none";
+      
+      const chatFeed = document.getElementById("chat-feed");
+      if (chatFeed) chatFeed.style.display = "flex";
+      
+      const inputBar = document.querySelector(".chat-input-bar");
+      if (inputBar) inputBar.style.display = "flex";
+      
+      // Shift active view tab to Chat
+      switchWorkspaceTab('chat');
+      
+      showToast(`Revision Mission: ${topicId} Loaded!`);
+    }
+
+    function selectTopic(topicId) {
+      startMission(topicId);
+    }
+
+    function toggleArchiveTopic(topicId, event) {
+      if (event) event.stopPropagation();
+      playSound("click");
+      const t = sessionState.topics.find(x => x.id === topicId);
+      
+      if (!t.active) {
+        // Unarchiving check max 5
+        if (countActiveTopics() >= 5) {
+          appendMessage("tutor", "⚠️ **Active Topic Limit Spotted:** You already have 5 active GCSE topics tracking in your list! To start revising Percentages or Ratios, please archive or complete one of your current topics first.");
+          showToast("Active topic limit of 5 hit!");
+          return;
+        }
+        t.active = true;
+      } else {
+        t.active = false;
+        // If archived active, fallback
+        if (sessionState.activeTopic === topicId) {
+          const firstActive = sessionState.topics.find(x => x.active);
+          if (firstActive) sessionState.activeTopic = firstActive.id;
+        }
+      }
+      
+      renderTopics();
+      renderDomains();
+    }
+
+    function renderProfileCard() {
+      const card = document.getElementById("sidebar-profile-card");
+      if (sessionState.isLoggedIn) {
+        card.innerHTML = `
+          <div class="profile-status logged-in-status">
+            <span class="dot"></span> ACTIVE STUDENT
+          </div>
+          <div class="profile-name">${sessionState.studentName}</div>
+          <div class="profile-level">🎯 Target: AQA GCSE Maths</div>
+        `;
+      } else {
+        card.innerHTML = `
+          <div class="profile-status">
+            <span class="dot"></span> Guest Session
+          </div>
+          <div class="profile-name">Explorer Mode</div>
+          <div class="profile-level">Register to log 0-5 GCSE domain points.</div>
+        `;
+      }
+    }
+
+    // =========================================================================
+    // CONCEPT CARD REVIEW DECK (THE GATEKEEPER)
+    // =========================================================================
+    function renderStudyDeck() {
+      const cardsData = CONCEPT_CARDS_CONTENT[sessionState.activeTopic] || [];
+      const deckContainer = document.getElementById("concept-cards-stack");
+      const counterEl = document.getElementById("study-deck-card-counter");
+      
+      deckContainer.innerHTML = "";
+      
+      cardsData.forEach((c, idx) => {
+        const card = document.createElement("div");
+        card.className = `concept-card ${idx === sessionState.currentCardIndex ? 'active' : ''} ${idx < sessionState.currentCardIndex ? 'previous' : ''}`;
+        
+        let sliderHtml = "";
+        if (c.showSlider) {
+          sliderHtml = `
+            <div class="sandbox-widget">
+              <div class="fraction-sandbox-display">
+                <svg class="sandbox-svg" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="var(--border)" stroke-width="4" />
+                  <path id="pie-shade" d="M 50 50 L 50 10 A 40 40 0 0 1 90 50 Z" fill="var(--primary)" opacity="0.35"/>
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="var(--fg)" stroke-width="2" />
+                </svg>
+                <div class="sandbox-fraction-math">
+                  <span class="numerator" id="sandbox-num-lbl">3</span>
+                  <span id="sandbox-denom-lbl">8</span>
+                </div>
+              </div>
+              <input type="range" class="sandbox-slider" min="1" max="8" value="3" oninput="updateVisualSandbox(this.value)">
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <span class="concept-card-num">${c.num}</span>
+          <div class="concept-card-body">
+            <div class="concept-headline">${c.headline}</div>
+            <div class="concept-explanation">${c.text}</div>
+            ${sliderHtml}
+          </div>
+        `;
+        deckContainer.appendChild(card);
+      });
+
+      // Update indicators
+      document.getElementById("study-progress-counter").textContent = `Card ${sessionState.currentCardIndex + 1} of ${cardsData.length}`;
+      document.getElementById("concept-prev-btn").disabled = sessionState.currentCardIndex === 0;
+      
+      if (sessionState.currentCardIndex === cardsData.length - 1) {
+        document.getElementById("concept-next-btn").textContent = "Finish Review";
+      } else {
+        document.getElementById("concept-next-btn").textContent = "Next Card";
+      }
+
+      // Check current card progress gate
+      const maxReviewed = sessionState.cardsReviewed[sessionState.activeTopic] || 0;
+      sessionState.cardsReviewed[sessionState.activeTopic] = Math.max(maxReviewed, sessionState.currentCardIndex + 1);
+      
+      counterEl.textContent = `${sessionState.cardsReviewed[sessionState.activeTopic]}/3`;
+
+      if (sessionState.cardsReviewed[sessionState.activeTopic] >= 3) {
+        sessionState.isChallengeUnlocked[sessionState.activeTopic] = true;
+        unlockChallengeCTA();
+      } else {
+        lockChallengeCTA();
+      }
+    }
+
+    function navigateConceptCards(direction) {
+      playSound("click");
+      const cardsData = CONCEPT_CARDS_CONTENT[sessionState.activeTopic] || [];
+      
+      if (direction === 1) {
+        if (sessionState.currentCardIndex < cardsData.length - 1) {
+          sessionState.currentCardIndex++;
+          renderStudyDeck();
+        } else {
+          // Finished cards, unlock alert
+          showToast("You have completed reviewing the concept slides! Challenge unlocked.", 4000);
+          playSound("fanfare");
+          renderStudyDeck();
+        }
+      } else {
+        if (sessionState.currentCardIndex > 0) {
+          sessionState.currentCardIndex--;
+          renderStudyDeck();
+        }
+      }
+    }
+
+    function updateVisualSandbox(val) {
+      const numLbl = document.getElementById("sandbox-num-lbl");
+      const shade = document.getElementById("pie-shade");
+      if (numLbl) numLbl.textContent = val;
+      
+      // Calculate pie slice arc mathematically for kids visualization
+      const angle = (val / 8) * 360;
+      const radians = ((angle - 90) * Math.PI) / 180;
+      const x = 50 + 40 * Math.cos(radians);
+      const y = 50 + 40 * Math.sin(radians);
+      const largeArcFlag = angle > 180 ? 1 : 0;
+      
+      if (shade) {
+        if (angle === 360) {
+          shade.setAttribute("d", "M 50 50 L 50 10 A 40 40 0 1 1 49.9 10 Z");
+        } else {
+          shade.setAttribute("d", `M 50 50 L 50 10 A 40 40 0 ${largeArcFlag} 1 ${x} ${y} Z`);
+        }
+      }
+    }
+
+    function lockChallengeCTA() {
+      const banner = document.getElementById("challenge-gate-banner");
+      banner.className = "study-gate-banner";
+      document.getElementById("gate-icon-indicator").textContent = "🔒";
+      document.getElementById("gate-main-title").textContent = "Challenge Mode Locked";
+      document.getElementById("gate-sub-title").textContent = "Review all 3 study cards above to unlock the practice run!";
+      document.getElementById("btn-start-challenge-trigger").disabled = true;
+    }
+
+    function unlockChallengeCTA() {
+      const banner = document.getElementById("challenge-gate-banner");
+      banner.className = "study-gate-banner unlocked";
+      document.getElementById("gate-icon-indicator").textContent = "🔓";
+      document.getElementById("gate-main-title").textContent = "Challenge Mode Unlocked!";
+      document.getElementById("gate-sub-title").textContent = "You are ready for the AQA GCSE adaptive run.";
+      document.getElementById("btn-start-challenge-trigger").disabled = false;
+    }
+
+    // =========================================================================
+    // FULL-SCREEN ADAPTIVE CHALLENGE RUN ENGINE
+    // =========================================================================
+    function launchChallengeMode() {
+      // Check Guest Limit
+      if (!sessionState.isLoggedIn && sessionState.guestQuestionsUsed >= sessionState.maxGuestQuestions) {
+        openGuestLimitWall();
+        return;
+      }
+
+      playSound("click");
+      
+      const topic = sessionState.activeTopic;
+      const questionsPool = DB_ARCHETYPES[topic] || [];
+      
+      activeChallenge = {
+        topic: topic,
+        pool: questionsPool,
+        currentIdx: 0,
+        userAnswers: [],
+        score: 0,
+        difficultyPath: ["must"], // Starts on baseline
+        mistakesSpotted: [],
+        lastAnswerCorrect: null
+      };
+
+      document.getElementById("challenge-topic-name").textContent = `${topic} GCSE adaptive Challenge`;
+      document.getElementById("challenge-overlay").classList.add("active");
+      
+      // Load first adaptive question
+      loadAdaptiveQuestion();
+    }
+
+    function getQuestionForDifficulty(band) {
+      const pool = activeChallenge.pool;
+      // Fallback matching logic
+      let matches = pool.filter(q => q.band === band);
+      if (matches.length === 0) matches = pool; // Default safety fallback
+      return matches[Math.floor(Math.random() * matches.length)];
+    }
+
+    function loadAdaptiveQuestion() {
+      const currentDifficulty = activeChallenge.difficultyPath[activeChallenge.currentIdx] || "must";
+      const q = getQuestionForDifficulty(currentDifficulty);
+      activeChallenge.currentQuestionObj = q;
+
+      // Update DOM Indicators
+      document.getElementById("challenge-progress-fraction").textContent = `Question ${activeChallenge.currentIdx + 1} of 5`;
+      document.getElementById("challenge-progress-bar").style.width = `${((activeChallenge.currentIdx) / 5) * 100}%`;
+      document.getElementById("challenge-q-difficulty").textContent = `AQA GCSE DIFFICULTY: ${currentDifficulty.toUpperCase()} SCALE`;
+      document.getElementById("challenge-q-text").textContent = q.q;
+
+      // Render Visual SVG helper for kid-friendliness
+      const visualContainer = document.getElementById("challenge-diagram-container");
+      visualContainer.style.display = "flex";
+      
+      if (activeChallenge.topic === "Fractions") {
+        visualContainer.innerHTML = `
+          <svg width="220" height="40" viewBox="0 0 220 40">
+            <g stroke="var(--fg)" stroke-width="2">
+              <rect x="10" y="5" width="200" height="30" fill="none" rx="4" />
+              <line x1="50" y1="5" x2="50" y2="35" />
+              <line x1="90" y1="5" x2="90" y2="35" />
+              <line x1="130" y1="5" x2="130" y2="35" />
+              <line x1="170" y1="5" x2="170" y2="35" />
+            </g>
+            <rect x="10" y="5" width="80" height="30" fill="var(--primary)" opacity="0.4" />
+            <text x="110" y="24" font-size="12" text-anchor="middle" font-weight="bold">Fractions Grid (Example Aid)</text>
+          </svg>
+        `;
+      } else if (activeChallenge.topic === "Decimals") {
+        visualContainer.innerHTML = `
+          <svg width="220" height="40" viewBox="0 0 220 40">
+            <line x1="10" y1="20" x2="210" y2="20" stroke="var(--fg)" stroke-width="2" />
+            <circle cx="10" cy="20" r="4" fill="var(--fg)" />
+            <text x="10" y="36" font-size="9" text-anchor="middle">0.0</text>
+            <circle cx="110" cy="20" r="4" fill="var(--fg)" />
+            <text x="110" y="36" font-size="9" text-anchor="middle">0.5</text>
+            <circle cx="210" cy="20" r="4" fill="var(--fg)" />
+            <text x="210" y="36" font-size="9" text-anchor="middle">1.0</text>
+            <circle cx="170" cy="20" r="6" fill="var(--accent)" />
+          </svg>
+        `;
+      } else {
+        visualContainer.style.display = "none";
+      }
+
+      // Render Options Card Choices
+      const inputsContainer = document.getElementById("challenge-inputs-container");
+      inputsContainer.innerHTML = "";
+
+      q.opts.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "challenge-option-btn";
+        btn.onclick = () => selectChallengeOption(btn, opt);
+        btn.innerHTML = `
+          <span>${opt}</span>
+          <div class="challenge-option-indicator"></div>
+        `;
+        inputsContainer.appendChild(btn);
+      });
+
+      // Reset footer bar state
+      document.getElementById("challenge-grading-status-box").innerHTML = "";
+      const actBtn = document.getElementById("challenge-next-action-btn");
+      actBtn.textContent = "Check Answer";
+      actBtn.onclick = handleChallengeActionSubmit;
+      actBtn.className = "btn btn-primary";
+    }
+
+    function selectChallengeOption(btn, opt) {
+      playSound("click");
+      document.querySelectorAll(".challenge-option-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      activeChallenge.selectedAnswer = opt;
+    }
+
+    function handleChallengeActionSubmit() {
+      const selected = activeChallenge.selectedAnswer;
+      if (!selected) {
+        showToast("Please choose an answer card first.");
+        return;
+      }
+
+      // Increment Guest counter instantly
+      if (!sessionState.isLoggedIn) {
+        sessionState.guestQuestionsUsed++;
+        updateGuestLimitBadge();
+      }
+
+      const qObj = activeChallenge.currentQuestionObj;
+      const correct = selected === qObj.ans;
+      
+      const statusBox = document.getElementById("challenge-grading-status-box");
+      const actBtn = document.getElementById("challenge-next-action-btn");
+
+      if (correct) {
+        playSound("correct");
+        activeChallenge.score++;
+        activeChallenge.lastAnswerCorrect = true;
+        statusBox.innerHTML = `
+          <div class="grading-state-row correct">
+            🎉 Brilliant! ${selected} is correct! Well done.
+          </div>
+        `;
+      } else {
+        playSound("incorrect");
+        activeChallenge.lastAnswerCorrect = false;
+        activeChallenge.mistakesSpotted.push({ q: qObj.q, your: selected, right: qObj.ans, hint: qObj.hint });
+        statusBox.innerHTML = `
+          <div class="grading-state-row incorrect">
+            ❌ Not quite. The correct answer was ${qObj.ans}.
+          </div>
+        `;
+      }
+
+      actBtn.textContent = "Continue";
+      actBtn.className = "btn btn-success";
+      actBtn.onclick = progressChallengeRun;
+    }
+
+    function progressChallengeRun() {
+      playSound("click");
+      activeChallenge.currentIdx++;
+
+      // Check Guest Lockout midway
+      if (!sessionState.isLoggedIn && sessionState.guestQuestionsUsed >= sessionState.maxGuestQuestions) {
+        document.getElementById("challenge-overlay").classList.remove("active");
+        openGuestLimitWall();
+        return;
+      }
+
+      if (activeChallenge.currentIdx >= 5) {
+        renderChallengeResults();
+        return;
+      }
+
+      // Compute Adaptive Difficulty step:
+      // If correct -> raise scale ("must" -> "should" -> "could" -> "gcse_bridge")
+      // If wrong -> reduce difficulty band to focus on fundamentals
+      const prevDiff = activeChallenge.difficultyPath[activeChallenge.currentIdx - 1];
+      let nextDiff = "must";
+
+      if (activeChallenge.lastAnswerCorrect) {
+        if (prevDiff === "must") nextDiff = "should";
+        else if (prevDiff === "should") nextDiff = "could";
+        else nextDiff = "gcse_bridge";
+      } else {
+        if (prevDiff === "gcse_bridge") nextDiff = "could";
+        else if (prevDiff === "could") nextDiff = "should";
+        else nextDiff = "must";
+      }
+
+      activeChallenge.difficultyPath.push(nextDiff);
+      activeChallenge.selectedAnswer = null;
+      loadAdaptiveQuestion();
+    }
+
+    function renderChallengeResults() {
+      playSound("fanfare");
+      
+      // Update sidebar scores in Topic progress dynamically
+      const activeTopicObj = sessionState.topics.find(t => t.id === activeChallenge.topic);
+      if (activeTopicObj) {
+        activeTopicObj.score = Math.max(activeTopicObj.score, Math.round(activeChallenge.score));
+        activeTopicObj.percent = Math.max(activeTopicObj.percent, activeChallenge.score * 20);
+        if (activeTopicObj.score >= 4) activeTopicObj.status = "mastered";
+        else activeTopicObj.status = "in_progress";
+      }
+
+      renderTopics();
+      renderDomains();
+
+      // Show Results screen in challenge container
+      document.getElementById("challenge-interactive-card").style.display = "none";
+      document.getElementById("challenge-next-action-btn").style.display = "none";
+      
+      const panel = document.getElementById("challenge-results-panel");
+      panel.style.display = "flex";
+
+      // Customize heading message
+      const heading = document.getElementById("results-congrats-heading");
+      const scoreWheel = document.getElementById("results-wheel-score");
+      const statGrowth = document.getElementById("results-stat-mastery");
+
+      scoreWheel.textContent = `${activeChallenge.score}/5`;
+      
+      if (activeChallenge.score === 5) {
+        heading.textContent = "🏆 Masterful Run! AQA Top Tier!";
+        statGrowth.textContent = "MASTERED";
+      } else if (activeChallenge.score >= 3) {
+        heading.textContent = "🌟 Solid Progress! Keep going.";
+        statGrowth.textContent = "+1 Level";
+      } else {
+        heading.textContent = "💪 Decent try! Let's review the topics.";
+        statGrowth.textContent = "Try again";
+      }
+
+      // Populate Mistakes lists
+      const mistList = document.getElementById("results-mistakes-list");
+      mistList.innerHTML = "";
+
+      if (activeChallenge.mistakesSpotted.length === 0) {
+        mistList.innerHTML = `<div style="font-size: 13px; color: var(--success); font-weight: 600;">Perfect revision run! No common errors spotted.</div>`;
+      } else {
+        activeChallenge.mistakesSpotted.forEach(m => {
+          const item = document.createElement("div");
+          item.className = "mistake-list-item";
+          item.innerHTML = `
+            <strong>Q:</strong> ${m.q}<br>
+            <span style="color:var(--danger)">Your answer: ${m.your}</span> | 
+            <span style="color:var(--success)">Correct: ${m.right}</span><br>
+            <span style="font-style:italic; font-size:12px; color:var(--muted)">💡 Hint: ${m.hint}</span>
+          `;
+          mistList.appendChild(item);
+        });
+      }
+    }
+
+    function confirmQuitChallenge() {
+      if (confirm("Are you sure you want to exit the practice run? Your progress will not be logged.")) {
+        document.getElementById("challenge-overlay").classList.remove("active");
+        playSound("click");
+      }
+    }
+
+    function closeChallengeMode(action) {
+      playSound("click");
+      document.getElementById("challenge-overlay").classList.remove("active");
+      
+      // Reset card displays
+      document.getElementById("challenge-interactive-card").style.display = "flex";
+      document.getElementById("challenge-next-action-btn").style.display = "inline-flex";
+      document.getElementById("challenge-results-panel").style.display = "none";
+
+      if (action === "next_mission") {
+        switchWorkspaceTab("chat");
+        appendMessage("tutor", `Amazing work completing your adaptive run! I have updated your GCSE tracker progress on the left. What topic would you like to explore next? Decimals or Algebra?`);
+      } else {
+        switchWorkspaceTab("study");
+      }
+    }
+
+    function updateGuestLimitBadge() {
+      const badge = document.getElementById("header-limit-count");
+      const remaining = Math.max(0, sessionState.maxGuestQuestions - sessionState.guestQuestionsUsed);
+      badge.textContent = remaining;
+    }
+
+    function openGuestLimitWall() {
+      playSound("incorrect");
+      
+      // Overlay a prompt inline within the Tutor chat system or trigger auth modal
+      appendMessage("tutor", "⚠️ **Daily GCSE Free Questions Limit:** You've used today's free questions in Explorer mode. Create a free account or sign in to save your 0-5 topic progress and unlock unlimited revision challenges!");
+      openAuthModal('register');
+    }
+
+    // =========================================================================
+    // TUTOR GUIDED CHAT SIMULATOR (British English AQA Coach Vibe)
+    // =========================================================================
+    function appendMessage(sender, text) {
+      const feed = document.getElementById("chat-feed");
+      const wrapper = document.createElement("div");
+      wrapper.className = `chat-bubble-wrapper ${sender === 'user' ? 'student' : ''}`;
+      
+      const avatar = sender === 'tutor' ? `<div class="tutor-avatar">🎓</div>` : '';
+      const nameTag = sender === 'tutor' ? 'SARA' : 'You';
+      
+      wrapper.innerHTML = `
+        ${avatar}
+        <div class="chat-bubble">
+          <div class="chat-meta">${nameTag}</div>
+          <div class="chat-text">${text}</div>
+        </div>
+      `;
+      feed.appendChild(wrapper);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function handleUserSendMessage() {
+      const field = document.getElementById("chat-input-field");
+      const val = field.value.trim();
+      if (!val) return;
+
+      playSound("click");
+      appendMessage("user", val);
+      field.value = "";
+
+      // Silent message hourly limits tracker warning
+      if (!sessionState.isLoggedIn) {
+        showToast("Rate limit: 10 messages/hour for guests.");
+      }
+
+      // Simulate tutor intelligent reply
+      simulateTutorResponse(val);
+    }
+
+    function simulateTutorResponse(msg) {
+      const clean = msg.toLowerCase();
+      
+      // Inline typing loader
+      const feed = document.getElementById("chat-feed");
+      const loader = document.createElement("div");
+      loader.className = "chat-bubble-wrapper";
+      loader.innerHTML = `
+        <div class="tutor-avatar">🎓</div>
+        <div class="chat-bubble" style="padding:10px 18px">
+          <div class="typing-indicator">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+      `;
+      feed.appendChild(loader);
+      feed.scrollTop = feed.scrollHeight;
+
+      setTimeout(() => {
+        loader.remove();
+        
+        let tutorReply = "";
+        
+        if (clean.includes("2/5") || clean.includes("13/20")) {
+          tutorReply = `Spot on! **13/20** is absolutely correct. Equivalent fraction addition is crucial for GCSE success! 🌟<br><br>Let's do some **gradual progress tracking**. Are you preparing towards Year 8 math classes, or revising for **Year 9 GCSE foundation courses**?`;
+        } else if (clean.includes("year 8") || clean.includes("year 9")) {
+          tutorReply = `Brilliant! I will tailor our focus accordingly. Next: **what's your first name** so I can set up your progress tracking goals in the sidebar?`;
+        } else if (sessionState.chatMessages.length === 1 || clean.includes("name is") || clean.length < 10) {
+          // Captures first name response
+          const inferredName = msg.replace(/my name is/i, "").trim();
+          tutorReply = `Excellent choice! Nice to meet you, **${inferredName}**. I've initialized active trackers. Check out the **Active Topics** and **GCSE Goals & Prep** logs in the side panels. To unlock custom AQA challenge runs, tap the **Study Deck** tab and review the 3 core concept cards!`;
+          
+          // Set name in state dynamically if not registered yet
+          if (!sessionState.isLoggedIn) {
+            sessionState.studentName = inferredName;
+            renderProfileCard();
+          }
+        } else if (clean.includes("hint") || clean.includes("help") || clean.includes("how")) {
+          tutorReply = `No worries! For <code>2/5 + 1/4</code>, find the lowest common multiple of the denominators (5 and 4), which is 20.<br><br>Scale both fractions:<br>• <code>2/5 = 8/20</code><br>• <code>1/4 = 5/20</code><br><br>Now add: <code>8/20 + 5/20 = ?</code>. Have a go!`;
+        } else {
+          tutorReply = `Excellent question. In AQA GCSE exams, these are graded under the **Number** domain. To really cement this skill, I highly recommend looking through the Fractions card deck in **Study Deck** above and starting an adaptive Practice Run!`;
+        }
+
+        appendMessage("tutor", tutorReply);
+        sessionState.chatMessages.push({ sender: "tutor", text: tutorReply });
+      }, 1200);
+    }
+
+    // =========================================================================
+    // EXPORT PROGRESS REPORT / PRINTING (AQA GCSE Ready style)
+    // =========================================================================
+    function exportProgressReport() {
+      playSound("fanfare");
+      
+      const topicObj = sessionState.topics.find(t => t.id === sessionState.activeTopic);
+      
+      document.getElementById("cert-student-name").textContent = sessionState.studentName;
+      document.getElementById("cert-topic-name").textContent = `${sessionState.activeTopic} (${topicObj ? topicObj.percent : 0}% mastered)`;
+      document.getElementById("cert-date").textContent = `Issued: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+      showToast("Preparing custom revision report... Opening print dialogue.");
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+
+    // =========================================================================
+    // ONLOAD INITIALIZATION
+    // =========================================================================
+    window.onload = function() {
+      // Load initial chat history if any exists
+      sessionState.chatMessages.forEach(msg => {
+        appendMessage(msg.sender, msg.text);
+      });
+
+      renderLeftSidebar();
+      renderGoals();
+      renderDashboard(); // Population of the SARA rebrand dashboard!
+      
+      showToast("Revision Coach Ready. Let's start!");
+    };
+  
+    // Custom SARA dashboard search & year filters
+    function handleDashboardSearch() {
+      const txt = document.getElementById("dashboard-search-textarea").value.trim();
+      if (!txt) {
+        showToast("Tell SARA what topic you want to learn! 🧮", 3000);
+        return;
+      }
+      
+      playSound("click");
+      showToast(`Searching for "${txt}" in AQA GCSE syllabus...`, 3000);
+      
+      // Check if it matches any of our topics
+      const lower = txt.toLowerCase();
+      let matchedTopic = "Fractions";
+      if (lower.includes("decimal")) matchedTopic = "Decimals";
+      else if (lower.includes("algebra") || lower.includes("equation") || lower.includes("solve")) matchedTopic = "Algebra";
+      else if (lower.includes("percent")) matchedTopic = "Percentages";
+      else if (lower.includes("ratio") || lower.includes("share")) matchedTopic = "Ratios";
+      
+      setTimeout(() => {
+        showToast(`Matched topic: ${matchedTopic}! Starting mission... 🚀`, 3000);
+        startMission(matchedTopic);
+      }, 1200);
+    }
+
+    function selectDashboardYear(year) {
+      playSound("click");
+      sessionState.studentYear = year;
+      
+      const pY8 = document.getElementById("pill-y8");
+      const pY9 = document.getElementById("pill-y9");
+      
+      if (year === 'Year 8') {
+        pY8.className = "year-pill active";
+        pY8.style.background = "var(--gradient-sara)";
+        pY8.style.border = "none";
+        pY8.style.color = "#FFFFFF";
+        pY8.style.boxShadow = "0 2px 8px rgba(249,115,22,0.3)";
+        
+        pY9.className = "year-pill";
+        pY9.style.background = "rgba(255, 255, 255, 0.05)";
+        pY9.style.border = "1px solid rgba(255, 255, 255, 0.15)";
+        pY9.style.color = "rgba(255, 255, 255, 0.6)";
+        pY9.style.boxShadow = "none";
+      } else {
+        pY9.className = "year-pill active";
+        pY9.style.background = "var(--gradient-sara)";
+        pY9.style.border = "none";
+        pY9.style.color = "#FFFFFF";
+        pY9.style.boxShadow = "0 2px 8px rgba(249,115,22,0.3)";
+        
+        pY8.className = "year-pill";
+        pY8.style.background = "rgba(255, 255, 255, 0.05)";
+        pY8.style.border = "1px solid rgba(255, 255, 255, 0.15)";
+        pY8.style.color = "rgba(255, 255, 255, 0.6)";
+        pY8.style.boxShadow = "none";
+      }
+      
+      renderLeftSidebar();
+      showToast(`Syllabus adjusted for AQA GCSE ${year} Revision!`, 3000);
+    }
+
+    function startNewMission() {
+      // Toggle back to dashboard
+      playSound("click");
+      const dash = document.getElementById("sara-dashboard");
+      const feed = document.getElementById("chat-feed");
+      const inputBar = document.querySelector(".chat-input-bar");
+      
+      if (dash && feed && inputBar) {
+        dash.style.display = "flex";
+        feed.style.display = "none";
+        inputBar.style.display = "none";
+        sessionState.activeTopic = null;
+        renderDashboard();
+        renderLeftSidebar();
+      }
+      showToast("Ready for a new GCSE mission! Select one below. 🚀", 3000);
+    }
+
+    function resetAllData() {
+      if (confirm("Are you sure you want to reset all your learning progress and history? This cannot be undone.")) {
+        playSound("click");
+        sessionState.xp = 0;
+        sessionState.streak = 1;
+        sessionState.level = 1;
+        sessionState.badgesCount = 0;
+        sessionState.guestQuestionsUsed = 0;
+        sessionState.topics.forEach(t => {
+          t.score = 0;
+          t.percent = 0;
+          t.status = "not_started";
+          t.active = true;
+        });
+        sessionState.activeTopic = "Fractions";
+        
+        // Go back to dashboard
+        startNewMission();
+        showToast("All progress and conversations reset. Ready for a fresh start!", 4000);
+      }
+    }
+    </script>
+    
+</body>
+</html>

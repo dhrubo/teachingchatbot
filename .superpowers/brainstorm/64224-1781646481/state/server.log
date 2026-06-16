@@ -1,0 +1,7 @@
+{"type":"server-started","port":56827,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:56827","screen_dir":"/Users/dhrubo.paul/Sites/teachingchatbot/.superpowers/brainstorm/64224-1781646481/content","state_dir":"/Users/dhrubo.paul/Sites/teachingchatbot/.superpowers/brainstorm/64224-1781646481/state"}
+{"type":"screen-added","file":"/Users/dhrubo.paul/Sites/teachingchatbot/.superpowers/brainstorm/64224-1781646481/content/current-layout.html"}
+{"type":"screen-added","file":"/Users/dhrubo.paul/Sites/teachingchatbot/.superpowers/brainstorm/64224-1781646481/content/proposed-layout.html"}
+{"type":"screen-added","file":"/Users/dhrubo.paul/Sites/teachingchatbot/.superpowers/brainstorm/64224-1781646481/content/responsive-layout.html"}
+{"type":"screen-added","file":"/Users/dhrubo.paul/Sites/teachingchatbot/.superpowers/brainstorm/64224-1781646481/content/waiting.html"}
+{"type":"screen-added","file":"/Users/dhrubo.paul/Sites/teachingchatbot/.superpowers/brainstorm/64224-1781646481/content/waiting-2.html"}
+{"type":"server-stopped","reason":"idle timeout"}

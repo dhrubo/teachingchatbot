@@ -1,0 +1,312 @@
+[
+  {
+    "id": "geo_y8_001",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Grid References",
+    "skill": "Use four-figure grid references",
+    "difficulty": 1,
+    "questionType": "multiple_choice",
+    "question": "What is a four-figure grid reference used to identify?",
+    "options": [
+      "A country",
+      "A square on a map",
+      "A river source",
+      "A climate zone"
+    ],
+    "correctAnswer": "A square on a map",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: A square on a map.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "grid_references"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_002",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Grid References",
+    "skill": "Use six-figure grid references",
+    "difficulty": 2,
+    "questionType": "multiple_choice",
+    "question": "What does a six-figure grid reference identify more accurately than a four-figure reference?",
+    "options": [
+      "A continent",
+      "A compass direction",
+      "A specific point within a grid square",
+      "A type of rainfall"
+    ],
+    "correctAnswer": "A specific point within a grid square",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: A specific point within a grid square.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "grid_references"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_003",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Compass Directions",
+    "skill": "Use compass points",
+    "difficulty": 1,
+    "questionType": "multiple_choice",
+    "question": "Which compass direction is directly opposite north?",
+    "options": [
+      "East",
+      "West",
+      "South",
+      "North-east"
+    ],
+    "correctAnswer": "South",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: South.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "compass_directions"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_004",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Scale",
+    "skill": "Understand map scale",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "If 1 cm on a map represents 1 km in real life, how far is 4 cm on the map?",
+    "options": [],
+    "correctAnswer": "4 km",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: 4 km.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "scale"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_005",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Contour Lines",
+    "skill": "Interpret relief",
+    "difficulty": 2,
+    "questionType": "multiple_choice",
+    "question": "What do contour lines on a map show?",
+    "options": [
+      "Weather",
+      "Population",
+      "Height and shape of the land",
+      "Road traffic"
+    ],
+    "correctAnswer": "Height and shape of the land",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Height and shape of the land.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "contour_lines"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_006",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Contour Lines",
+    "skill": "Interpret steepness",
+    "difficulty": 3,
+    "questionType": "multiple_choice",
+    "question": "What do close together contour lines usually mean?",
+    "options": [
+      "Flat land",
+      "A steep slope",
+      "A river valley",
+      "A city centre"
+    ],
+    "correctAnswer": "A steep slope",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: A steep slope.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "contour_lines"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_007",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Symbols",
+    "skill": "Use OS map symbols",
+    "difficulty": 1,
+    "questionType": "short_answer",
+    "question": "Why do maps use symbols?",
+    "options": [],
+    "correctAnswer": "To show features clearly in a small space",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: To show features clearly in a small space.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "symbols"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_008",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Direction",
+    "skill": "Use bearings",
+    "difficulty": 3,
+    "questionType": "multiple_choice",
+    "question": "A bearing is usually measured in which unit?",
+    "options": [
+      "Metres",
+      "Degrees",
+      "Kilograms",
+      "Litres"
+    ],
+    "correctAnswer": "Degrees",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Degrees.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "direction"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_009",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Distance",
+    "skill": "Measure distance using scale",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "A road is 6 cm long on a map. The scale is 1 cm = 2 km. What is the real distance?",
+    "options": [],
+    "correctAnswer": "12 km",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: 12 km.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "distance"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_010",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Map Skills",
+    "subtopic": "Relief",
+    "skill": "Physical geography interpretation",
+    "difficulty": 4,
+    "questionType": "short_answer",
+    "question": "Explain how contour lines can help someone plan a walking route.",
+    "options": [],
+    "correctAnswer": "They show height and steepness, helping walkers avoid steep slopes or choose easier routes",
+    "marks": 2,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: They show height and steepness, helping walkers avoid steep slopes or choose easier routes.",
+    "tags": [
+      "geography",
+      "year_8",
+      "map_skills",
+      "relief"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 15
+  }
+]

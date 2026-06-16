@@ -1,0 +1,297 @@
+[
+  {
+    "id": "geo_y8_011",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "River Features",
+    "skill": "Identify river source",
+    "difficulty": 1,
+    "questionType": "multiple_choice",
+    "question": "What is the source of a river?",
+    "options": [
+      "Where it ends",
+      "Where it begins",
+      "Where it floods",
+      "Where it becomes salty"
+    ],
+    "correctAnswer": "Where a river begins",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Where a river begins.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "river_features"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_012",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "River Features",
+    "skill": "Identify river mouth",
+    "difficulty": 1,
+    "questionType": "short_answer",
+    "question": "What is the mouth of a river?",
+    "options": [],
+    "correctAnswer": "Where a river flows into the sea, lake or another river",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Where a river flows into the sea, lake or another river.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "river_features"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_013",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "Erosion",
+    "skill": "Understand erosion",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "What is erosion in a river?",
+    "options": [],
+    "correctAnswer": "The wearing away of rock and soil by river water",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The wearing away of rock and soil by river water.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "erosion"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_014",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "Transportation",
+    "skill": "Understand transportation",
+    "difficulty": 2,
+    "questionType": "multiple_choice",
+    "question": "What does transportation mean in a river?",
+    "options": [
+      "Material being dropped",
+      "Material being moved",
+      "Rain falling",
+      "Water evaporating"
+    ],
+    "correctAnswer": "The movement of material carried by the river",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The movement of material carried by the river.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "transportation"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_015",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "Deposition",
+    "skill": "Understand deposition",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "When is a river most likely to deposit material?",
+    "options": [],
+    "correctAnswer": "When it loses energy or slows down",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: When it loses energy or slows down.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "deposition"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_016",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "Flooding",
+    "skill": "Causes of flooding",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "Name one natural cause of river flooding.",
+    "options": [],
+    "correctAnswer": "Heavy rainfall",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Heavy rainfall.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "flooding"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_017",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "Flooding",
+    "skill": "Human causes of flooding",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "How can building on floodplains increase flood risk?",
+    "options": [],
+    "correctAnswer": "It creates impermeable surfaces and reduces space for water to spread out",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: It creates impermeable surfaces and reduces space for water to spread out.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "flooding"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_018",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "River Landforms",
+    "skill": "Meanders",
+    "difficulty": 3,
+    "questionType": "multiple_choice",
+    "question": "What is a meander?",
+    "options": [
+      "A waterfall",
+      "A river bend",
+      "A river source",
+      "A flood defence"
+    ],
+    "correctAnswer": "A bend in a river",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: A bend in a river.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "river_landforms"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_019",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "River Management",
+    "skill": "Flood defences",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "Name one method used to reduce flood risk.",
+    "options": [],
+    "correctAnswer": "Flood walls, levees, dams, flood warnings or planting trees",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Flood walls, levees, dams, flood warnings or planting trees.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "river_management"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_020",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Rivers",
+    "subtopic": "Processes",
+    "skill": "Apply river process understanding",
+    "difficulty": 4,
+    "questionType": "short_answer",
+    "question": "Explain why deposition often happens on the inside bend of a meander.",
+    "options": [],
+    "correctAnswer": "Water is slower on the inside bend, so it has less energy and drops sediment",
+    "marks": 2,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Water is slower on the inside bend, so it has less energy and drops sediment.",
+    "tags": [
+      "geography",
+      "year_8",
+      "rivers",
+      "processes"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 15
+  }
+]

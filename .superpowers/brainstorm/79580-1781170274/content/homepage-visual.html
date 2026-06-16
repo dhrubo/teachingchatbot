@@ -1,0 +1,110 @@
+<h2>Homepage Topic Map & Journey Visuals</h2>
+<p class="subtitle">How should SARA's homepage display the student's learning journey?</p>
+
+<div class="split">
+  <div class="mockup" style="flex: 1; min-height: 400px; display: flex; flex-direction: column;">
+    <div class="mockup-header" style="background: rgba(255,107,0,0.1); color: var(--color-brand-amber);">Concept A: Linear Journey Path (Brilliant/Duolingo Style)</div>
+    <div class="mockup-body" style="padding: 16px; background: rgba(0,0,0,0.4); border-radius: 0 0 12px 12px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+      <p style="font-size: 11px; text-align: center; color: var(--color-muted-foreground); max-width: 250px; margin-bottom: 20px;">A vertical trail of lesson nodes. High gamification, clear single-path focus.</p>
+      
+      <!-- Node 1: Completed -->
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 0 15px rgba(16,185,129,0.3);">
+          ✓
+        </div>
+        <span style="font-size: 11px; margin-top: 4px; font-weight: 500; color: #10b981;">Number Skills</span>
+      </div>
+      
+      <!-- Trail Line 1 -->
+      <div style="width: 4px; height: 30px; background: #10b981; margin: 4px 0;"></div>
+      
+      <!-- Node 2: Active / Glowing -->
+      <div style="display: flex; flex-direction: column; align-items: center; transform: scale(1.1);">
+        <div style="width: 54px; height: 54px; border-radius: 50%; background: var(--gradient-sunset); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 25px rgba(249,115,22,0.4); animation: float 3s ease-in-out infinite;">
+          💯
+        </div>
+        <span style="font-size: 11px; margin-top: 4px; font-weight: bold; color: white;">Percentages</span>
+        <span style="font-size: 9px; color: var(--color-brand-amber);">TODAY'S MISSION</span>
+      </div>
+      
+      <!-- Trail Line 2 -->
+      <div style="width: 4px; height: 30px; background: rgba(255,255,255,0.1); margin: 4px 0;"></div>
+      
+      <!-- Node 3: Locked -->
+      <div style="display: flex; flex-direction: column; align-items: center; opacity: 0.5;">
+        <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.1); color: #888; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+          🧮
+        </div>
+        <span style="font-size: 10px; margin-top: 4px; color: var(--color-muted-foreground);">Fractions</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="flex: 1; min-height: 400px; display: flex; flex-direction: column;">
+    <div class="mockup-header" style="background: rgba(124,58,237,0.1); color: var(--color-brand-violet);">Concept B: Dashboard Grid with Featured Mission Card</div>
+    <div class="mockup-body" style="padding: 16px; background: rgba(0,0,0,0.4); border-radius: 0 0 12px 12px; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 16px;">
+      <p style="font-size: 11px; text-align: center; color: var(--color-muted-foreground);">Separate featured mission box with a grid of Year 8 / 9 subject category cards below. Gives freedom of choice.</p>
+      
+      <!-- Featured Mission Card -->
+      <div style="border: 1px solid rgba(249,115,22,0.3); background: rgba(249,115,22,0.05); padding: 12px; border-radius: 12px; position: relative;">
+        <div style="position: absolute; top: 8px; right: 8px; background: rgba(249,115,22,0.2); color: var(--color-brand-amber); font-size: 9px; padding: 2px 6px; border-radius: 99px; font-weight: bold;">ACTIVE</div>
+        <div style="font-size: 11px; color: var(--color-brand-amber); font-weight: bold;">TODAY'S MISSION</div>
+        <h4 style="margin: 4px 0 2px 0; font-size: 13px; font-weight: bold; color: white;">Percentages</h4>
+        <p style="font-size: 10px; color: var(--color-muted-foreground); margin: 0;">Learn percentages, decimals, discounts, and GCSE-style questions.</p>
+      </div>
+      
+      <!-- Category Grid -->
+      <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 8px;">
+        <div style="border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🔢</span>
+          <div>
+            <div style="font-size: 11px; font-weight: bold; color: white;">Number</div>
+            <div style="font-size: 9px; color: var(--color-muted-foreground);">✓ Completed</div>
+          </div>
+        </div>
+        <div style="border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🔤</span>
+          <div>
+            <div style="font-size: 11px; font-weight: bold; color: white;">Algebra</div>
+            <div style="font-size: 9px; color: var(--color-muted-foreground);">0% complete</div>
+          </div>
+        </div>
+        <div style="border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">📐</span>
+          <div>
+            <div style="font-size: 11px; font-weight: bold; color: white;">Geometry</div>
+            <div style="font-size: 9px; color: var(--color-muted-foreground);">0% complete</div>
+          </div>
+        </div>
+        <div style="border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🎲</span>
+          <div>
+            <div style="font-size: 11px; font-weight: bold; color: white;">Probability</div>
+            <div style="font-size: 9px; color: var(--color-muted-foreground);">0% complete</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options" data-multiselect="false" style="margin-top: 20px;">
+  <div class="option selected" data-choice="concept_a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Concept A: Linear Journey Path</h3>
+      <p>Clean vertical trail of custom icons showing clear sequential milestones.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="concept_b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Concept B: Dashboard Grid with Featured Card</h3>
+      <p>Traditional clean dashboard layout, standard cards, and categorization.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 24px; text-align: center;">
+  <p class="subtitle">Open the same link to see the homepage path options, pick a choice, and let me know in the terminal!</p>
+</div>

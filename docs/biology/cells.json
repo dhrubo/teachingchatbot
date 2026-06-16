@@ -1,0 +1,30 @@
+[
+  {
+    "id": "bio_cells_001",
+    "subject": "Biology",
+    "yearGroups": [
+      8,
+      9
+    ],
+    "topic": "Cells",
+    "subtopic": "Cell Structure",
+    "difficulty": 1,
+    "question": "What is the basic building block of all living organisms?",
+    "answer": "Cell",
+    "misconception": "Confusing cells with tissues",
+    "hint": "Think of the smallest living unit."
+  },
+  {
+    "id": "bio_cells_002",
+    "subject": "Biology",
+    "yearGroups": [
+      8,
+      9
+    ],
+    "topic": "Cells",
+    "subtopic": "Cell Organelles",
+    "difficulty": 2,
+    "question": "What is the function of the nucleus?",
+    "answer": "Controls cell activities and contains genetic material"
+  }
+]

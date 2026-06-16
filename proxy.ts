@@ -9,6 +9,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow read-only curriculum lookup to bypass session requirements
+  if (pathname.startsWith("/api/lessons")) {
+    return NextResponse.next();
+  }
+
   // Cron endpoints authenticate themselves with CRON_SECRET (Bearer token),
   // not a session cookie — skip the guest-redirect so the scheduler can reach
   // them.

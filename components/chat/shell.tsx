@@ -19,7 +19,11 @@ import {
   useArtifactSelector,
 } from "@/hooks/use-artifact";
 import type { Attachment, ChatMessage } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, fetcher } from "@/lib/utils";
+import { useSession } from "next-auth/react";
+import useSWR from "swr";
+import { guestRegex } from "@/lib/constants";
+import { ProfileSelector } from "./profile-selector";
 import { AchievementToast } from "./achievement-toast";
 import { Artifact } from "./artifact";
 import { ChallengeMode, type ChallengeResults } from "./challenge-mode";
@@ -73,6 +77,7 @@ export function ChatShell() {
     completeCards,
     continueLearning,
     startChallengeMode,
+    fastTrackChallenge,
     finishChallenge,
     exitMission,
     challengeResults,
@@ -83,6 +88,15 @@ export function ChatShell() {
     showAnotherExample,
     performAction,
   } = useMission();
+
+  const { data: sessionData, status: authStatus } = useSession();
+  const isGuest = guestRegex.test(sessionData?.user?.email ?? "");
+  const isLoggedIn = authStatus === "authenticated" && !isGuest;
+
+  const { data: profilesData } = useSWR(
+    isLoggedIn ? "/api/profiles" : null,
+    fetcher
+  );
 
   const missionSlug = mission?.slug ?? "";
 
@@ -151,209 +165,216 @@ export function ChatShell() {
             selectedVisibilityType={visibilityType}
           />
 
-          {messages.length === 0 && !isLoading && !isInMission && (
-            <div className="flex-1 overflow-y-auto">
-              <SaraDashboard />
-            </div>
-          )}
-
-          {/* ---- Loading ---- */}
-          {isInMission && phase === "loading" && mission && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 backdrop-blur-md px-4">
-              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-12 flex flex-col items-center justify-center gap-4 text-center">
-                <span className="animate-pulse text-4xl">{mission.emoji}</span>
-                <p className="text-base font-medium text-indigo-200">
-                  Loading {mission.title}…
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* ---- Concept Cards ---- */}
-          {isInMission && phase === "cards" && mission && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center overflow-y-auto bg-[#090915]/80 p-4 backdrop-blur-md">
-              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
-                <div className="mb-5 text-center">
-                  <span className="text-3xl">{mission.emoji}</span>
-                  <h3 className="mt-2 text-xl font-bold text-foreground tracking-tight">
-                    {mission.title}
-                  </h3>
-                  <p className="text-sm text-indigo-300/80">
-                    Concept review
-                  </p>
+          {isLoggedIn && !profilesData?.activeProfile ? (
+            <ProfileSelector />
+          ) : (
+            <>
+              {messages.length === 0 && !isLoading && !isInMission && (
+                <div className="flex-1 overflow-y-auto">
+                  <SaraDashboard />
                 </div>
-                {currentCards.length > 0 && (
-                  <ConceptCardSlides
-                    cards={currentCards}
-                    onCardSeen={recordCardSeen}
-                    onChooseAnother={exitMission}
-                    onComplete={completeCards}
-                  />
+              )}
+
+              {/* ---- Loading ---- */}
+              {isInMission && phase === "loading" && mission && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 backdrop-blur-md px-4">
+                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-12 flex flex-col items-center justify-center gap-4 text-center">
+                    <span className="animate-pulse text-4xl">{mission.emoji}</span>
+                    <p className="text-base font-medium text-indigo-200">
+                      Loading {mission.title}…
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* ---- Concept Cards ---- */}
+              {isInMission && phase === "cards" && mission && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center overflow-y-auto bg-[#090915]/80 p-4 backdrop-blur-md">
+                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <div className="mb-5 text-center">
+                      <span className="text-3xl">{mission.emoji}</span>
+                      <h3 className="mt-2 text-xl font-bold text-foreground tracking-tight">
+                        {mission.title}
+                      </h3>
+                      <p className="text-sm text-indigo-300/80">
+                        Concept review
+                      </p>
+                    </div>
+                    {currentCards.length > 0 && (
+                      <ConceptCardSlides
+                        cards={currentCards}
+                        onCardSeen={recordCardSeen}
+                        onChooseAnother={exitMission}
+                        onComplete={completeCards}
+                        onSkipToQuiz={fastTrackChallenge}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ---- Lesson Footer / Gate ---- */}
+              {isInMission && phase === "gate" && mission && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
+                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 text-center transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <span className="text-4xl">{mission.emoji}</span>
+                    <h3 className="mt-3 text-2xl font-bold text-foreground tracking-tight">
+                      {mission.title}
+                    </h3>
+                    <p className="mt-2 text-base text-indigo-200">
+                      What would you like to do next?
+                    </p>
+                    <div className="mt-8 flex flex-col gap-3 max-w-md mx-auto">
+                      {hasMoreCards && (
+                        <Button
+                          className="rounded-full py-5 text-sm font-medium hover:bg-indigo-950/40 border-indigo-950/60 hover:translate-y-[-1px] transition-all"
+                          onClick={continueLearning}
+                          size="default"
+                          variant="outline"
+                        >
+                          Continue Learning
+                        </Button>
+                      )}
+                      <Button
+                        className="rounded-full bg-[image:var(--gradient-sunset)] py-5 font-bold text-white shadow-lg shadow-amber-500/15 hover:opacity-95 hover:translate-y-[-1px] hover:scale-[1.01] transition-all duration-200 text-sm"
+                        onClick={startChallengeMode}
+                        size="default"
+                      >
+                        Start Challenge Mode
+                      </Button>
+                      <Button
+                        className="rounded-full py-5 text-sm font-medium text-muted-foreground hover:text-foreground hover:translate-y-[-1px] transition-all"
+                        onClick={exitMission}
+                        size="default"
+                        variant="ghost"
+                      >
+                        Choose Another Topic
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ---- Review Mistakes ---- */}
+              {isInMission && phase === "review_mistakes" && mission && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center overflow-y-auto bg-[#090915]/80 p-4 backdrop-blur-md">
+                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <ReviewMistakesScreen
+                      missionTitle={mission.title}
+                      missionEmoji={mission.emoji}
+                      wrongAnswers={wrongAnswers}
+                      allowedActions={allowedActions}
+                      onAction={handleMissionAction}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ---- Content Complete (end of lesson cards) ---- */}
+              {isInMission && phase === "content_complete" && mission && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
+                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <ContentCompleteScreen
+                      missionTitle={mission.title}
+                      missionEmoji={mission.emoji}
+                      allowedActions={allowedActions}
+                      onAction={handleMissionAction}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ---- Results ---- */}
+              {isInMission &&
+                phase === "results" &&
+                challengeResults &&
+                mission && (
+                  <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
+                    <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                      <ChallengeResultsScreen
+                        missionTitle={mission.title}
+                        onContinue={handleMissionContinue}
+                        onReview={
+                          challengeResults.questionCount -
+                            challengeResults.finalScore >
+                          0
+                            ? () => handleMissionAction("review_mistakes")
+                            : undefined
+                        }
+                        results={challengeResults}
+                      />
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
-          )}
 
-          {/* ---- Lesson Footer / Gate ---- */}
-          {isInMission && phase === "gate" && mission && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
-              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 text-center transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
-                <span className="text-4xl">{mission.emoji}</span>
-                <h3 className="mt-3 text-2xl font-bold text-foreground tracking-tight">
-                  {mission.title}
-                </h3>
-                <p className="mt-2 text-base text-indigo-200">
-                  What would you like to do next?
-                </p>
-                <div className="mt-8 flex flex-col gap-3 max-w-md mx-auto">
-                  {hasMoreCards && (
-                    <Button
-                      className="rounded-full py-5 text-sm font-medium hover:bg-indigo-950/40 border-indigo-950/60 hover:translate-y-[-1px] transition-all"
-                      onClick={continueLearning}
-                      size="default"
-                      variant="outline"
-                    >
-                      Continue Learning
-                    </Button>
-                  )}
-                  <Button
-                    className="rounded-full bg-[image:var(--gradient-sunset)] py-5 font-bold text-white shadow-lg shadow-amber-500/15 hover:opacity-95 hover:translate-y-[-1px] hover:scale-[1.01] transition-all duration-200 text-sm"
-                    onClick={startChallengeMode}
-                    size="default"
-                  >
-                    Start Challenge Mode
-                  </Button>
-                  <Button
-                    className="rounded-full py-5 text-sm font-medium text-muted-foreground hover:text-foreground hover:translate-y-[-1px] transition-all"
-                    onClick={exitMission}
-                    size="default"
-                    variant="ghost"
-                  >
-                    Choose Another Topic
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ---- Review Mistakes ---- */}
-          {isInMission && phase === "review_mistakes" && mission && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center overflow-y-auto bg-[#090915]/80 p-4 backdrop-blur-md">
-              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
-                <ReviewMistakesScreen
-                  missionTitle={mission.title}
-                  missionEmoji={mission.emoji}
-                  wrongAnswers={wrongAnswers}
-                  allowedActions={allowedActions}
-                  onAction={handleMissionAction}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ---- Content Complete (end of lesson cards) ---- */}
-          {isInMission && phase === "content_complete" && mission && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
-              <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
-                <ContentCompleteScreen
-                  missionTitle={mission.title}
-                  missionEmoji={mission.emoji}
-                  allowedActions={allowedActions}
-                  onAction={handleMissionAction}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ---- Results ---- */}
-          {isInMission &&
-            phase === "results" &&
-            challengeResults &&
-            mission && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
-                <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
-                  <ChallengeResultsScreen
-                    missionTitle={mission.title}
-                    onContinue={handleMissionContinue}
-                    onReview={
-                      challengeResults.questionCount -
-                        challengeResults.finalScore >
-                      0
-                        ? () => handleMissionAction("review_mistakes")
-                        : undefined
-                    }
-                    results={challengeResults}
-                  />
-                </div>
-              </div>
-            )}
-
-          {(messages.length > 0 || isLoading) && (
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:rounded-tl-[12px] md:border-t md:border-l md:border-border/40">
-              <Messages
-                addToolApprovalResponse={addToolApprovalResponse}
-                chatId={chatId}
-                isArtifactVisible={isArtifactVisible}
-                isLoading={isLoading}
-                isReadonly={isReadonly}
-                messages={messages}
-                onEditMessage={(msg) => {
-                  const text = msg.parts
-                    ?.filter((p) => p.type === "text")
-                    .map((p) => p.text)
-                    .join("");
-                  setInput(text ?? "");
-                  setEditingMessage(msg);
-                }}
-                regenerate={regenerate}
-                selectedModelId={currentModelId}
-                setMessages={setMessages}
-                status={status}
-                votes={votes}
-              />
-
-              <TopicSelectScreen />
-
-              <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-5xl gap-2 border-t-0 bg-background px-3 pb-3 md:px-6 md:pb-4">
-                {!isReadonly && phase !== "challenge" && (
-                  <MultimodalInput
-                    attachments={attachments}
+              {(messages.length > 0 || isLoading) && (
+                <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:rounded-tl-[12px] md:border-t md:border-l md:border-border/40">
+                  <Messages
+                    addToolApprovalResponse={addToolApprovalResponse}
                     chatId={chatId}
-                    editingMessage={editingMessage}
-                    input={input}
+                    isArtifactVisible={isArtifactVisible}
                     isLoading={isLoading}
+                    isReadonly={isReadonly}
                     messages={messages}
-                    onCancelEdit={() => {
-                      setEditingMessage(null);
-                      setInput("");
+                    onEditMessage={(msg) => {
+                      const text = msg.parts
+                        ?.filter((p) => p.type === "text")
+                        .map((p) => p.text)
+                        .join("");
+                      setInput(text ?? "");
+                      setEditingMessage(msg);
                     }}
-                    onModelChange={setCurrentModelId}
+                    regenerate={regenerate}
                     selectedModelId={currentModelId}
-                    selectedVisibilityType={visibilityType}
-                    sendMessage={
-                      editingMessage
-                        ? async () => {
-                            const msg = editingMessage;
-                            setEditingMessage(null);
-                            await submitEditedMessage({
-                              message: msg,
-                              text: input,
-                              setMessages,
-                              regenerate,
-                            });
-                            setInput("");
-                          }
-                        : sendMessage
-                    }
-                    setAttachments={setAttachments}
-                    setInput={setInput}
                     setMessages={setMessages}
                     status={status}
-                    stop={stop}
+                    votes={votes}
                   />
-                )}
-              </div>
-            </div>
+
+                  <TopicSelectScreen />
+
+                  <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-5xl gap-2 border-t-0 bg-background px-3 pb-3 md:px-6 md:pb-4">
+                    {!isReadonly && phase !== "challenge" && (
+                      <MultimodalInput
+                        attachments={attachments}
+                        chatId={chatId}
+                        editingMessage={editingMessage}
+                        input={input}
+                        isLoading={isLoading}
+                        messages={messages}
+                        onCancelEdit={() => {
+                          setEditingMessage(null);
+                          setInput("");
+                        }}
+                        onModelChange={setCurrentModelId}
+                        selectedModelId={currentModelId}
+                        selectedVisibilityType={visibilityType}
+                        sendMessage={
+                          editingMessage
+                            ? async () => {
+                                const msg = editingMessage;
+                                setEditingMessage(null);
+                                await submitEditedMessage({
+                                  message: msg,
+                                  text: input,
+                                  setMessages,
+                                  regenerate,
+                                });
+                                setInput("");
+                              }
+                            : sendMessage
+                        }
+                        setAttachments={setAttachments}
+                        setInput={setInput}
+                        setMessages={setMessages}
+                        status={status}
+                        stop={stop}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 

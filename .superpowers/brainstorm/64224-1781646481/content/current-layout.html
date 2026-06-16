@@ -1,0 +1,77 @@
+<h2>Current Homepage Layout (for reference)</h2>
+<p class="subtitle">Based on sara-dashboard.tsx — I can't see your screenshot, so here's what the code shows</p>
+
+<div class="mockup" style="max-width: 700px; margin: 0 auto;">
+  <div class="mockup-header">SARA Dashboard — Current</div>
+  <div class="mockup-body" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+    <!-- Hero -->
+    <div style="background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.15); border-radius: 16px; padding: 16px; text-align: center;">
+      <span style="font-size: 12px; font-style: italic; color: #a78bfa;">"Welcome back! Let's explore fractions..."</span>
+    </div>
+    
+    <!-- Hero row -->
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 24px 0; gap: 24px;">
+      <div>
+        <div style="font-size: 28px; font-weight: 900;">Learn Maths <span style="background: linear-gradient(90deg,#f97316,#f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Without Feeling Stuck</span></div>
+        <div style="font-size: 13px; color: #888; max-width: 400px; margin-top: 12px;">SARA is your AI maths coach...</div>
+      </div>
+      <div style="width: 100px; height: 100px; background: rgba(124,58,237,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">🧑‍🏫</div>
+    </div>
+    
+    <!-- Two-column grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px;">
+        <div style="font-weight: 700; font-size: 15px;">What do you want to learn?</div>
+        <div style="font-size: 12px; color: #888; margin-top: 8px;">Pick a topic or paste your syllabus...</div>
+        <div style="margin-top: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 8px; font-size: 12px; color: #555;">[textarea: paste topics...]</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px;">
+        <div style="font-weight: 700; font-size: 15px; background: linear-gradient(90deg,#fb923c,#fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">What is SARA?</div>
+        <ul style="font-size: 12px; color: #888; line-height: 2;">
+          <li>📖 Short visual lessons</li>
+          <li>🎯 Concept cards</li>
+          <li>⚡ Challenge mode</li>
+          <li>📊 Progress tracking</li>
+        </ul>
+        <div style="display: flex; gap: 4px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px; margin-top: 16px;">
+          <button style="border-radius: 999px; padding: 6px 20px; font-size: 10px; font-weight: 700; background: linear-gradient(90deg,#f97316,#7c3aed); color: white; border: none;">Year 8</button>
+          <button style="border-radius: 999px; padding: 6px 20px; font-size: 10px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: #888; background: none;">Year 9</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Subject selector -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div style="border: 2px solid rgba(249,115,22,0.3); background: rgba(249,115,22,0.1); border-radius: 16px; padding: 24px; text-align: center;">
+        <div style="font-size: 28px;">📐</div>
+        <div style="font-weight: 900; font-size: 14px; color: #fb923c;">GCSE Maths</div>
+        <div style="font-size: 10px; color: #666;">Active Syllabus</div>
+      </div>
+      <div style="border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.05); border-radius: 16px; padding: 24px; text-align: center; opacity: 0.7;">
+        <div style="font-size: 28px;">🧪</div>
+        <div style="font-weight: 900; font-size: 14px; color: #888;">GCSE Science</div>
+        <div style="font-size: 10px; color: #555;">Active Syllabus</div>
+      </div>
+    </div>
+    
+    <!-- Today's Mission -->
+    <div style="border: 1px solid rgba(249,115,22,0.2); background: rgba(67,56,202,0.1); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px;">
+      <div style="width: 56px; height: 56px; background: linear-gradient(135deg, rgba(249,115,22,0.2), rgba(124,58,237,0.2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">💯</div>
+      <div style="flex: 1;">
+        <div style="font-weight: 700; font-size: 14px;">Percentages</div>
+        <div style="font-size: 12px; color: #888;">Master percentages from basics to real-world problems.</div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button style="border: 1px solid rgba(249,115,22,0.3); background: rgba(249,115,22,0.1); border-radius: 999px; padding: 10px 20px; font-size: 11px; color: #fb923c;">⚡ Fast-Track Quiz</button>
+        <button style="background: linear-gradient(90deg,#f97316,#7c3aed); border-radius: 999px; padding: 10px 20px; font-size: 11px; color: white;">Continue →</button>
+      </div>
+    </div>
+    
+    <!-- Challenge Mode Banner -->
+    <div style="border: 1px solid rgba(124,58,237,0.3); background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(79,70,229,0.1)); border-radius: 16px; padding: 24px;">
+      <div style="font-weight: 900; font-size: 15px;">🏆 Challenge Mode: Year 8 Maths</div>
+      <div style="font-size: 12px; color: #a78bfa;">Skip the cards and test yourself with a 5-question adaptive quiz!</div>
+      <button style="margin-top: 12px; background: linear-gradient(90deg,#7c3aed,#4f46e5); border-radius: 999px; padding: 12px 24px; font-size: 11px; color: white;">Take Quiz Now ⚡</button>
+    </div>
+  </div>
+</div>

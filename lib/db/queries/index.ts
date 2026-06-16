@@ -4,6 +4,10 @@ export {
   setUserApprovalStatus,
 } from "./admin";
 export {
+  getAIEfficiencyStats,
+  logAICall,
+} from "./analytics";
+export {
   createGuestUser,
   createUser,
   getUser,
@@ -52,4 +56,5 @@ export {
   getStudentsByUserId,
   updateGoal,
   updateStudentProfile,
+  recordStudentMisconception,
 } from "./student";

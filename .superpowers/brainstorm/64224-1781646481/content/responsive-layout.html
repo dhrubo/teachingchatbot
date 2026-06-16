@@ -1,0 +1,131 @@
+<h2>Responsive Behaviour</h2>
+<p class="subtitle">Showing desktop (left) and mobile (right) versions</p>
+
+<div class="split">
+  <!-- Desktop -->
+  <div class="mockup" style="max-width: 100%;">
+    <div class="mockup-header">Desktop (≥768px)</div>
+    <div class="mockup-body" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; font-size: 10px;">
+      <!-- hero -->
+      <div style="font-size: 20px; font-weight: 900; text-align: center;">Your GCSE Tutor & Quiz Master</div>
+      
+      <!-- search full width -->
+      <div style="border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; min-height: 40px; font-size: 11px; color: #555;">[paste topics - full width]</div>
+      
+      <!-- what is SARA - horizontal -->
+      <div style="border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        <span>📖 Visual lessons</span>
+        <span>🎯 Concept cards</span>
+        <span>⚡ Quizzes</span>
+        <span>📊 Tracking</span>
+      </div>
+
+      <!-- Tabs - horizontal row, all visible -->
+      <div style="display: flex; gap: 2px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div style="padding: 8px 16px; font-weight: 700; font-size: 11px; color: #fb923c; border-bottom: 2px solid #f97316;">📐 GCSE Maths</div>
+        <div style="padding: 8px 16px; font-size: 11px; color: #888;">🧪 GCSE Science</div>
+        <div style="padding: 8px 16px; font-size: 11px; color: #888;">🌍 GCSE Geography</div>
+      </div>
+      
+      <!-- Year toggle -->
+      <div style="display: flex; gap: 6px;">
+        <div style="padding: 4px 14px; border-radius: 999px; font-size: 9px; font-weight: 700; background: linear-gradient(90deg,#f97316,#7c3aed); color: white;">Year 8</div>
+        <div style="padding: 4px 14px; border-radius: 999px; font-size: 9px; border: 1px solid rgba(255,255,255,0.1); color: #888;">Year 9</div>
+      </div>
+      
+      <!-- 2-col topic grid with quiz buttons -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div style="border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 600;">📐 Percentages</span>
+          <button style="background: linear-gradient(90deg,#7c3aed,#4f46e5); border: none; border-radius: 999px; padding: 4px 12px; font-size: 9px; font-weight: 700; color: white;">Quiz ⚡</button>
+        </div>
+        <div style="border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 600;">⚖️ Ratio</span>
+          <button style="background: linear-gradient(90deg,#7c3aed,#4f46e5); border: none; border-radius: 999px; padding: 4px 12px; font-size: 9px; font-weight: 700; color: white;">Quiz ⚡</button>
+        </div>
+        <div style="border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 600;">🔤 Algebra</span>
+          <button style="background: linear-gradient(90deg,#7c3aed,#4f46e5); border: none; border-radius: 999px; padding: 4px 12px; font-size: 9px; font-weight: 700; color: white;">Quiz ⚡</button>
+        </div>
+        <div style="border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 600;">📈 Graphs</span>
+          <button style="background: linear-gradient(90deg,#7c3aed,#4f46e5); border: none; border-radius: 999px; padding: 4px 12px; font-size: 9px; font-weight: 700; color: white;">Quiz ⚡</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Mobile -->
+  <div class="mockup" style="max-width: 100%;">
+    <div class="mockup-header">Mobile ({">"}320px)</div>
+    <div class="mockup-body" style="padding: 12px; display: flex; flex-direction: column; gap: 10px; font-size: 10px;">
+      <!-- tighter hero -->
+      <div style="font-size: 16px; font-weight: 900; text-align: center; line-height: 1.3;">Your GCSE Tutor & Quiz Master</div>
+      
+      <!-- search full width -->
+      <div style="border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; min-height: 36px; font-size: 10px; color: #555;">[paste topics]</div>
+      
+      <!-- what is SARA - wrap -->
+      <div style="border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 9px;">📖 Lessons</span>
+        <span style="font-size: 9px;">🎯 Cards</span>
+        <span style="font-size: 9px;">⚡ Quizzes</span>
+        <span style="font-size: 9px;">📊 Progress</span>
+      </div>
+
+      <!-- Tabs - horizontally scrollable (pill style) -->
+      <div style="display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; padding-bottom: 8px; -webkit-overflow-scrolling: touch;">
+        <div style="padding: 6px 14px; border-radius: 999px; font-size: 10px; font-weight: 700; background: rgba(249,115,22,0.2); color: #fb923c; border: 1px solid rgba(249,115,22,0.3);">📐 Maths</div>
+        <div style="padding: 6px 14px; border-radius: 999px; font-size: 10px; border: 1px solid rgba(255,255,255,0.1); color: #888;">🧪 Science</div>
+        <div style="padding: 6px 14px; border-radius: 999px; font-size: 10px; border: 1px solid rgba(255,255,255,0.1); color: #888;">🌍 Geography</div>
+        <div style="padding: 6px 14px; border-radius: 999px; font-size: 10px; border: 1px solid rgba(255,255,255,0.1); color: #888;">📖 English</div>
+      </div>
+      
+      <!-- Year toggle -->
+      <div style="display: flex; gap: 4px;">
+        <div style="padding: 3px 12px; border-radius: 999px; font-size: 8px; font-weight: 700; background: linear-gradient(90deg,#f97316,#7c3aed); color: white;">Y8</div>
+        <div style="padding: 3px 12px; border-radius: 999px; font-size: 8px; border: 1px solid rgba(255,255,255,0.1); color: #888;">Y9</div>
+      </div>
+      
+      <!-- 1-col topic list with quiz buttons -->
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 14px; margin-right: 6px;">📐</span>
+            <span style="font-size: 11px; font-weight: 600;">Percentages</span>
+          </div>
+          <button style="background: linear-gradient(90deg,#7c3aed,#4f46e5); border: none; border-radius: 999px; padding: 5px 12px; font-size: 9px; font-weight: 700; color: white;">Quiz ⚡</button>
+        </div>
+        <div style="border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 14px; margin-right: 6px;">⚖️</span>
+            <span style="font-size: 11px; font-weight: 600;">Ratio</span>
+          </div>
+          <button style="background: linear-gradient(90deg,#7c3aed,#4f46e5); border: none; border-radius: 999px; padding: 5px 12px; font-size: 9px; font-weight: 700; color: white;">Quiz ⚡</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 32px;">Responsive Summary</h3>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+  <div class="pros-cons">
+    <div class="pros"><h4>Desktop (≥768px)</h4><ul>
+      <li>Horizontal tab bar (underlined active)</li>
+      <li>2-col topic grid with Quiz button on each</li>
+      <li>Search box full width</li>
+      <li>What is SARA in a horizontal row</li>
+    </ul></div>
+  </div>
+  <div class="pros-cons">
+    <div class="pros"><h4>Mobile (320px–767px)</h4><ul>
+      <li>Scrollable pill-style subject tabs</li>
+      <li>1-col topic list with Quiz buttons</li>
+      <li>Search box full width (same)</li>
+      <li>Year toggle shortened (Y8/Y9)</li>
+      <li>What is SARA → compact wrap</li>
+    </ul></div>
+  </div>
+</div>

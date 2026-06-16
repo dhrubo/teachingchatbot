@@ -159,6 +159,8 @@ export const studentProfile = pgTable("StudentProfile", {
   xp: integer("xp").notNull().default(0),
   streak: integer("streak").notNull().default(0),
   badges: json("badges").$type<string[]>().notNull().default([]),
+  selectedSubjects: json("selectedSubjects").$type<string[]>().notNull().default([]),
+  examBoard: varchar("examBoard", { length: 32 }).notNull().default("Unspecified"),
   confidenceNotes: text("confidenceNotes"),
   parentReportNotes: text("parentReportNotes"),
   lastSessionAt: timestamp("lastSessionAt"),
@@ -470,3 +472,85 @@ export const topicRequest = pgTable("TopicRequest", {
 });
 
 export type TopicRequest = InferSelectModel<typeof topicRequest>;
+
+export const studentMisconception = pgTable("StudentMisconception", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  studentId: uuid("studentId")
+    .notNull()
+    .references(() => studentProfile.id, { onDelete: "cascade" }),
+  skillSlug: text("skillSlug").notNull(),
+  misconception: text("misconception").notNull(),
+  count: integer("count").notNull().default(1),
+  lastSeenAt: timestamp("lastSeenAt").notNull().defaultNow(),
+});
+
+export type StudentMisconception = InferSelectModel<typeof studentMisconception>;
+
+export const aiCall = pgTable("AiCall", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  studentId: uuid("studentId").references(() => studentProfile.id, {
+    onDelete: "set null",
+  }),
+  purpose: varchar("purpose", { length: 64 }).notNull(),
+  modelUsed: varchar("modelUsed", { length: 64 }).notNull(),
+  promptTokens: integer("promptTokens").notNull(),
+  completionTokens: integer("completionTokens").notNull(),
+  estimatedTokensSaved: integer("estimatedTokensSaved").notNull().default(0),
+  cachedResponseUsed: boolean("cachedResponseUsed").notNull().default(false),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type AiCall = InferSelectModel<typeof aiCall>;
+
+export const weeklyReport = pgTable("WeeklyReport", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  studentId: uuid("studentId")
+    .notNull()
+    .references(() => studentProfile.id, { onDelete: "cascade" }),
+  summaryText: text("summaryText").notNull(),
+  startOfWeek: timestamp("startOfWeek").notNull(),
+  endOfWeek: timestamp("endOfWeek").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type WeeklyReport = InferSelectModel<typeof weeklyReport>;
+
+// ---- CurriculumArtifact: unified storage for AI-generated curriculum content ----
+// Every generated asset (mission, lesson, concept card, question archetype, etc.)
+// becomes a CurriculumArtifact. Only "approved" artifacts are visible to students.
+export const curriculumArtifact = pgTable("CurriculumArtifact", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  subject: text("subject").notNull().default("maths"),
+  yearGroup: integer("yearGroup").notNull(),
+  examBoard: varchar("examBoard", { length: 32 }).notNull().default("AQA"),
+  topic: text("topic").notNull(),
+  subtopic: text("subtopic"),
+  skillSlug: text("skillSlug"),
+  artifactType: varchar("artifactType", {
+    enum: [
+      "subject_map",
+      "topic_map",
+      "mission",
+      "lesson",
+      "concept_card",
+      "skill",
+      "question_archetype",
+      "quiz",
+      "boss_battle",
+      "misconception_map",
+    ],
+  })
+    .notNull()
+    .default("mission"),
+  contentJson: json("contentJson").notNull().default({}),
+  status: varchar("status", { enum: ["draft", "approved", "rejected"] })
+    .notNull()
+    .default("draft"),
+  version: integer("version").notNull().default(1),
+  generatedBy: text("generatedBy"),
+  reviewedBy: text("reviewedBy"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export type CurriculumArtifact = InferSelectModel<typeof curriculumArtifact>;

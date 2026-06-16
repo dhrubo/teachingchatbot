@@ -1,0 +1,297 @@
+[
+  {
+    "id": "geo_y8_041",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Coastal Processes",
+    "skill": "Erosion",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "What is coastal erosion?",
+    "options": [],
+    "correctAnswer": "The wearing away of the coastline by waves and weathering",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The wearing away of the coastline by waves and weathering.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "coastal_processes"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_042",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Coastal Processes",
+    "skill": "Deposition",
+    "difficulty": 2,
+    "questionType": "multiple_choice",
+    "question": "What is deposition at the coast?",
+    "options": [
+      "Material is picked up",
+      "Material is dropped",
+      "Waves become taller",
+      "Cliffs collapse"
+    ],
+    "correctAnswer": "When material is dropped by the sea",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: When material is dropped by the sea.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "coastal_processes"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_043",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Waves",
+    "skill": "Constructive waves",
+    "difficulty": 3,
+    "questionType": "multiple_choice",
+    "question": "What do constructive waves usually do?",
+    "options": [
+      "Destroy beaches",
+      "Build up beaches",
+      "Create earthquakes",
+      "Stop tides"
+    ],
+    "correctAnswer": "Build up beaches by depositing material",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Build up beaches by depositing material.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "waves"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_044",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Waves",
+    "skill": "Destructive waves",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "What do destructive waves usually do?",
+    "options": [],
+    "correctAnswer": "Erode beaches and cliffs",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Erode beaches and cliffs.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "waves"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_045",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Landforms",
+    "skill": "Beach",
+    "difficulty": 1,
+    "questionType": "short_answer",
+    "question": "What is a beach made from?",
+    "options": [],
+    "correctAnswer": "Sand, shingle or pebbles deposited by the sea",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Sand, shingle or pebbles deposited by the sea.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "landforms"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_046",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Landforms",
+    "skill": "Headlands and bays",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "Why do bays often form in softer rock?",
+    "options": [],
+    "correctAnswer": "Softer rock erodes faster than harder rock",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Softer rock erodes faster than harder rock.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "landforms"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_047",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Coastal Management",
+    "skill": "Sea walls",
+    "difficulty": 2,
+    "questionType": "multiple_choice",
+    "question": "What is the purpose of a sea wall?",
+    "options": [
+      "To increase rainfall",
+      "To protect the coast",
+      "To create earthquakes",
+      "To measure tides"
+    ],
+    "correctAnswer": "To protect the coast from wave erosion and flooding",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: To protect the coast from wave erosion and flooding.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "coastal_management"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_048",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Coastal Management",
+    "skill": "Groynes",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "What do groynes help to do?",
+    "options": [],
+    "correctAnswer": "Trap sediment and build up beaches",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Trap sediment and build up beaches.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "coastal_management"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_049",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Longshore Drift",
+    "skill": "Sediment movement",
+    "difficulty": 4,
+    "questionType": "short_answer",
+    "question": "What is longshore drift?",
+    "options": [],
+    "correctAnswer": "The movement of sediment along a coastline by waves approaching at an angle",
+    "marks": 2,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: The movement of sediment along a coastline by waves approaching at an angle.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "longshore_drift"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 15
+  },
+  {
+    "id": "geo_y8_050",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Coasts",
+    "subtopic": "Coastal Management",
+    "skill": "Evaluate protection",
+    "difficulty": 4,
+    "questionType": "short_answer",
+    "question": "Give one disadvantage of building a sea wall.",
+    "options": [],
+    "correctAnswer": "It is expensive, can look unattractive and may move erosion further along the coast",
+    "marks": 2,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: It is expensive, can look unattractive and may move erosion further along the coast.",
+    "tags": [
+      "geography",
+      "year_8",
+      "coasts",
+      "coastal_management"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 15
+  }
+]

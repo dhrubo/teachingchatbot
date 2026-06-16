@@ -1,0 +1,10 @@
+Add Year 8 Geography to the home screen.
+
+Requirements:
+1. Add a subject card for Geography.
+2. Add a CTA button: Start Year 8 Geography Quiz.
+3. Route to /student/quiz/geography-year8-home-quiz-001.
+4. Load quiz data from generated-quizzes/geography-year8-home-quiz-001.json.
+5. Show title, 30 questions, 30 minutes, mixed difficulty and topic list.
+6. Log token efficiency: aiUsedToGenerateQuiz=false, tokensUsed=0, questionsServed=30.
+7. Quiz mode allows hints and immediate feedback. Test mode disables hints and immediate feedback.

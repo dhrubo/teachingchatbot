@@ -76,6 +76,69 @@ export function ChallengeMode({
 
   const wrongRef = useRef<WrongAnswerRecord[]>([]);
 
+  const [hintText, setHintText] = useState<string | null>(null);
+  const [hintLoading, setHintLoading] = useState(false);
+
+  const [explanationText, setExplanationText] = useState<string | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
+
+  const handleGetHint = async () => {
+    if (!currentQuestion || hintLoading) return;
+    setHintLoading(true);
+    setHintText(null);
+    try {
+      const response = await fetch("/api/ai/hint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionPrompt: currentQuestion.prompt,
+          skillSlug: currentQuestion.skillSlug,
+        }),
+      });
+      const data = await response.json();
+      if (data.hint) {
+        setHintText(data.hint);
+      } else {
+        setHintText("I can do this! Look closely at the numbers and try breaking it down step by step.");
+      }
+    } catch (error) {
+      console.error("Failed to fetch hint", error);
+      setHintText("Try reading the question carefully one more time! You've got this.");
+    } finally {
+      setHintLoading(false);
+    }
+  };
+
+  const handleGetExplanation = async () => {
+    if (!currentQuestion || explanationLoading) return;
+    setExplanationLoading(true);
+    setExplanationText(null);
+    try {
+      const response = await fetch("/api/ai/explain-error", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionPrompt: currentQuestion.prompt,
+          studentAnswer: selectedAnswer || textInput,
+          correctAnswer: currentQuestion.correctAnswer,
+          explanation: currentQuestion.explanation,
+          skillSlug: currentQuestion.skillSlug,
+        }),
+      });
+      const data = await response.json();
+      if (data.feedback) {
+        setExplanationText(data.feedback);
+      } else {
+        setExplanationText("Take another look at the steps. You're very close, keep trying!");
+      }
+    } catch (error) {
+      console.error("Failed to fetch explanation", error);
+      setExplanationText("Let's review the steps. Check if you missed any negative signs or small steps!");
+    } finally {
+      setExplanationLoading(false);
+    }
+  };
+
   const gateOpen = canShowChallengeQuestion(consentState);
 
   const fetchNextQuestion = useCallback(async () => {
@@ -188,6 +251,8 @@ export function ChallengeMode({
       setFeedback(null);
       setSelectedAnswer(null);
       setTextInput("");
+      setHintText(null);
+      setExplanationText(null);
       fetchNextQuestion();
     }
   };
@@ -310,6 +375,40 @@ export function ChallengeMode({
                 </p>
               </div>
 
+              <div className="flex flex-col items-center gap-3 mb-6">
+                {!hintText && !hintLoading && !feedback && (
+                  <Button
+                    className="rounded-full bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 hover:text-orange-300 border border-orange-500/20 px-4 py-1.5 text-xs font-semibold tracking-wide transition-all duration-200"
+                    onClick={handleGetHint}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    💡 Get SARA Hint
+                  </Button>
+                )}
+
+                {hintLoading && (
+                  <div className="w-full max-w-sm rounded-xl bg-orange-500/5 border border-orange-500/10 p-4 flex flex-col gap-2 animate-pulse">
+                    <div className="h-2.5 w-1/3 rounded bg-orange-400/20" />
+                    <div className="h-2 w-3/4 rounded bg-orange-400/20" />
+                    <div className="h-2 w-2/3 rounded bg-orange-400/20" />
+                  </div>
+                )}
+
+                {hintText && !feedback && (
+                  <motion.div
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/5 border border-orange-500/20 p-4 text-left shadow-lg shadow-orange-500/5"
+                    initial={{ opacity: 0, y: 8 }}
+                  >
+                    <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider block mb-1">
+                      💡 SARA Hint
+                    </span>
+                    <p className="text-sm text-amber-100 leading-relaxed">{hintText}</p>
+                  </motion.div>
+                )}
+              </div>
+
               {question.options && question.options.length > 0 ? (
                 <div className="flex flex-col gap-3">
                   {question.options.map((option, index) => {
@@ -410,6 +509,40 @@ export function ChallengeMode({
                           {question.correctAnswer}
                         </span>
                       </p>
+
+                      <div className="mt-3 pt-3 border-t border-red-500/20 flex flex-col items-center gap-3">
+                        {!explanationText && !explanationLoading && (
+                          <Button
+                            className="rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 px-4 py-1.5 text-xs font-semibold tracking-wide transition-all"
+                            onClick={handleGetExplanation}
+                            size="sm"
+                            variant="ghost"
+                          >
+                            🧐 Ask SARA: Why was I wrong?
+                          </Button>
+                        )}
+
+                        {explanationLoading && (
+                          <div className="w-full rounded-xl bg-red-500/5 p-4 flex flex-col gap-2 animate-pulse">
+                            <div className="h-2.5 w-1/4 rounded bg-red-400/20" />
+                            <div className="h-2 w-5/6 rounded bg-red-400/20" />
+                            <div className="h-2 w-2/3 rounded bg-red-400/20" />
+                          </div>
+                        )}
+
+                        {explanationText && (
+                          <motion.div
+                            animate={{ opacity: 1, y: 0 }}
+                            className="w-full rounded-xl bg-red-950/20 border border-red-500/15 p-4 text-left"
+                            initial={{ opacity: 0, y: 6 }}
+                          >
+                            <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1">
+                              🧠 SARA Correction
+                            </span>
+                            <p className="text-sm text-red-100/90 leading-relaxed">{explanationText}</p>
+                          </motion.div>
+                        )}
+                      </div>
                     </div>
                   )}
                   <Button

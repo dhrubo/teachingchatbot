@@ -1,0 +1,18 @@
+{
+  "artifact": "GCSE Mastery Year 8 Geography Seed",
+  "subject": "Geography",
+  "yearGroups": [
+    8
+  ],
+  "totalQuestions": 60,
+  "topics": [
+    "coasts",
+    "ecosystems",
+    "map_skills",
+    "population_and_settlement",
+    "rivers",
+    "weather_and_climate"
+  ],
+  "quizIncluded": "generated-quizzes/geography-year8-home-quiz-001.json",
+  "homeScreenRoute": "/student/quiz/geography-year8-home-quiz-001"
+}

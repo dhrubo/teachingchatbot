@@ -8,6 +8,7 @@ import {
   type StudentProfile,
   studentGoal,
   studentProfile,
+  studentMisconception,
 } from "../schema";
 
 // --- Student profile ---
@@ -29,13 +30,33 @@ export async function getStudentsByUserId({
 }
 
 /**
- * Gets the first student profile associated with a user.
- * In the future, this should handle multiple profiles, but for now
- * we assume one student per user for the adaptive engine.
+ * Gets the student profile associated with a user.
+ * If activeStudentId is provided, returns that specific profile.
+ * Otherwise, falls back to the first student profile found.
  */
 export async function getStudentProfile(
-  userId: string
+  userId: string,
+  activeStudentId?: string | null
 ): Promise<StudentProfile | null> {
+  if (activeStudentId) {
+    try {
+      const [found] = await db
+        .select()
+        .from(studentProfile)
+        .where(
+          and(
+            eq(studentProfile.id, activeStudentId),
+            eq(studentProfile.userId, userId)
+          )
+        );
+      if (found) return found;
+    } catch (_error) {
+      throw new ChatbotError(
+        "bad_request:database",
+        "Failed to get student profile by active ID"
+      );
+    }
+  }
   const students = await getStudentsByUserId({ userId });
   return students[0] ?? null;
 }
@@ -44,15 +65,25 @@ export async function createStudent({
   userId,
   name,
   schoolYear,
+  selectedSubjects,
+  examBoard,
 }: {
   userId: string;
   name: string;
   schoolYear?: "8" | "9";
+  selectedSubjects?: string[];
+  examBoard?: string;
 }): Promise<StudentProfile> {
   try {
     const [created] = await db
       .insert(studentProfile)
-      .values({ userId, name, schoolYear })
+      .values({
+        userId,
+        name,
+        schoolYear,
+        selectedSubjects: selectedSubjects ?? [],
+        examBoard: examBoard ?? "Unspecified",
+      })
       .returning();
     return created;
   } catch (_error) {
@@ -189,5 +220,53 @@ export async function updateGoal({
     return row;
   } catch (_error) {
     throw new ChatbotError("bad_request:database", "Failed to update goal");
+  }
+}
+
+export async function recordStudentMisconception({
+  studentId,
+  skillSlug,
+  misconception,
+}: {
+  studentId: string;
+  skillSlug: string;
+  misconception: string;
+}): Promise<void> {
+  try {
+    const [existing] = await db
+      .select()
+      .from(studentMisconception)
+      .where(
+        and(
+          eq(studentMisconception.studentId, studentId),
+          eq(studentMisconception.skillSlug, skillSlug),
+          eq(studentMisconception.misconception, misconception)
+        )
+      );
+
+    if (existing) {
+      await db
+        .update(studentMisconception)
+        .set({
+          count: existing.count + 1,
+          lastSeenAt: new Date(),
+        })
+        .where(eq(studentMisconception.id, existing.id));
+    } else {
+      await db
+        .insert(studentMisconception)
+        .values({
+          studentId,
+          skillSlug,
+          misconception,
+          count: 1,
+          lastSeenAt: new Date(),
+        });
+    }
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to record student misconception"
+    );
   }
 }

@@ -1,6 +1,6 @@
-# 🚀 Deploy Your Own AI Maths Tutor
+# 🚀 GCSE Mastery: Gamified GCSE Learning App & AI Tutor
 
-Build a personalised AI maths tutor for your child.
+Build a personalized Duolingo-style GCSE learning platform for your child, complete with local template-based challenge engines, multi-student selector onboarding, and parent insight dashboards.
 
 Powered by:
 
@@ -12,14 +12,19 @@ Powered by:
 
 ## Features
 
-- **Year 8/9 maths tutoring** — full UK curriculum coverage
-- **Adaptive GCSE-style Archetype Engine** — generates thousands of unique questions from JSON-defined archetypes with deterministic local grading
-- **Deterministic Question Selection** — selects the next question dynamically based on the student's weakest skills and current difficulty band
-- **Socrates Mastery Scoring** — updates student skill mastery on a 0-100 scale mapping to must/should/could/gcse_bridge bands
-- **Interactive fullscreen quizzes** — 5-question fullscreen adaptive challenges with zero LLM calls
-- **Parent dashboard** — detailed learning insights showing strong and weak skills based on real-time mastery data
-- **XP and streaks** — gamified motivation (Duolingo-style)
-- **Socratic teaching style** — patient, encouraging, visual micro-lessons
+- **Syllabus-Gated Learning Map** — Circular mission nodes (Duolingo-style) guiding students through the Year 8 & Year 9 Maths curriculum.
+- **Adaptive GCSE-style Archetype Engine** — Generates thousands of unique, context-aware questions dynamically from JSON-defined skill templates with zero LLM API costs.
+- **GCSE Subject Switcher** — Beautiful row cards toggling between GCSE Maths 📐 and a stunning GCSE Science 🧪 placeholder with keyframe glow animation.
+- **Netflix-Style Multi-Student Selection** — Circular avatar switcher allowing parents of multiple children to manage profiles, paired with a 4-step onboarding stepper (Name -> Year -> Subjects -> Board).
+- **Socratic AI Hints Drawer** — Pinned trigger card providing students with short, encouraging scaffolding clues *without* revealing mathematical solutions.
+- **Socratic "Why Was I Wrong?" Explainer** — Structured feedback diagnosing the exact misconception committed on any incorrect answer and recording/upserting the error counts inside the database.
+- **Syllabus Mastery Heatmap Grid** — Color-coded parent grid mapping student skill levels (Gold for Mastered $\ge 75$, Amber for Secure, Indigo for In-Progress, and Grey for Locked).
+- **AI Efficiency Dashboard** — High-fidelity telemetry card metrics tracking questions served, cost per learner, and total prompt/completion tokens saved by using deterministic question templates.
+- **Parent Goal-Setter** — Direct goal assigner permitting guardians to select any syllabus topic, enter descriptions, and push custom missions directly to children dashboards.
+- **XP, Badges & Streaks** — Complete gamified motivation layer including local Web Audio sound effects (success/wrong) and floating achievements.
+- **Deterministic Question Selection** — Selects the next question dynamically based on the student's weakest skills and current difficulty band.
+- **Socrates Mastery Scoring** — Updates student skill mastery on a 0-100 scale mapping to must/should/could/gcse_bridge bands.
+- **Interactive fullscreen quizzes** — 5-question fullscreen adaptive challenges with zero LLM calls.
 
 ## Free Mode Limitations
 

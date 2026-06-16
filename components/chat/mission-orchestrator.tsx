@@ -60,6 +60,7 @@ type MissionContextValue = {
   completeCards: () => void;
   continueLearning: () => void;
   startChallengeMode: () => void;
+  fastTrackChallenge: () => void;
   finishChallenge: (results: ChallengeResults, wrong: WrongAnswerRecord[]) => void;
   startReviewMistakes: () => void;
   retrySimilar: () => void;
@@ -201,6 +202,14 @@ export function MissionProvider({ children }: { children: ReactNode }) {
     assertPhase("challenge");
   }, [conceptCardsSeen, assertPhase]);
 
+  const fastTrackChallenge = useCallback(() => {
+    setConceptCardsSeen(3); // satisfies the MIN_CONCEPT_CARDS_BEFORE_CHALLENGE gate in code
+    setChallengeResults(null);
+    setWrongAnswers([]);
+    setPhase("challenge");
+    assertPhase("challenge");
+  }, [assertPhase]);
+
   const finishChallenge = useCallback(
     (results: ChallengeResults, wrong: WrongAnswerRecord[]) => {
       setChallengeResults(results);
@@ -293,6 +302,7 @@ export function MissionProvider({ children }: { children: ReactNode }) {
       completeCards,
       continueLearning,
       startChallengeMode,
+      fastTrackChallenge,
       finishChallenge,
       startReviewMistakes,
       retrySimilar,
@@ -317,6 +327,7 @@ export function MissionProvider({ children }: { children: ReactNode }) {
       completeCards,
       continueLearning,
       startChallengeMode,
+      fastTrackChallenge,
       finishChallenge,
       startReviewMistakes,
       retrySimilar,

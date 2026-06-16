@@ -1,0 +1,292 @@
+[
+  {
+    "id": "geo_y8_051",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Ecosystem Basics",
+    "skill": "Define ecosystem",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "What is an ecosystem?",
+    "options": [],
+    "correctAnswer": "A community of living organisms interacting with each other and their environment",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: A community of living organisms interacting with each other and their environment.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "ecosystem_basics"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_052",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Food Chains",
+    "skill": "Producers",
+    "difficulty": 1,
+    "questionType": "multiple_choice",
+    "question": "What is a producer in a food chain?",
+    "options": [
+      "An animal that eats plants",
+      "An organism that makes its own food",
+      "A top predator",
+      "A decomposer"
+    ],
+    "correctAnswer": "An organism that makes its own food, usually a plant",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: An organism that makes its own food, usually a plant.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "food_chains"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_053",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Food Chains",
+    "skill": "Consumers",
+    "difficulty": 1,
+    "questionType": "short_answer",
+    "question": "What is a consumer?",
+    "options": [],
+    "correctAnswer": "An organism that gets energy by eating other organisms",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: An organism that gets energy by eating other organisms.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "food_chains"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_054",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Rainforests",
+    "skill": "Rainforest climate",
+    "difficulty": 2,
+    "questionType": "multiple_choice",
+    "question": "What is the climate of tropical rainforests usually like?",
+    "options": [
+      "Cold and dry",
+      "Hot and wet all year",
+      "Cold and wet",
+      "Hot and dry all year"
+    ],
+    "correctAnswer": "Hot and wet all year",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Hot and wet all year.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "rainforests"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_055",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Rainforests",
+    "skill": "Biodiversity",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "Why do tropical rainforests have high biodiversity?",
+    "options": [],
+    "correctAnswer": "Warm, wet conditions support many different plants and animals",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Warm, wet conditions support many different plants and animals.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "rainforests"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_056",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Deforestation",
+    "skill": "Causes",
+    "difficulty": 2,
+    "questionType": "short_answer",
+    "question": "Name one cause of deforestation.",
+    "options": [],
+    "correctAnswer": "Farming, logging, mining or road building",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Farming, logging, mining or road building.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "deforestation"
+    ],
+    "estimatedTimeSeconds": 45,
+    "xp": 5
+  },
+  {
+    "id": "geo_y8_057",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Deforestation",
+    "skill": "Impacts",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "Name one environmental impact of deforestation.",
+    "options": [],
+    "correctAnswer": "Habitat loss, species extinction, soil erosion or increased carbon dioxide",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Habitat loss, species extinction, soil erosion or increased carbon dioxide.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "deforestation"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_058",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Sustainability",
+    "skill": "Sustainable management",
+    "difficulty": 3,
+    "questionType": "short_answer",
+    "question": "What does sustainable management mean?",
+    "options": [],
+    "correctAnswer": "Using resources in a way that protects them for the future",
+    "marks": 1,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Using resources in a way that protects them for the future.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "sustainability"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 10
+  },
+  {
+    "id": "geo_y8_059",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Adaptations",
+    "skill": "Plant adaptations",
+    "difficulty": 4,
+    "questionType": "short_answer",
+    "question": "Explain why rainforest plants often have drip-tip leaves.",
+    "options": [],
+    "correctAnswer": "They help water run off quickly, reducing damage and fungal growth",
+    "marks": 2,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: They help water run off quickly, reducing damage and fungal growth.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "adaptations"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 15
+  },
+  {
+    "id": "geo_y8_060",
+    "subject": "Geography",
+    "yearGroups": [
+      8
+    ],
+    "keyStage": "KS3",
+    "topic": "Ecosystems",
+    "subtopic": "Human Impacts",
+    "skill": "Evaluate deforestation",
+    "difficulty": 4,
+    "questionType": "short_answer",
+    "question": "Give one economic benefit and one environmental cost of deforestation.",
+    "options": [],
+    "correctAnswer": "Benefit: jobs or farmland. Cost: habitat loss, biodiversity loss or increased carbon dioxide",
+    "marks": 2,
+    "misconception": "May confuse related geography terms or processes.",
+    "hint": "Think about the key geography word in the question.",
+    "explanation": "The correct answer is: Benefit: jobs or farmland. Cost: habitat loss, biodiversity loss or increased carbon dioxide.",
+    "tags": [
+      "geography",
+      "year_8",
+      "ecosystems",
+      "human_impacts"
+    ],
+    "estimatedTimeSeconds": 75,
+    "xp": 15
+  }
+]

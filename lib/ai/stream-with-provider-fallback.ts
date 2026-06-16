@@ -17,6 +17,8 @@ const REASONS = [
   "parent_report",
   "summary",
   "fallback_quota",
+  "hint",
+  "explanation",
 ] as const;
 
 export type AiCallReason = (typeof REASONS)[number];
