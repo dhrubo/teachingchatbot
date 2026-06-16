@@ -242,7 +242,7 @@ export function SaraDashboard() {
         {/* ---- Dynamic Subject Tabs ---- */}
         <section>
           {/* Subject tab bar — horizontal on desktop, scrollable pills on mobile */}
-          <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none md:overflow-x-visible md:border-b md:border-white/5">
+          <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar md:overflow-x-visible md:border-b md:border-white/5">
             {subjects.length === 0 && (
               <p className="text-xs text-muted-foreground py-2">No subjects available yet</p>
             )}
