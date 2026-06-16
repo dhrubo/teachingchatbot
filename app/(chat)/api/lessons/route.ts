@@ -1,30 +1,68 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/app/(auth)/auth";
 import { conceptCard, lesson, mission } from "@/lib/db/schema";
+
+function subjectTitle(slug: string): string {
+  const titles: Record<string, string> = {
+    maths: "Maths",
+    science: "Science",
+    geography: "Geography",
+    english: "English",
+  };
+  return titles[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
+}
 
 // GET /api/lessons?year=8          → list missions
 // GET /api/lessons?mission=X       → list lessons for a mission
 // GET /api/lessons?lesson=Y        → get lesson + concept cards + randomized questions
+// GET /api/lessons?subjects=true   → list distinct subjects with their year groups
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
   const { searchParams } = new URL(req.url);
   const yearParam = searchParams.get("year");
+  const subjectParam = searchParams.get("subject") || "maths";
   const missionSlug = searchParams.get("mission");
   const lessonSlug = searchParams.get("lesson");
 
   try {
+    // GET /api/lessons?subjects=true → list distinct subjects with their year groups
+    if (searchParams.get("subjects") === "true") {
+      const rows = await db
+        .select({ subject: mission.subject, yearGroup: mission.yearGroup })
+        .from(mission)
+        .where(eq(mission.isActive, true))
+        .groupBy(mission.subject, mission.yearGroup)
+        .orderBy(asc(mission.subject));
+
+      const subjectMap = new Map<string, { slug: string; title: string; yearGroups: number[] }>();
+      for (const row of rows) {
+        if (!subjectMap.has(row.subject)) {
+          subjectMap.set(row.subject, {
+            slug: row.subject,
+            title: subjectTitle(row.subject),
+            yearGroups: [],
+          });
+        }
+        subjectMap.get(row.subject)!.yearGroups.push(row.yearGroup);
+      }
+
+      return NextResponse.json({ subjects: Array.from(subjectMap.values()) });
+    }
+
+
     // List missions for a year group
     if (yearParam) {
       const year = Number.parseInt(yearParam, 10);
       const missions = await db
         .select()
         .from(mission)
-        .where(and(eq(mission.yearGroup, year), eq(mission.isActive, true)))
+        .where(
+          and(
+            eq(mission.yearGroup, year),
+            eq(mission.subject, subjectParam),
+            eq(mission.isActive, true)
+          )
+        )
         .orderBy(asc(mission.order));
 
       return NextResponse.json({ missions });
