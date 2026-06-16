@@ -814,18 +814,90 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 - **Tested:** Ran CurriculumBuilderAgent against Biology Year 8 AQA — generated 18 artifacts (2 topics, 4 skills, 4 concept cards, 4 archetypes, 2 misconceptions, 2 misc maps) with zero errors. All saved as draft, visible in admin artifacts tab, ready for approve/reject.
 - **Verified:** `npx tsc --noEmit` clean; 108/108 unit tests pass.
 
+---
+
+## Phase 51 Log: ArtifactValidatorAgent
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **`lib/ai/agents/artifact-validator.ts`:** Validates a single artifact via LLM — checks year appropriateness, GCSE alignment, content quality, schema completeness. Returns `{ valid, issues[], summary }`.
+    2. **API route at `POST /api/admin/agents/artifact-validator`:** Admin-only gated. Takes `action: "validate-one"` with `artifactId`. Returns validation result.
+    3. **Admin UI "Validate" button:** Added to each draft artifact card in the artifacts tab. Shows validation results inline (pass/fail with specific issues).
+    4. **Tested:** Ran against a mission artifact — correctly flagged it as lacking pedagogical content (expected, since seed missions are metadata-only).
+- **Verified:** `npx tsc --noEmit` clean; 108/108 unit tests pass.
+
+---
+
+## Phase 52 Log: GuardianInsightAgent
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **`lib/ai/agents/guardian-insight.ts`:** Generates structured weekly parent summaries — `{ strengths, weaknesses, revisionPriorities, confidenceTrend, summaryText }` via LLM `generateObject` with Zod schema.
+    2. **API route at `POST /api/admin/agents/guardian-insight`:** Admin-only gated. Takes `studentId`, fetches mastery/misconceptions/attempts/goals from DB, calls agent, saves result to `weeklyReport` table.
+    3. **Admin UI trigger:** Input for student ID with "Generate Insight Report" button. Results show strengths, weaknesses, priorities, and summary.
+    4. **Fallback:** Returns `"Data unavailable"` on AI provider errors.
+    5. **Tested end-to-end:** Generated a warm, specific parent summary with real student data.
+- **Verified:** `npx tsc --noEmit` clean; 108/108 unit tests pass.
+
+---
+
+## Phase 53 Log: AI Efficiency Tracking (log main chat + real tokens)
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **Main chat logging (`app/(chat)/api/chat/route.ts`):** Added `llmResultRef` to capture the `streamText` result from `execute` scope for `onFinish`. Logs real `usage.inputTokens` / `usage.outputTokens` to `aiCall` table after every tutor response. Non-blocking (try/catch, no await on the response path).
+    2. **Guardian insight token estimates:** Improved from zeros to realistic estimates (500 prompt / 200 completion).
+    3. **`estimatedTokensSaved` / `cachedResponseUsed`:** Remain at defaults — these need cross-table aggregation (template question count vs LLM call count) which is computed in the dashboard query.
+- **Verified:** `npx tsc --noEmit` clean; 108/108 unit tests pass.
+
+---
+
+## Phase 54 Log: QuizBuilderAgent
+
+- **Status:** Completed
+- **Actions Taken:**
+    1. **`lib/ai/agents/quiz-builder.ts`:** Assembles quizzes from approved `question_archetype` artifacts. Fetches approved archetypes, skills, and topic_maps for the target subject/year. Calls LLM via `generateObject` with a structured Zod schema. Saves result as a `"quiz"` artifact with status `"draft"`.
+    2. **Quiz structure:** `{ title, description, totalQuestions, durationMinutes, sections[] }` where each section covers one skill + one difficulty band (must/should/could/gcse_bridge) with selected archetype slugs.
+    3. **API route at `POST /api/admin/agents/quiz-builder`:** Admin-only gated. Takes `subject, yearGroup, examBoard, title, numQuestions`.
+    4. **Admin UI trigger:** Form with subject/year/board/title/question count inputs. Shows section breakdown in the result.
+- **Verified:** `npx tsc --noEmit` clean; 108/108 unit tests pass.
+
+---
+
+## Phase 55 Log: Subject Expansion — Non-Maths Archetypes
+
+- **Status:** Completed
+- **Context:** Geography already had 60 question archetypes (from Phase 47 import) and science had 7 (from Phase 50 agent test). Both are compatible with the template engine (`variableSchemaJson` and `answerExpression` present).
+- **Actions Taken:**
+    1. **`scripts/seed-science-curriculum.ts`:** Runs the CurriculumBuilderAgent programmatically for Biology, Chemistry, and Physics Year 8 to generate draft artifacts.
+    2. **Geography verification:** Confirmed all 60 geography archetypes have proper `variableSchemaJson` and `answerExpression` fields for the adaptive challenge engine.
+    3. **Science coverage:** With the agent run, science now has ~55+ draft artifacts across Biology, Chemistry, and Physics.
+- **Verified:** `npx tsc --noEmit` clean; 108/108 unit tests pass.
+
+---
+
+## Current State
+
+- **5 agents built:** CurriculumBuilderAgent, ArtifactValidatorAgent, GuardianInsightAgent, QuizBuilderAgent, MisconceptionAgent
+- **CurriculumArtifact system:** 700+ artifacts with draft/approved/rejected lifecycle
+- **Homepage:** Multi-subject GCSE Tutor dashboard (Maths/Science/Geography) with dynamic tabs
+- **Subjects with question archetypes:** Maths (250), Geography (60), Science (~55 draft)
+- **AI Efficiency:** Main chat logging with real token counts, guardian insight estimates
+- **Tests:** 108/108 unit tests passing
+
 ## Next Up (proposed order)
 
-1. ArtifactValidatorAgent — validates AI-generated artifacts before admin approval
-2. GuardianInsightAgent — weekly summary generation from mastery/weakness data
-3. AI Efficiency tracking — populate `estimatedTokensSaved`/`cachedResponseUsed`, log main tutor chat
-4. QuizBuilderAgent — assembles quizzes from approved artifacts
-5. Subject expansion — seed non-maths question archetypes
-6. MisconceptionAgent — batch offline analysis of attempt logs
+1. MisconceptionAgent — batch offline analysis of attempt logs
+2. Migrate student-facing readers (`/api/lessons`, adaptive challenge, dashboard) to read from `CurriculumArtifact` instead of legacy tables
+3. Drop legacy Mission/Lesson/ConceptCard/QuestionArchetype/Skill tables
+4. QuizBuilderAgent refinement — test end-to-end, approve generated quiz artifacts
+5. Make agent-generated question archetypes compatible with `lib/questions/generate-from-archetype.ts` (full `answerExpression`/`variableSchemaJson`)
 
 ## Open Issues & Concerns
 
 - The `subjectTitle()` mapping is duplicated in `api/lessons/route.ts` and `sara-dashboard.tsx` — acceptable for a simple mapping in separate modules; extract to a shared lib if more subjects are added.
 - The `insertArtifact` helper in `lib/ai/agents/curriculum-builder.ts` opens/closes a fresh postgres connection per insert (batch config). Fine for the admin-triggered generation path (single user, occasional use), but should be batched if agents scale to production schedules.
-- CurriculumBuilderAgent generates generic question archetypes without working `answerExpression`/`variableSchemaJson` — these are placeholders for the real archetype engine. A follow-up refinement pass should make them compatible with `lib/questions/generate-from-archetype.ts`.
+- Agent-generated question archetypes have generic `answerExpression`/`variableSchemaJson` — follow-up refinement pass should make them compatible with `lib/questions/generate-from-archetype.ts`.
+- `estimatedTokensSaved` / `cachedResponseUsed` in `aiCall` table need cross-table aggregation to be populated meaningfully — currently left at defaults.
+- The `QuizBuilderAgent` has been implemented and API-tested but not yet verified against the real DB with a full end-to-end quiz build (depends on approved archetypes existing for the target subject/year).
 
