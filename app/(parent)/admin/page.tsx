@@ -1434,6 +1434,19 @@ function ArtifactManager() {
     report: { summaryText: string; startOfWeek: string; endOfWeek: string };
     insight: { strengths: string[]; weaknesses: string[]; revisionPriorities: string[]; confidenceTrend: string };
   } | null>(null);
+  const [quizForm, setQuizForm] = useState({
+    subject: "",
+    yearGroup: "8",
+    examBoard: "AQA",
+    title: "",
+    numQuestions: "10",
+  });
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  const [quizResult, setQuizResult] = useState<{
+    quiz: { title: string; description: string; totalQuestions: number; durationMinutes: number; sections: { skillSlug: string; skillName: string; difficultyBand: string; questionCount: number }[] } | null;
+    artifacts: number;
+    errors: string[];
+  } | null>(null);
 
   const fetchArtifacts = useCallback(async () => {
     setLoading(true);
@@ -1674,6 +1687,140 @@ function ArtifactManager() {
               <span>🎯 Weak: {insightResult.insight.weaknesses.join(", ")}</span>
               <span>📋 Priority: {insightResult.insight.revisionPriorities.join(", ")}</span>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Quiz Builder Agent */}
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+        <p className="text-sm font-bold text-foreground">📝 Quiz Builder Agent</p>
+        <p className="text-[10px] text-muted-foreground">
+          Assemble a quiz from approved question archetypes. Selects questions by skill and difficulty, creates a draft
+          quiz artifact.
+        </p>
+        <div className="flex gap-3 flex-wrap items-end">
+          <div>
+            <label className="block text-[10px] font-semibold text-muted-foreground mb-1">Subject</label>
+            <input
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs w-24"
+              placeholder="Maths"
+              value={quizForm.subject}
+              onChange={(e) => setQuizForm((f) => ({ ...f, subject: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-muted-foreground mb-1">Year</label>
+            <select
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs"
+              value={quizForm.yearGroup}
+              onChange={(e) => setQuizForm((f) => ({ ...f, yearGroup: e.target.value }))}
+            >
+              <option value="8">Year 8</option>
+              <option value="9">Year 9</option>
+              <option value="10">Year 10</option>
+              <option value="11">Year 11</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-muted-foreground mb-1">Board</label>
+            <input
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs w-16"
+              placeholder="AQA"
+              value={quizForm.examBoard}
+              onChange={(e) => setQuizForm((f) => ({ ...f, examBoard: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-muted-foreground mb-1">Title</label>
+            <input
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs w-40"
+              placeholder="e.g. Algebra Basics Quiz"
+              value={quizForm.title}
+              onChange={(e) => setQuizForm((f) => ({ ...f, title: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-muted-foreground mb-1">Questions</label>
+            <input
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs w-12"
+              type="number"
+              min={1}
+              max={50}
+              value={quizForm.numQuestions}
+              onChange={(e) => setQuizForm((f) => ({ ...f, numQuestions: e.target.value }))}
+            />
+          </div>
+          <button
+            className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-1.5 text-xs font-extrabold text-white shadow-lg shadow-amber-500/15 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+            onClick={async () => {
+              if (!quizForm.subject) {
+                setActionMsg("Please enter a subject");
+                return;
+              }
+              setGeneratingQuiz(true);
+              setQuizResult(null);
+              setActionMsg("Building quiz...");
+              try {
+                const res = await fetch("/api/admin/agents/quiz-builder", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(quizForm),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                  setActionMsg(`Error: ${data.error}`);
+                } else if (data.errors?.length > 0) {
+                  setQuizResult(data);
+                  setActionMsg(`Quiz built with ${data.errors.length} warnings`);
+                } else {
+                  setQuizResult(data);
+                  setActionMsg(
+                    `✅ Quiz "${data.quiz.title}" created (${data.quiz.totalQuestions} questions, ${data.quiz.sections.length} sections)`
+                  );
+                }
+              } catch (err) {
+                setActionMsg(`Error: ${(err as Error).message}`);
+              } finally {
+                setGeneratingQuiz(false);
+              }
+            }}
+            disabled={generatingQuiz}
+            type="button"
+          >
+            {generatingQuiz ? "Building..." : "Build Quiz"}
+          </button>
+        </div>
+        {quizResult && (
+          <div className="space-y-2 text-xs">
+            {quizResult.errors.length > 0 && (
+              <div className="text-red-400 space-y-1">
+                {quizResult.errors.map((e, i) => (
+                  <p key={i}>⚠ {e}</p>
+                ))}
+              </div>
+            )}
+            {quizResult.quiz && (
+              <div className="space-y-1">
+                <p className="text-amber-400 font-semibold">
+                  ✅ {quizResult.quiz.title}
+                </p>
+                <p className="text-muted-foreground">{quizResult.quiz.description}</p>
+                <p className="text-muted-foreground">
+                  {quizResult.quiz.totalQuestions} questions · {quizResult.quiz.durationMinutes} min ·{" "}
+                  {quizResult.quiz.sections.length} sections
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {quizResult.quiz.sections.map((s, i) => (
+                    <span
+                      key={i}
+                      className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-400"
+                    >
+                      {s.skillName} ({s.difficultyBand}) ×{s.questionCount}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
