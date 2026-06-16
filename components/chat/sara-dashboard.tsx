@@ -2,14 +2,14 @@
 
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { PlayerStats } from "@/components/brand/player-stats";
-import { SaraMascot } from "@/components/brand/sara-mascot";
 import { MissionMap } from "@/components/chat/mission-map";
 import { TopicPasteBox } from "@/components/chat/topic-paste-box";
 import { useActiveChat } from "@/hooks/use-active-chat";
 import { useStartTopic } from "@/hooks/use-start-topic";
+import { useMission } from "@/components/chat/mission-orchestrator";
 import { pickGuestMission } from "@/lib/ai/guest-mission";
 import { getMissionsByYear, type MissionDefinition } from "@/lib/ai/missions";
 import { guestRegex } from "@/lib/constants";
@@ -54,20 +54,62 @@ const TOPIC_EMOJIS: Record<string, string> = {
   "indices-standard-form": "🔢",
 };
 
+const SUBJECT_EMOJIS: Record<string, string> = {
+  maths: "📐",
+  science: "🧪",
+  geography: "🌍",
+  english: "📖",
+};
+
+const SUBJECT_TITLES: Record<string, string> = {
+  maths: "Maths",
+  science: "Science",
+  geography: "Geography",
+  english: "English",
+};
+
+function subjectTitle(slug: string): string {
+  return SUBJECT_TITLES[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
+}
+
 export function SaraDashboard() {
   const { xpStreak, topicProgress, completedTopics } = useActiveChat();
   const startTopic = useStartTopic();
+  const { fastTrackChallenge } = useMission();
   const { data, status } = useSession();
   const isGuest = guestRegex.test(data?.user?.email ?? "");
   const isLoggedIn = status === "authenticated" && !isGuest;
 
   const [year, setYear] = useState<"8" | "9">("8");
+  const [subject, setSubject] = useState<string>("maths");
 
-  const { data: apiData } = useSWR(
-    `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/lessons?year=${year}`,
+  const { data: apiData, error: apiError } = useSWR(
+    `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/lessons?year=${year}&subject=${subject}`,
+    fetcher,
+    { revalidateOnFocus: false, keepPreviousData: true }
+  );
+
+  const { data: subjectsData } = useSWR(
+    `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/lessons?subjects=true`,
     fetcher,
     { revalidateOnFocus: false }
   );
+
+  const subjects: { slug: string; title: string; yearGroups: number[] }[] =
+    useMemo(() => subjectsData?.subjects ?? [], [subjectsData]);
+
+  const yearNum = Number(year);
+  const activeSubjectYearGroups = useMemo(
+    () => subjects.find((s) => s.slug === subject)?.yearGroups ?? [8],
+    [subjects, subject]
+  );
+
+  // Reset year to first available if current year isn't available for this subject
+  useEffect(() => {
+    if (activeSubjectYearGroups.length > 0 && !activeSubjectYearGroups.includes(yearNum)) {
+      setYear(String(activeSubjectYearGroups[0]) as "8" | "9");
+    }
+  }, [subject, activeSubjectYearGroups, yearNum]);
 
   const missions = useMemo(() => {
     if (apiData?.missions?.length) {
@@ -136,6 +178,11 @@ export function SaraDashboard() {
     startTopic({ id: mission.id, title: mission.title, emoji: mission.emoji });
   }
 
+  async function startMissionDirectQuiz(mission: any) {
+    await startTopic({ id: mission.id, title: mission.title, emoji: mission.emoji });
+    fastTrackChallenge();
+  }
+
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <motion.div
@@ -152,97 +199,35 @@ export function SaraDashboard() {
         </section>
 
         {/* ---- Hero Row ---- */}
-        <section className="relative flex flex-col md:flex-row items-center justify-between py-6 gap-6">
-          <div className="flex-1 text-left">
-            <h1 className="text-3xl font-black tracking-tight sm:text-5xl leading-tight">
-              Learn Maths{" "}
-              <span className="glowing-sunset font-black block mt-1">
-                Without Feeling Stuck
-              </span>
-            </h1>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground/90 font-medium max-w-md">
-              SARA is your AI maths coach — tiny visual lessons, one challenge at
-              a time, and progress that actually sticks.
-            </p>
-          </div>
-          <div className="shrink-0">
-            <SaraMascot animated mood="happy" size={130} />
-          </div>
+        <section className="text-center py-4">
+          <h1 className="text-2xl font-black tracking-tight sm:text-4xl leading-tight">
+            Your GCSE{" "}
+            <span className="bg-gradient-to-r from-orange-400 via-violet-400 to-emerald-400 bg-clip-text text-transparent font-black">
+              Tutor & Quiz Master
+            </span>
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground/90 font-medium max-w-lg mx-auto">
+            SARA adapts to your syllabus — every subject, one lesson at a time.
+          </p>
         </section>
 
-        {/* ---- Card Selection Grid ---- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Column 1: Paste-A-Topic */}
-          <div className="sara-glass-panel hover-sara-glass-panel rounded-2xl p-6 flex flex-col justify-between">
-            <div>
-              <h2 className="text-base font-bold text-foreground">
-                What do you want to learn?
-              </h2>
-              <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                Pick a topic from <strong className="text-foreground">Choose a Topic</strong> at the top — or paste your school syllabus topics below to auto-match.
-              </p>
-            </div>
-            <div className="mt-4">
-              <TopicPasteBox />
-            </div>
-          </div>
+        {/* ---- Full-width Search Box ---- */}
+        <section className="w-full">
+          <TopicPasteBox />
+        </section>
 
-          {/* Column 2: What is SARA? & Level toggler */}
-          <div className="sara-glass-panel hover-sara-glass-panel rounded-2xl p-6 flex flex-col justify-between gap-6">
-            <div>
-              <h2 className="text-base font-bold text-foreground bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
-                What is SARA?
-              </h2>
-              <ul className="mt-4 space-y-2 text-xs text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <span>📖</span>
-                  <span>Short visual lessons — one concept at a time</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span>🎯</span>
-                  <span>Concept cards — reference whenever you need</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span>⚡</span>
-                  <span>Challenge mode — gamified lessons with local grading</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span>📊</span>
-                  <span>Progress tracking — GCSE alignment and analytics</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="flex items-center justify-start border-t border-white/5 pt-4">
-              <div className="flex gap-1 rounded-full border border-white/5 bg-white/5 p-1 backdrop-blur-md">
-                <button
-                  className={cn(
-                    "rounded-full px-5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all duration-300",
-                    year === "8"
-                      ? "bg-gradient-to-r from-orange-500 to-violet-600 text-white shadow-md shadow-orange-500/20 scale-105"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                  )}
-                  onClick={() => setYear("8")}
-                  type="button"
-                >
-                  Year 8
-                </button>
-                <button
-                  className={cn(
-                    "rounded-full px-5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all duration-300",
-                    year === "9"
-                      ? "bg-gradient-to-r from-orange-500 to-violet-600 text-white shadow-md shadow-orange-500/20 scale-105"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                  )}
-                  onClick={() => setYear("9")}
-                  type="button"
-                >
-                  Year 9
-                </button>
-              </div>
-            </div>
+        {/* ---- What is SARA? (full width, underneath search) ---- */}
+        <section className="rounded-2xl border border-white/5 bg-white/[0.02] p-5 text-center backdrop-blur-md">
+          <h2 className="text-sm font-bold bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
+            What is SARA?
+          </h2>
+          <div className="mt-3 flex flex-wrap justify-center gap-x-8 gap-y-2 text-xs text-muted-foreground">
+            <span>📖 Short visual lessons</span>
+            <span>🎯 Concept cards</span>
+            <span>⚡ Quiz challenges</span>
+            <span>📊 Progress tracking</span>
           </div>
-        </div>
+        </section>
 
         {/* ---- PlayerStats (logged-in only) ---- */}
         {isLoggedIn && hasProgressData && stats && (
@@ -254,64 +239,193 @@ export function SaraDashboard() {
           />
         )}
 
-        {/* ---- Today's Mission ---- */}
-        {todayMission && (
-          <section>
-            <h2 className="mb-4 text-xs font-extrabold text-foreground/40 tracking-wider uppercase">
-              Today&apos;s Mission
-            </h2>
-            <div className="group relative flex w-full flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl border border-orange-500/20 bg-indigo-950/25 p-5 text-left backdrop-blur-md transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:translate-y-[-2px]">
-              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/20 to-violet-500/20 text-2xl shadow-inner">
-                {todayMission.emoji}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate text-sm font-bold text-foreground">
-                    {todayMission.title}
-                  </h3>
-                  <span className="shrink-0 text-[10px] font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full">
-                    DAILY
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                  {todayMission.description}
-                </p>
-                <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider">
-                  <span>⏱ ~{todayMission.estimatedMinutes} min</span>
-                  <span>•</span>
-                  <span>{todayMission.gcseDomain?.replace(/_/g, " ") || "GCSE Maths"}</span>
-                </div>
-              </div>
+        {/* ---- Dynamic Subject Tabs ---- */}
+        <section>
+          {/* Subject tab bar — horizontal on desktop, scrollable pills on mobile */}
+          <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none md:overflow-x-visible md:border-b md:border-white/5">
+            {subjects.length === 0 && (
+              <p className="text-xs text-muted-foreground py-2">No subjects available yet</p>
+            )}
+            {subjects.map((s) => (
               <button
-                className="w-full sm:w-auto shrink-0 rounded-full bg-gradient-to-r from-orange-500 to-violet-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:scale-[1.05] hover:shadow-orange-500/40 active:scale-[0.95]"
-                onClick={() => startMission(todayMission)}
+                key={s.slug}
+                className={cn(
+                  "whitespace-nowrap rounded-full md:rounded-none md:rounded-t-lg px-4 py-2 text-xs font-bold transition-all duration-200 shrink-0",
+                  subject === s.slug
+                    ? "bg-orange-500/15 text-orange-400 md:bg-transparent md:text-orange-400 md:border-b-2 md:border-orange-500"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5 md:hover:bg-transparent"
+                )}
+                onClick={() => setSubject(s.slug)}
                 type="button"
               >
-                {continueMission ? "Continue →" : "Start →"}
+                <span className="mr-1.5">{SUBJECT_EMOJIS[s.slug] ?? "📖"}</span>
+                GCSE {s.title}
               </button>
-            </div>
-          </section>
-        )}
-
-        <div className="my-2 h-px bg-white/5" />
-
-        {/* ---- Mission Map ---- */}
-        <section>
-          <h2 className="mb-4 text-xs font-extrabold text-foreground/40 tracking-wider uppercase">
-            YOUR LEARNING JOURNEY
-          </h2>
-          <div className="sara-glass-panel rounded-2xl p-6 relative overflow-hidden">
-            <div className="absolute -left-16 -top-16 size-32 rounded-full bg-orange-500/5 blur-3xl pointer-events-none" />
-            <div className="absolute -right-16 -bottom-16 size-32 rounded-full bg-violet-500/5 blur-3xl pointer-events-none" />
-
-            <MissionMap
-              completedMissions={completedMissionIds}
-              currentMissionId={currentMissionId}
-              onSelect={(mission) => startMission(mission)}
-              year={year}
-            />
+            ))}
           </div>
+
+          {/* Year toggle — only shows years available for this subject */}
+          {activeSubjectYearGroups.length > 1 && (
+            <div className="flex gap-1.5 mt-3 mb-4">
+              {activeSubjectYearGroups.map((y) => (
+                <button
+                  key={y}
+                  className={cn(
+                    "rounded-full px-4 py-1 text-[10px] font-bold uppercase tracking-wider transition-all duration-300",
+                    Number(year) === y
+                      ? "bg-gradient-to-r from-orange-500 to-violet-600 text-white shadow-md shadow-orange-500/20"
+                      : "text-muted-foreground hover:text-foreground border border-white/5 hover:bg-white/5"
+                  )}
+                  onClick={() => setYear(String(y) as "8" | "9")}
+                  type="button"
+                >
+                  Year {y}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Topic grid with Quiz buttons */}
+          {missions.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              {missions.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-4 transition-all duration-200 hover:border-white/10 hover:bg-white/5"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xl shrink-0">{m.emoji}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{m.title}</p>
+                      <p className="text-[10px] text-muted-foreground/60 truncate">
+                        {m.gcseDomain?.replace(/_/g, " ") || "GCSE"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 text-[10px] font-extrabold text-white shadow-lg shadow-violet-500/15 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap"
+                      onClick={() => startMissionDirectQuiz(m)}
+                      type="button"
+                    >
+                      Quiz ⚡
+                    </button>
+                    <button
+                      className="rounded-full bg-gradient-to-r from-orange-500 to-violet-600 px-3 py-1.5 text-[10px] font-extrabold text-white shadow-lg shadow-orange-500/15 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap"
+                      onClick={() => startMission(m)}
+                      type="button"
+                    >
+                      Start →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : apiError ? (
+            <p className="text-xs text-muted-foreground py-8 text-center">
+              Couldn&apos;t load topics. Make sure you&apos;re connected to the internet.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground py-8 text-center">
+              No topics available for {subjectTitle(subject)} Year {year} yet.
+            </p>
+          )}
         </section>
+
+        {/* ---- Active Content ---- */}
+        <>
+          {/* ---- Today's Mission ---- */}
+            {todayMission && (
+              <section>
+                <h2 className="mb-4 text-xs font-extrabold text-foreground/40 tracking-wider uppercase">
+                  Today&apos;s Mission
+                </h2>
+                <div className="group relative flex w-full flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl border border-orange-500/20 bg-indigo-950/25 p-5 text-left backdrop-blur-md transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:translate-y-[-2px]">
+                  <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/20 to-violet-500/20 text-2xl shadow-inner">
+                    {todayMission.emoji}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate text-sm font-bold text-foreground">
+                        {todayMission.title}
+                      </h3>
+                      <span className="shrink-0 text-[10px] font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full">
+                        DAILY
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                      {todayMission.description}
+                    </p>
+                    <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider">
+                      <span>⏱ ~{todayMission.estimatedMinutes} min</span>
+                      <span>•</span>
+                      <span>{todayMission.gcseDomain?.replace(/_/g, " ") || "GCSE Maths"}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 shrink-0">
+                    <button
+                      className="w-full sm:w-auto rounded-full border border-orange-500/30 bg-orange-500/10 px-5 py-2.5 text-xs font-extrabold text-orange-400 hover:text-white hover:bg-orange-500/20 hover:border-orange-500/50 shadow-md shadow-orange-500/5 transition-all duration-300 hover:scale-[1.05] hover:shadow-[0_0_15px_rgba(249,115,22,0.25)] active:scale-[0.95]"
+                      onClick={() => startMissionDirectQuiz(todayMission)}
+                      type="button"
+                    >
+                      ⚡ Fast-Track Quiz
+                    </button>
+                    <button
+                      className="w-full sm:w-auto rounded-full bg-gradient-to-r from-orange-500 to-violet-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:scale-[1.05] hover:shadow-orange-500/40 active:scale-[0.95]"
+                      onClick={() => startMission(todayMission)}
+                      type="button"
+                    >
+                      {continueMission ? "Continue →" : "Start →"}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <div className="my-2 h-px bg-white/5" />
+
+            {/* ---- Fast-Track Challenge Mode Banner ---- */}
+            {todayMission && (
+              <div className="mb-6 rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-950/40 to-indigo-950/40 p-6 text-left relative overflow-hidden shadow-[0_0_30px_rgba(124,58,237,0.15)] backdrop-blur-md transition-all duration-300 hover:border-violet-500/50 hover:shadow-[0_0_40px_rgba(124,58,237,0.3)] hover:-translate-y-0.5">
+                <div className="absolute -right-10 -bottom-10 size-40 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-black tracking-tight text-white flex items-center gap-2">
+                      🏆 Challenge Mode: Year {year} {subjectTitle(subject)}
+                    </h3>
+                    <p className="mt-2 text-xs text-violet-200/80 leading-relaxed max-w-xl font-medium">
+                      Skip the cards and test your secure understanding with a 5-question adaptive quiz immediately! 🚀
+                    </p>
+                  </div>
+                  <button
+                    className="w-full sm:w-auto shrink-0 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-xs font-extrabold text-white shadow-lg shadow-violet-500/20 hover:shadow-violet-500/35 transition-all duration-300 hover:scale-[1.05] active:scale-[0.95]"
+                    onClick={() => startMissionDirectQuiz(todayMission)}
+                    type="button"
+                  >
+                    Take Quiz Now ⚡
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ---- Mission Map ---- */}
+            <section>
+              <h2 className="mb-4 text-xs font-extrabold text-foreground/40 tracking-wider uppercase">
+                YOUR LEARNING JOURNEY
+              </h2>
+              <div className="sara-glass-panel rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute -left-16 -top-16 size-32 rounded-full bg-orange-500/5 blur-3xl pointer-events-none" />
+                <div className="absolute -right-16 -bottom-16 size-32 rounded-full bg-violet-500/5 blur-3xl pointer-events-none" />
+
+                <MissionMap
+                  completedMissions={completedMissionIds}
+                  currentMissionId={currentMissionId}
+                  onSelect={(mission) => startMission(mission)}
+                  year={year}
+                />
+              </div>
+            </section>
+          </>
 
         {/* ---- How It Works ---- */}
         <section>
@@ -335,100 +449,6 @@ export function SaraDashboard() {
                 </p>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* ---- What You'll Learn (curriculum missions list) ---- */}
-        <section>
-          <h2 className="mb-1 text-xs font-extrabold text-foreground/40 tracking-wider uppercase">
-            What You&apos;ll Learn
-          </h2>
-          <p className="mb-4 text-[11px] text-muted-foreground">
-            Year {year} maths, broken into bite-sized topics. Tap any to start.
-          </p>
-          <div className="flex flex-col gap-3">
-            {missions.map((mission) => {
-              const isCompleted = completedMissionIds.includes(mission.id);
-              const isCurrent = mission.id === currentMissionId;
-
-              // Compute score and percentage progress
-              const score = isCurrent && topicProgress ? topicProgress.score : isCompleted ? 5 : 0;
-              const progressPercentage = Math.round((score / 5) * 100);
-
-              return (
-                <button
-                  className={cn(
-                    "group relative flex flex-col gap-3 rounded-2xl border p-4 text-left backdrop-blur-md transition-all duration-300 sara-glass-panel",
-                    isCompleted
-                      ? "border-emerald-500/25 bg-emerald-500/5 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                      : isCurrent
-                        ? "border-orange-500/25 bg-orange-500/5 hover:border-orange-500/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.1)]"
-                        : "border-white/5 bg-white/5 hover:border-white/10 hover:shadow-[0_0_15px_rgba(99,102,241,0.05)]"
-                  )}
-                  key={mission.id}
-                  onClick={() => startMission(mission)}
-                  type="button"
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <span
-                      className={cn(
-                        "flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-lg shadow-inner",
-                        isCompleted
-                          ? "from-emerald-500/20 to-emerald-500/5 text-emerald-400"
-                          : isCurrent
-                            ? "from-orange-500/20 to-orange-500/5 text-orange-400"
-                            : "from-indigo-500/20 to-indigo-500/5 text-indigo-300"
-                      )}
-                    >
-                      {isCompleted ? "✓" : mission.emoji}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={cn(
-                            "text-sm font-bold tracking-tight",
-                            isCompleted
-                              ? "text-emerald-400"
-                              : isCurrent
-                                ? "text-orange-400"
-                                : "text-indigo-200"
-                          )}
-                        >
-                          {mission.title}
-                        </span>
-                        <span className="shrink-0 text-[10px] font-bold text-muted-foreground/60 bg-muted/25 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          {mission.estimatedMinutes} min
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground/80 leading-relaxed max-w-lg">
-                        {mission.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Progress Indicator for curriculum list */}
-                  {(isCompleted || isCurrent) && (
-                    <div className="mt-2 w-full pt-2 border-t border-white/5">
-                      <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/75 mb-1.5 uppercase tracking-wider animate-none">
-                        <span>{isCompleted ? "Completed" : "Active Progress"}</span>
-                        <span>{progressPercentage}%</span>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-indigo-950/40 overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all duration-500",
-                            isCompleted
-                              ? "bg-gradient-to-r from-emerald-500 to-teal-400"
-                              : "bg-gradient-to-r from-orange-500 to-amber-400 shadow-[0_0_8px_rgba(249,115,22,0.3)]"
-                          )}
-                          style={{ width: `${progressPercentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
           </div>
         </section>
 
