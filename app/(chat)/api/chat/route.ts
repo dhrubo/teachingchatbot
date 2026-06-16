@@ -31,6 +31,7 @@ import { askQuestion } from "@/lib/ai/tools/ask-question";
 import { getCurriculumTopics } from "@/lib/ai/tools/get-curriculum-topics";
 import { manageGoals } from "@/lib/ai/tools/manage-goals";
 import { startNewTopicSession } from "@/lib/ai/tools/start-new-topic-session";
+import { logAICall } from "@/lib/db/queries/analytics";
 import { updateStudentProfile } from "@/lib/ai/tools/update-student-profile";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
@@ -319,6 +320,12 @@ export async function POST(request: Request) {
       | "askQuestion"
     )[];
 
+    // Capture the LLM result for token usage logging in onFinish.
+    // The execute callback and onFinish share the same closure scope.
+    let llmResultRef: Awaited<
+      ReturnType<typeof streamTextWithFallback>
+    >["result"] | null = null;
+
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
@@ -380,6 +387,8 @@ export async function POST(request: Request) {
           }
         );
 
+        llmResultRef = llmResult;
+
         dataStream.merge(
           llmResult.toUIMessageStream({ sendReasoning: isReasoningModel })
         );
@@ -439,6 +448,22 @@ export async function POST(request: Request) {
                 chatId: id,
               })),
             });
+          }
+        }
+
+        // Log AI call token usage for efficiency tracking (non-blocking).
+        if (llmResultRef) {
+          try {
+            const usage = await llmResultRef.usage;
+            await logAICall({
+              purpose: "chat",
+              modelUsed: "gemini-3.1-flash-lite",
+              promptTokens: usage.inputTokens ?? 0,
+              completionTokens: usage.outputTokens ?? 0,
+              cachedResponseUsed: false,
+            });
+          } catch {
+            /* non-fatal — logging should never block the response */
           }
         }
       },

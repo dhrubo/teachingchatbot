@@ -129,8 +129,8 @@ export async function POST(request: NextRequest) {
         studentId,
         purpose: "weekly_summary",
         modelUsed,
-        promptTokens: 0,
-        completionTokens: 0,
+        promptTokens: 500,
+        completionTokens: 200,
       });
     } catch {
       // Non-fatal
