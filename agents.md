@@ -798,7 +798,34 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
     4. **Maths-specific copy cleanup:** Meta description changed from "Your AI maths coach for Year 8 & 9" to "Your AI tutor & quiz master for GCSE subjects." Remaining `"GCSE Maths"` fallbacks replaced with `"GCSE"`. AI coach bubble text made subject-agnostic. Challenge Mode banner now uses `subjectTitle(subject)` instead of hardcoded `"Maths"` / `"Science"` ternary.
 - **Verified:** `npx tsc --noEmit` clean; 108/108 unit tests pass; `next build` clean. Commits: `41d7bb1` (rewrite), `86374a3` (scrollbar fix), `e321d47` (copy cleanup).
 
-## Open Issues & Concerns (updated)
+---
+
+## Phase 50 Log: CurriculumArtifact System + CurriculumBuilderAgent
+
+- **Status:** Completed
+- **Context:** The architecture document provides a comprehensive vision of AI-generated curriculum stored as reusable artifacts. Everything depends on a unified artifact storage layer — no agents, no approval flow, no deployment pipeline could exist without it.
+- **Actions Taken:**
+    1. **`CurriculumArtifact` DB table (`lib/db/schema.ts`, migration `0014`):** Polymorphic table storing all generated curriculum assets — `subject`, `yearGroup`, `examBoard`, `topic`, `artifactType` (enum: subject_map/topic_map/mission/lesson/concept_card/skill/question_archetype/quiz/boss_battle/misconception_map), `contentJson` (polymorphic payload), `status` (draft/approved/rejected), `version`, `generatedBy`, `reviewedBy`. Follows existing PascalCase naming and uuid/json patterns.
+    2. **Seed script (`scripts/seed-curriculum-artifacts.ts`):** Idempotently migrates existing data (701 artifacts across Mission/Lesson/ConceptCard/Skill/QuestionArchetype) into `CurriculumArtifact` with status `"approved"`. Wired into `build` and `seed` scripts.
+    3. **Artifact queries (`lib/db/queries/artifacts.ts`):** `listArtifacts` (filtered by subject/year/type/status with pagination), `getArtifactById`, `updateArtifactStatus` (approve/reject/draft), `createArtifact`, `getArtifactsBySubject`, `getArtifactsStats`.
+    4. **Admin artifact API (`POST/GET /api/admin/artifacts`):** Admin-only gated endpoints for listing (with query-param filters) and status updates (approve/reject/draft actions via POST body).
+    5. **Admin "🏺 Curriculum Artifacts" tab (`app/(parent)/admin/page.tsx`):** New `ArtifactManager` component with type/status filters, artifact list with status badges, and approve/reject/reset-to-draft buttons.
+    6. **CurriculumBuilderAgent (`lib/ai/agents/curriculum-builder.ts`):** First agent implementation. Takes `{ subject, yearGroup, examBoard }`, calls LLM via `generateObject` with a structured Zod schema, generates topics (topic_map), skills, concept cards, question archetypes, and misconceptions. Each item saved as a `CurriculumArtifact` with status `"draft"`. Follows existing provider fallback pattern. Admin triggers it via a "🤖 Curriculum Builder Agent" form with Subject/Year/Exam Board inputs in the Artifacts tab. POST endpoint at `/api/admin/agents/curriculum-builder`.
+- **Tested:** Ran CurriculumBuilderAgent against Biology Year 8 AQA — generated 18 artifacts (2 topics, 4 skills, 4 concept cards, 4 archetypes, 2 misconceptions, 2 misc maps) with zero errors. All saved as draft, visible in admin artifacts tab, ready for approve/reject.
+- **Verified:** `npx tsc --noEmit` clean; 108/108 unit tests pass.
+
+## Next Up (proposed order)
+
+1. ArtifactValidatorAgent — validates AI-generated artifacts before admin approval
+2. GuardianInsightAgent — weekly summary generation from mastery/weakness data
+3. AI Efficiency tracking — populate `estimatedTokensSaved`/`cachedResponseUsed`, log main tutor chat
+4. QuizBuilderAgent — assembles quizzes from approved artifacts
+5. Subject expansion — seed non-maths question archetypes
+6. MisconceptionAgent — batch offline analysis of attempt logs
+
+## Open Issues & Concerns
 
 - The `subjectTitle()` mapping is duplicated in `api/lessons/route.ts` and `sara-dashboard.tsx` — acceptable for a simple mapping in separate modules; extract to a shared lib if more subjects are added.
+- The `insertArtifact` helper in `lib/ai/agents/curriculum-builder.ts` opens/closes a fresh postgres connection per insert (batch config). Fine for the admin-triggered generation path (single user, occasional use), but should be batched if agents scale to production schedules.
+- CurriculumBuilderAgent generates generic question archetypes without working `answerExpression`/`variableSchemaJson` — these are placeholders for the real archetype engine. A follow-up refinement pass should make them compatible with `lib/questions/generate-from-archetype.ts`.
 
