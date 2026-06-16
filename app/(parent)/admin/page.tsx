@@ -1428,6 +1428,12 @@ function ArtifactManager() {
   const [validationResults, setValidationResults] = useState<
     Record<string, { valid: boolean; issues: { field: string; severity: string; message: string }[]; summary: string }>
   >({});
+  const [insightForm, setInsightForm] = useState({ studentId: "" });
+  const [generatingInsight, setGeneratingInsight] = useState(false);
+  const [insightResult, setInsightResult] = useState<{
+    report: { summaryText: string; startOfWeek: string; endOfWeek: string };
+    insight: { strengths: string[]; weaknesses: string[]; revisionPriorities: string[]; confidenceTrend: string };
+  } | null>(null);
 
   const fetchArtifacts = useCallback(async () => {
     setLoading(true);
@@ -1596,6 +1602,78 @@ function ArtifactManager() {
             {genResult.errors.map((e, i) => (
               <p key={i}>⚠ {e}</p>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Guardian Insight Agent */}
+      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3">
+        <p className="text-sm font-bold text-foreground">🛡️ Guardian Insight Agent</p>
+        <p className="text-[10px] text-muted-foreground">
+          Generate a weekly parent summary for any student (mastery, weaknesses, revision priorities, confidence trend).
+        </p>
+        <div className="flex gap-3 flex-wrap items-end">
+          <div>
+            <label className="block text-[10px] font-semibold text-muted-foreground mb-1">Student ID</label>
+            <input
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs w-48"
+              placeholder="e.g. stu_abc123"
+              value={insightForm.studentId}
+              onChange={(e) =>
+                setInsightForm((f) => ({ ...f, studentId: e.target.value }))
+              }
+            />
+          </div>
+          <button
+            className="rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-1.5 text-xs font-extrabold text-white shadow-lg shadow-emerald-500/15 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+            onClick={async () => {
+              if (!insightForm.studentId) {
+                setActionMsg("Please enter a student ID");
+                return;
+              }
+              setGeneratingInsight(true);
+              setInsightResult(null);
+              setActionMsg("Generating insight...");
+              try {
+                const res = await fetch(
+                  "/api/admin/agents/guardian-insight",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      studentId: insightForm.studentId,
+                    }),
+                  }
+                );
+                const data = await res.json();
+                if (!res.ok) {
+                  setActionMsg(`Error: ${data.error}`);
+                } else {
+                  setInsightResult(data);
+                  setActionMsg("✅ Insight generated successfully!");
+                  setInsightForm({ studentId: "" });
+                }
+              } catch (err) {
+                setActionMsg(`Error: ${(err as Error).message}`);
+              } finally {
+                setGeneratingInsight(false);
+              }
+            }}
+            disabled={generatingInsight}
+            type="button"
+          >
+            {generatingInsight ? "Generating..." : "Generate Insight Report"}
+          </button>
+        </div>
+        {insightResult && (
+          <div className="space-y-2 text-xs">
+            <p className="text-emerald-400 font-semibold">✅ Insight Generated</p>
+            <p className="text-foreground">{insightResult.report.summaryText}</p>
+            <div className="flex gap-4 flex-wrap text-[10px] text-muted-foreground">
+              <span>💪 Strong: {insightResult.insight.strengths.join(", ")}</span>
+              <span>🎯 Weak: {insightResult.insight.weaknesses.join(", ")}</span>
+              <span>📋 Priority: {insightResult.insight.revisionPriorities.join(", ")}</span>
+            </div>
           </div>
         )}
       </div>
