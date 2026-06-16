@@ -887,11 +887,11 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 
 ## Next Up (proposed order)
 
-1. MisconceptionAgent — batch offline analysis of attempt logs
-2. Migrate student-facing readers (`/api/lessons`, adaptive challenge, dashboard) to read from `CurriculumArtifact` instead of legacy tables
-3. Drop legacy Mission/Lesson/ConceptCard/QuestionArchetype/Skill tables
-4. QuizBuilderAgent refinement — test end-to-end, approve generated quiz artifacts
-5. Make agent-generated question archetypes compatible with `lib/questions/generate-from-archetype.ts` (full `answerExpression`/`variableSchemaJson`)
+1. Migrate student-facing readers (`/api/lessons`, adaptive challenge, dashboard) to read from `CurriculumArtifact` instead of legacy tables
+2. Drop legacy Mission/Lesson/ConceptCard/QuestionArchetype/Skill tables
+3. QuizBuilderAgent refinement — test end-to-end, approve generated quiz artifacts
+4. Make agent-generated question archetypes compatible with `lib/questions/generate-from-archetype.ts` (full `answerExpression`/`variableSchemaJson`)
+5. Migrate the student-facing adaptive challenge engine from `QuestionArchetype` legacy table to `CurriculumArtifact`
 
 ## Open Issues & Concerns
 
