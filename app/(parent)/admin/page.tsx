@@ -1424,6 +1424,10 @@ function ArtifactManager() {
     artifacts: number;
     errors: string[];
   } | null>(null);
+  const [validatingId, setValidatingId] = useState<string | null>(null);
+  const [validationResults, setValidationResults] = useState<
+    Record<string, { valid: boolean; issues: { field: string; severity: string; message: string }[]; summary: string }>
+  >({});
 
   const fetchArtifacts = useCallback(async () => {
     setLoading(true);
@@ -1465,6 +1469,33 @@ function ArtifactManager() {
       fetchArtifacts();
     } catch (err) {
       setActionMsg(`Error: ${(err as Error).message}`);
+    }
+  };
+
+  const validateArtifact = async (id: string) => {
+    setValidatingId(id);
+    try {
+      const res = await fetch("/api/admin/agents/artifact-validator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "validate-one", artifactId: id }),
+      });
+      const data = await res.json();
+      setValidationResults((prev) => ({
+        ...prev,
+        [id]: data.result,
+      }));
+    } catch (err) {
+      setValidationResults((prev) => ({
+        ...prev,
+        [id]: {
+          valid: false,
+          issues: [{ field: "network", severity: "error", message: (err as Error).message }],
+          summary: "Network error",
+        },
+      }));
+    } finally {
+      setValidatingId(null);
     }
   };
 
@@ -1642,8 +1673,37 @@ function ArtifactManager() {
                 </span>
               </div>
 
+              {validationResults[a.id] && (
+                <div
+                  className={`rounded-lg p-2 text-[10px] ${
+                    validationResults[a.id].valid
+                      ? "bg-emerald-500/10 text-emerald-500"
+                      : "bg-amber-500/10 text-amber-600"
+                  }`}
+                >
+                  <p className="font-semibold">{validationResults[a.id].summary}</p>
+                  {validationResults[a.id].issues.length > 0 && (
+                    <ul className="mt-1 space-y-0.5">
+                      {validationResults[a.id].issues.map((issue, i) => (
+                        <li key={i}>
+                          {issue.severity === "error" ? "🔴" : "🟡"} {issue.message}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               {a.status !== "approved" && (
-                <div className="flex gap-2 pt-1">
+                <div className="flex gap-2 pt-1 flex-wrap">
+                  <button
+                    className="rounded-lg bg-cyan-500/15 px-3 py-1 text-[10px] font-bold text-cyan-500 hover:bg-cyan-500/25 transition-colors disabled:opacity-50"
+                    onClick={() => validateArtifact(a.id)}
+                    disabled={validatingId === a.id}
+                    type="button"
+                  >
+                    {validatingId === a.id ? "Validating..." : "Validate"}
+                  </button>
                   <button
                     className="rounded-lg bg-emerald-500/15 px-3 py-1 text-[10px] font-bold text-emerald-500 hover:bg-emerald-500/25 transition-colors"
                     onClick={() => updateStatus(a.id, "approved")}
