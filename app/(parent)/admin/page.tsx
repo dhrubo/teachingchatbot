@@ -1447,6 +1447,13 @@ function ArtifactManager() {
     artifacts: number;
     errors: string[];
   } | null>(null);
+  const [misconceptionForm, setMisconceptionForm] = useState({ days: "30", minWrong: "3" });
+  const [analyzingMisconceptions, setAnalyzingMisconceptions] = useState(false);
+  const [misconceptionResult, setMisconceptionResult] = useState<{
+    analyses: { skillSlug: string; skillLabel: string; commonMisconceptions: { misconception: string; frequency: number; example: string }[]; summary: string }[];
+    totalWrong: number;
+    errors: string[];
+  } | null>(null);
 
   const fetchArtifacts = useCallback(async () => {
     setLoading(true);
@@ -1821,6 +1828,111 @@ function ArtifactManager() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Misconception Agent */}
+      <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 space-y-3">
+        <p className="text-sm font-bold text-foreground">🔍 Misconception Agent</p>
+        <p className="text-[10px] text-muted-foreground">
+          Batch analysis of wrong-answer logs. Identifies common misconception patterns per skill across all students,
+          saves results as draft misconception_map artifacts.
+        </p>
+        <div className="flex gap-3 flex-wrap items-end">
+          <div>
+            <label className="block text-[10px] font-semibold text-muted-foreground mb-1">Lookback (days)</label>
+            <input
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs w-14"
+              type="number"
+              min={1}
+              max={365}
+              value={misconceptionForm.days}
+              onChange={(e) =>
+                setMisconceptionForm((f) => ({ ...f, days: e.target.value }))
+              }
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-muted-foreground mb-1">Min wrong answers</label>
+            <input
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs w-14"
+              type="number"
+              min={1}
+              max={100}
+              value={misconceptionForm.minWrong}
+              onChange={(e) =>
+                setMisconceptionForm((f) => ({ ...f, minWrong: e.target.value }))
+              }
+            />
+          </div>
+          <button
+            className="rounded-lg bg-gradient-to-r from-rose-600 to-pink-600 px-4 py-1.5 text-xs font-extrabold text-white shadow-lg shadow-rose-500/15 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+            onClick={async () => {
+              setAnalyzingMisconceptions(true);
+              setMisconceptionResult(null);
+              setActionMsg("Analyzing misconceptions...");
+              try {
+                const res = await fetch("/api/admin/agents/misconception", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    days: misconceptionForm.days,
+                    minWrongAnswers: misconceptionForm.minWrong,
+                  }),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                  setActionMsg(`Error: ${data.error}`);
+                } else {
+                  setMisconceptionResult(data);
+                  setActionMsg(
+                    `✅ Analyzed ${data.totalWrong} wrong answers across ${data.analyses?.length ?? 0} skills`
+                  );
+                }
+              } catch (err) {
+                setActionMsg(`Error: ${(err as Error).message}`);
+              } finally {
+                setAnalyzingMisconceptions(false);
+              }
+            }}
+            disabled={analyzingMisconceptions}
+            type="button"
+          >
+            {analyzingMisconceptions ? "Analyzing..." : "Run Analysis"}
+          </button>
+        </div>
+        {misconceptionResult && (
+          <div className="space-y-2 text-xs">
+            <p className="text-rose-400 font-semibold">
+              ✅ {misconceptionResult.totalWrong} wrong answers · {misconceptionResult.analyses?.length ?? 0} skills analyzed
+            </p>
+            {misconceptionResult.errors.length > 0 && (
+              <div className="text-red-400 space-y-1">
+                {misconceptionResult.errors.map((e, i) => (
+                  <p key={i}>⚠ {e}</p>
+                ))}
+              </div>
+            )}
+            {misconceptionResult.analyses?.slice(0, 5).map((a, i) => (
+              <div key={i} className="rounded-lg bg-rose-500/5 p-2 space-y-1">
+                <p className="font-semibold text-foreground">
+                  {a.skillLabel || a.skillSlug}
+                </p>
+                <p className="text-muted-foreground">{a.summary}</p>
+                <div className="flex gap-2 flex-wrap">
+                  {a.commonMisconceptions.map((mc, j) => (
+                    <span
+                      key={j}
+                      className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] text-rose-400"
+                      title={mc.example}
+                    >
+                      {mc.misconception} ({mc.frequency}%)
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
