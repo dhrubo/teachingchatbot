@@ -163,6 +163,9 @@ export const studentProfile = pgTable("StudentProfile", {
   examBoard: varchar("examBoard", { length: 32 }).notNull().default("Unspecified"),
   confidenceNotes: text("confidenceNotes"),
   parentReportNotes: text("parentReportNotes"),
+  preferredExplanationStyle: varchar("preferredExplanationStyle", {
+    enum: ["visual", "worked_example", "analogy", "step_by_step", "exam_style"],
+  }),
   lastSessionAt: timestamp("lastSessionAt"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
@@ -485,6 +488,59 @@ export const studentMisconception = pgTable("StudentMisconception", {
 });
 
 export type StudentMisconception = InferSelectModel<typeof studentMisconception>;
+
+// ---- StudentConfidence: tracks self-reported confidence (1-5) per skill ----
+export const studentConfidence = pgTable("StudentConfidence", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  studentId: uuid("studentId")
+    .notNull()
+    .references(() => studentProfile.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull(),
+  topic: text("topic"),
+  skillSlug: text("skillSlug").notNull(),
+  confidence: integer("confidence").notNull(), // 1-5
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export type StudentConfidence = InferSelectModel<typeof studentConfidence>;
+
+// ---- RevisionQueue: spaced repetition queue per skill ----
+export const revisionQueue = pgTable("RevisionQueue", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  studentId: uuid("studentId")
+    .notNull()
+    .references(() => studentProfile.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull().default("maths"),
+  skillSlug: text("skillSlug").notNull(),
+  masteryScore: integer("masteryScore").notNull().default(0),
+  confidence: integer("confidence").notNull().default(3), // 1-5, default neutral
+  intervalDays: integer("intervalDays").notNull().default(1),
+  nextReviewDate: timestamp("nextReviewDate").notNull(),
+  reviewCount: integer("reviewCount").notNull().default(0),
+  lastReviewedAt: timestamp("lastReviewedAt"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type RevisionQueue = InferSelectModel<typeof revisionQueue>;
+
+// ---- StudentWeaknessProfile: richer weakness tracking (why, not just whether) ----
+export const studentWeaknessProfile = pgTable("StudentWeaknessProfile", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  studentId: uuid("studentId")
+    .notNull()
+    .references(() => studentProfile.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull().default("maths"),
+  topic: text("topic"),
+  skillSlug: text("skillSlug").notNull(),
+  misconception: text("misconception").notNull(),
+  frequency: integer("frequency").notNull().default(1),
+  confidence: integer("confidence").notNull().default(3),
+  evidenceJson: json("evidenceJson").$type<Record<string, unknown>>().default({}),
+  lastSeenAt: timestamp("lastSeenAt").notNull().defaultNow(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type StudentWeaknessProfile = InferSelectModel<typeof studentWeaknessProfile>;
 
 export const aiCall = pgTable("AiCall", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),

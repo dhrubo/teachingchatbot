@@ -42,6 +42,7 @@ const SYSTEM_PROMPT = `You are a UK GCSE curriculum validator. Given a curriculu
 2. **GCSE alignment** — Does the content align with the UK GCSE specification?
 3. **Content quality** — Is the teaching content accurate, clear, and age-appropriate?
 4. **Schema completeness** — Does the content have all necessary fields for its artifact type?
+5. **Concept card coverage** — If this is a lesson, topic_map, or concept_card artifact, check that there are at least 6 concept cards. Fewer than 6 means students cannot proceed to Challenge Mode. Add a warning if under 6.
 
 Return valid=true only if ALL checks pass. If any check fails, list specific, actionable issues.`;
 

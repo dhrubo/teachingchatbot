@@ -876,14 +876,58 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 
 ---
 
+## Phase 56 Log: Six-Card Topic Learning Flow
+
+- **Status:** Completed
+- **Context:** Students were being offered Challenge Mode after seeing only 3 concept cards, which didn't provide enough teaching content before the assessment. The requirement was raised to 6 cards shown in batches of 3 with prescribed sequence.
+- **Actions Taken:**
+    1. **`lib/challenge-gate.ts`:** `MIN_CONCEPT_CARDS_BEFORE_CHALLENGE` raised from `3` to `6`. `canStartChallenge` now requires ≥6 cards seen AND an explicit click.
+    2. **`lib/ai/missions.ts`:** `fallbackConceptCards()` expanded from 3 to 6 cards in the prescribed sequence: `big_idea → key_vocabulary → worked_example → common_mistake → exam_context → recap`. `conceptCardsForLesson()` guarantees ≥6 cards.
+    3. **`components/chat/mission-orchestrator.tsx`:** `fastTrackChallenge` now sets `conceptCardsSeen(6)` to satisfy the new threshold.
+    4. **`hooks/use-start-topic.tsx`:** Fallback padding logic simplified to always pad to `MIN_CONCEPT_CARDS_BEFORE_CHALLENGE` (6).
+    5. **`lib/ai/agents/curriculum-builder.ts`:** Agent prompt updated to ask for "6 concept cards per topic" with the specific sequence.
+    6. **`lib/ai/agents/artifact-validator.ts`:** Added check #5: warns on fewer than 6 approved concept cards for lesson/topic_map/concept_card artifacts.
+    7. **`scripts/import-geography.ts`:** Each geography lesson now seeds 6 concept cards (intro, vocabulary, worked example, common mistake, exam-style thinking, recap) instead of 3.
+    8. **`lib/__tests__/missions.test.ts` (new):** 4 tests validating the 6-card fallback sequence — count, order, required fields, unique IDs.
+    9. **`lib/__tests__/challenge-gate.test.ts`:** Updated all threshold tests from 3→6.
+    10. **`lib/__tests__/missions.test.ts`:** Added 4 tests for `fallbackConceptCards` — count (6), prescribed sequence (big_idea→recap), all required fields, unique IDs.
+- **Verified:** `npx tsc --noEmit` clean; `112/112 unit tests pass` (13 files); `pnpm build` clean with 29 routes + Proxy middleware.
+
+---
+
 ## Current State
 
 - **5 agents built:** CurriculumBuilderAgent, ArtifactValidatorAgent, GuardianInsightAgent, QuizBuilderAgent, MisconceptionAgent
-- **CurriculumArtifact system:** 700+ artifacts with draft/approved/rejected lifecycle
+- **CurriculumArtifact system:** 743 artifacts with draft/approved/rejected lifecycle
 - **Homepage:** Multi-subject GCSE Tutor dashboard (Maths/Science/Geography) with dynamic tabs
 - **Subjects with question archetypes:** Maths (250), Geography (60), Science (~55 draft)
 - **AI Efficiency:** Main chat logging with real token counts, guardian insight estimates
-- **Tests:** 108/108 unit tests passing
+- **Challenge gate:** 6 concept cards required before Challenge Mode (up from 3), shown in batches of 3
+- **Tests:** 112/112 unit tests passing
+
+## Phase 56 Log (cont'd): Learning Science Layer
+
+- **Status:** Partially Complete (A: Foundation ✅, B: Core Logic ✅, C: UI ✅, D: Dashboard ✅, E: Batch Analysis ⏳)
+
+### Phase 56C: Concept Card Recall Checkpoints
+- Added mini recall prompts between concept cards in `concept-card-slides.tsx`: after each card, a "🧠 Quick recall check" overlay asks the student to recall the card in their own words before advancing. No grading — purely for memory strengthening. Only the final card skips recall and shows "Continue →" directly.
+- `recallPrompt()` generates a deterministic question from the card title.
+
+### Phase 56D: Today's Retrieval Practice (Student Dashboard)
+- New `GET /api/retrieval-practice` endpoint: returns due reviews, due count, and weak skills for the logged-in student. Gated on authenticated + non-guest.
+- Added "Today's Retrieval Practice" section to `SaraDashboard`: green-emerald banner showing due count + up to 3 skill chips. Only visible to logged-in users with >0 due reviews.
+
+### Phase 56D: Guardian Dashboard Upgrades
+- Added learning science queries to `/api/dashboard`: `reviewsDueCount`, `confidenceStats` (top 5 recent), `revisionQueueItems` (next 10 due).
+- New "🧠 Learning Retention" section in Guardian Dashboard stats grid: reviews due count, average confidence (1-5), recent confidence entries, queued items. Plus an "Upcoming Reviews" list showing skillSlug + due date + interval.
+
+### Phase 56E: Batch Misconception Analysis Trigger ✅
+- Built `lib/learning-science/batch-misconception-analysis.ts` — deterministic batch analyzer that reviews recent wrong answers, groups by (skillSlug, misconceptionTag), detects recurring patterns (≥2 same tag), and upserts into both `StudentMisconception` and `StudentWeaknessProfile` tables. **Zero LLM calls.**
+- Extracted pure helpers: `groupByMisconception()` and `buildEvidence()` with evidence JSON (examples, count, first/last seen).
+- Wired auto-trigger into `recordAnswer()` in `engine.ts` — fire-and-forget `tryBatchAnalysis()` runs after every wrong answer when ≥5 accumulate in 30 days.
+- Built `POST /api/learning-science/misconception-analysis` — student-triggered endpoint (auth + non-guest gated).
+- Added "🔍 Run Analysis" button to Guardian Dashboard's "Aggregated Student Slips" section.
+- Tests: 13 tests for `groupByMisconception` and `buildEvidence`.
 
 ## Next Up (proposed order)
 
@@ -900,4 +944,5 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 - Agent-generated question archetypes have generic `answerExpression`/`variableSchemaJson` — follow-up refinement pass should make them compatible with `lib/questions/generate-from-archetype.ts`.
 - `estimatedTokensSaved` / `cachedResponseUsed` in `aiCall` table need cross-table aggregation to be populated meaningfully — currently left at defaults.
 - The `QuizBuilderAgent` has been implemented and API-tested but not yet verified against the real DB with a full end-to-end quiz build (depends on approved archetypes existing for the target subject/year).
+- The Geography importer (`scripts/import-geography.ts`) seeds into legacy `ConceptCard` table, not `CurriculumArtifact` — should be migrated when legacy tables are dropped.
 

@@ -175,20 +175,35 @@ async function main() {
         await db.delete(conceptCard).where(eq(conceptCard.lessonId, insertedLesson.id));
         const cardContents = [
           {
-            title: `Introduction to ${subtopic}`,
-            body: `Understanding the core concepts and fundamental definitions of ${subtopic} in Geography. This forms the baseline for analyzing geographical features and patterns.`,
-            example: `A classic example of ${subtopic} demonstrates how human and physical systems interact within this environment.`,
-          },
-          {
-            title: `Geographical Analysis of ${subtopic}`,
-            body: `An in-depth look at the processes, models, and spatial distribution related to ${subtopic}. We examine the causes, physical/human effects, and management strategies used by geographers.`,
+            title: `What is ${subtopic}?`,
+            body: `${subtopic} is a key concept in geography. We explore the physical and human processes involved, examining how they shape our landscapes and environments. Understanding ${subtopic} helps us predict future changes and manage their impacts effectively.`,
             example: `Analyzing real-world map data and field observations allows us to see the direct impacts of ${subtopic} over time.`,
           },
           {
-            title: `GCSE Worked Example & Case Study`,
+            title: `Key vocabulary for ${subtopic}`,
+            body: `Learn the essential geographical terms for ${subtopic}. Knowing the language helps you describe processes, features, and case studies with precision.`,
+            example: `Key terms include specific landform names, process definitions, and the vocabulary used to describe human-environment interactions.`,
+          },
+          {
+            title: `Worked example: ${subtopic}`,
             body: `Applying our knowledge of ${subtopic} to exam-style questions. We focus on physical/human geographical evidence, key terminology, and structuring clear, geographical explanations.`,
             example: `In a standard case study of ${subtopic}, we identify the specific location, physical processes, human impact, and evaluate management effectiveness.`,
-          }
+          },
+          {
+            title: `Common mistake in ${subtopic}`,
+            body: `Students often confuse the causes and effects of ${subtopic}. A common error is describing a process without linking it to its environmental or human impact.`,
+            example: `Wrong: 'Erosion wears away rocks.' Right: 'Erosion by waves wears away cliffs, causing coastal retreat and threatening habitats.'`,
+          },
+          {
+            title: `Exam-style thinking: ${subtopic}`,
+            body: `GCSE geography questions often ask you to describe, explain, and evaluate. For ${subtopic}, be ready to use case study evidence and link physical processes to human consequences.`,
+            example: `A typical 6-mark question: 'Explain how ${subtopic} affects both the environment and people living in the area.' — use a named example and specific facts.`,
+          },
+          {
+            title: `Quick recap: ${subtopic}`,
+            body: `You've covered the key ideas in ${subtopic}. Remember the processes, the key terms, and how human activity interacts with physical geography.`,
+            example: `Before the challenge, check you can describe the process, name a case study, and explain the impacts on people and the environment.`,
+          },
         ];
 
         for (let i = 0; i < cardContents.length; i++) {

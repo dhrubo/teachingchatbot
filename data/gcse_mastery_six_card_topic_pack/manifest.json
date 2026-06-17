@@ -1,0 +1,409 @@
+{
+  "name": "GCSE Mastery Six-Card Concept Card Pack",
+  "createdAt": "2026-06-16T23:01:41.115799Z",
+  "totalTopics": 49,
+  "totalCards": 294,
+  "cardsPerTopic": 6,
+  "cardSequence": [
+    "big_idea",
+    "key_vocabulary",
+    "worked_example",
+    "common_mistake",
+    "exam_context",
+    "recap"
+  ],
+  "topics": [
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Number Skills",
+      "missionSlug": "number-skills",
+      "gcseDomain": "Number"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Percentages",
+      "missionSlug": "percentages",
+      "gcseDomain": "Number"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Fractions",
+      "missionSlug": "fractions",
+      "gcseDomain": "Number"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Ratio and Proportion",
+      "missionSlug": "ratio-proportion",
+      "gcseDomain": "Ratio"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Algebra Basics",
+      "missionSlug": "algebra-basics",
+      "gcseDomain": "Algebra"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Angles and Geometry",
+      "missionSlug": "angles-geometry",
+      "gcseDomain": "Geometry"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Area and Perimeter",
+      "missionSlug": "area-perimeter",
+      "gcseDomain": "Geometry"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Volume and Surface Area",
+      "missionSlug": "volume-surface-area",
+      "gcseDomain": "Geometry"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Probability",
+      "missionSlug": "probability",
+      "gcseDomain": "Probability"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Straight Line Graphs",
+      "missionSlug": "straight-line-graphs",
+      "gcseDomain": "Graphs"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Indices and Standard Form",
+      "missionSlug": "indices-standard-form",
+      "gcseDomain": "Number"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Pythagoras",
+      "missionSlug": "pythagoras",
+      "gcseDomain": "Geometry"
+    },
+    {
+      "subject": "Maths",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Simultaneous Equations",
+      "missionSlug": "simultaneous-equations",
+      "gcseDomain": "Algebra"
+    },
+    {
+      "subject": "Geography",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Map Skills",
+      "missionSlug": "map-skills",
+      "gcseDomain": "Geographical Skills"
+    },
+    {
+      "subject": "Geography",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Rivers",
+      "missionSlug": "rivers",
+      "gcseDomain": "Physical Geography"
+    },
+    {
+      "subject": "Geography",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Weather and Climate",
+      "missionSlug": "weather-climate",
+      "gcseDomain": "Physical Geography"
+    },
+    {
+      "subject": "Geography",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Population and Settlement",
+      "missionSlug": "population-settlement",
+      "gcseDomain": "Human Geography"
+    },
+    {
+      "subject": "Geography",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Coasts",
+      "missionSlug": "coasts",
+      "gcseDomain": "Physical Geography"
+    },
+    {
+      "subject": "Geography",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Ecosystems",
+      "missionSlug": "ecosystems",
+      "gcseDomain": "Environmental Geography"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Cells",
+      "missionSlug": "biology-cells-y8",
+      "gcseDomain": "Cells"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Organisation",
+      "missionSlug": "biology-organisation-y8",
+      "gcseDomain": "Organisation"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Reproduction",
+      "missionSlug": "biology-reproduction-y8",
+      "gcseDomain": "Reproduction"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Ecosystems and Food Chains",
+      "missionSlug": "biology-ecosystems-y8",
+      "gcseDomain": "Ecology"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Respiration",
+      "missionSlug": "biology-respiration-y8",
+      "gcseDomain": "Bioenergetics"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Photosynthesis",
+      "missionSlug": "biology-photosynthesis-y8",
+      "gcseDomain": "Bioenergetics"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Particles and States of Matter",
+      "missionSlug": "chemistry-particles-y8",
+      "gcseDomain": "Particles"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Elements and Compounds",
+      "missionSlug": "chemistry-elements-compounds-y8",
+      "gcseDomain": "Atomic Structure"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Mixtures and Separation",
+      "missionSlug": "chemistry-mixtures-separation-y8",
+      "gcseDomain": "Separation"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Chemical Reactions",
+      "missionSlug": "chemistry-reactions-y8",
+      "gcseDomain": "Reactions"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Acids and Alkalis",
+      "missionSlug": "chemistry-acids-alkalis-y8",
+      "gcseDomain": "Acids"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "The Periodic Table",
+      "missionSlug": "chemistry-periodic-table-y8",
+      "gcseDomain": "Periodic Table"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Forces",
+      "missionSlug": "physics-forces-y8",
+      "gcseDomain": "Forces"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Energy",
+      "missionSlug": "physics-energy-y8",
+      "gcseDomain": "Energy"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Motion",
+      "missionSlug": "physics-motion-y8",
+      "gcseDomain": "Motion"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Waves",
+      "missionSlug": "physics-waves-y8",
+      "gcseDomain": "Waves"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Electricity",
+      "missionSlug": "physics-electricity-y8",
+      "gcseDomain": "Electricity"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 8,
+      "examBoard": "AQA",
+      "topic": "Space",
+      "missionSlug": "physics-space-y8",
+      "gcseDomain": "Space"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Genetics and Inheritance",
+      "missionSlug": "biology-genetics-y9",
+      "gcseDomain": "Inheritance"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Adaptation and Evolution",
+      "missionSlug": "biology-adaptation-y9",
+      "gcseDomain": "Evolution"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Disease and Immunity",
+      "missionSlug": "biology-disease-y9",
+      "gcseDomain": "Health"
+    },
+    {
+      "subject": "Biology",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Body Systems",
+      "missionSlug": "biology-body-systems-y9",
+      "gcseDomain": "Organisation"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Atomic Structure",
+      "missionSlug": "chemistry-atomic-structure-y9",
+      "gcseDomain": "Atomic Structure"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Bonding",
+      "missionSlug": "chemistry-bonding-y9",
+      "gcseDomain": "Bonding"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Metals and Reactivity",
+      "missionSlug": "chemistry-metals-y9",
+      "gcseDomain": "Reactivity"
+    },
+    {
+      "subject": "Chemistry",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Earth and Atmosphere",
+      "missionSlug": "chemistry-earth-atmosphere-y9",
+      "gcseDomain": "Earth Chemistry"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Electric Circuits",
+      "missionSlug": "physics-electric-circuits-y9",
+      "gcseDomain": "Electricity"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Pressure",
+      "missionSlug": "physics-pressure-y9",
+      "gcseDomain": "Forces"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Momentum",
+      "missionSlug": "physics-momentum-y9",
+      "gcseDomain": "Forces"
+    },
+    {
+      "subject": "Physics",
+      "yearGroup": 9,
+      "examBoard": "AQA",
+      "topic": "Magnetism and Electromagnets",
+      "missionSlug": "physics-magnetism-y9",
+      "gcseDomain": "Magnetism"
+    }
+  ]
+}

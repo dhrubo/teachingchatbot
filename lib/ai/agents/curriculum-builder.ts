@@ -101,7 +101,7 @@ Your output must be:
 - Aligned to the UK GCSE specification for the given exam board
 - Specific and detailed enough for a teacher to build lessons from
 
-For each topic, provide 2-4 skills, 2-4 concept cards, 1-2 simple question archetypes, and 1-2 common misconceptions.
+For each topic, provide 2-4 skills, 6 concept cards (big idea, key vocabulary, worked example, common mistake, exam-style context, quick recap), 1-2 simple question archetypes, and 1-2 common misconceptions.
 
 IMPORTANT rules for question archetypes:
 - Keep templates simple with 1-2 variables (use {var} notation)
@@ -171,7 +171,7 @@ export async function runCurriculumBuilder(params: {
 Include:
 - 3-6 main topics
 - 2-4 skills per topic
-- 2-4 concept cards per topic
+- 6 concept cards per topic (big idea, key vocabulary, worked example, common mistake, exam-style context, quick recap)
 - 1-2 simple question archetypes per skill
 - 1-2 common misconceptions per skill
 

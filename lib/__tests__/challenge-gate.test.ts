@@ -26,11 +26,12 @@ describe("canShowChallengeQuestion", () => {
 
 describe("canOfferChallenge", () => {
   it("requires at least MIN_CONCEPT_CARDS_BEFORE_CHALLENGE cards", () => {
-    expect(MIN_CONCEPT_CARDS_BEFORE_CHALLENGE).toBe(3);
+    expect(MIN_CONCEPT_CARDS_BEFORE_CHALLENGE).toBe(6);
     expect(canOfferChallenge({ conceptCardsSeen: 0 })).toBe(false);
-    expect(canOfferChallenge({ conceptCardsSeen: 2 })).toBe(false);
-    expect(canOfferChallenge({ conceptCardsSeen: 3 })).toBe(true);
-    expect(canOfferChallenge({ conceptCardsSeen: 5 })).toBe(true);
+    expect(canOfferChallenge({ conceptCardsSeen: 3 })).toBe(false);
+    expect(canOfferChallenge({ conceptCardsSeen: 5 })).toBe(false);
+    expect(canOfferChallenge({ conceptCardsSeen: 6 })).toBe(true);
+    expect(canOfferChallenge({ conceptCardsSeen: 7 })).toBe(true);
   });
 
   it("respects a custom minimum", () => {
@@ -44,15 +45,15 @@ describe("canStartChallenge", () => {
   it("requires BOTH an explicit click AND enough cards", () => {
     // explicit click but not enough cards → no
     expect(
-      canStartChallenge({ explicitUserClick: true, conceptCardsSeen: 2 })
+      canStartChallenge({ explicitUserClick: true, conceptCardsSeen: 5 })
     ).toBe(false);
     // enough cards but no explicit click (e.g. typed "ok") → no
     expect(
-      canStartChallenge({ explicitUserClick: false, conceptCardsSeen: 5 })
+      canStartChallenge({ explicitUserClick: false, conceptCardsSeen: 9 })
     ).toBe(false);
     // both satisfied → yes
     expect(
-      canStartChallenge({ explicitUserClick: true, conceptCardsSeen: 3 })
+      canStartChallenge({ explicitUserClick: true, conceptCardsSeen: 6 })
     ).toBe(true);
   });
 
@@ -77,21 +78,22 @@ describe("consentStateForPhase", () => {
     );
   });
 
-  it("only reaches ready_to_offer after 3 cards", () => {
+  it("only reaches ready_to_offer after 6 cards", () => {
     expect(consentStateForPhase("cards", 1)).toBe("cards_in_progress");
-    expect(consentStateForPhase("cards", 3)).toBe("ready_to_offer");
-    expect(consentStateForPhase("gate", 3)).toBe("ready_to_offer");
+    expect(consentStateForPhase("cards", 5)).toBe("cards_in_progress");
+    expect(consentStateForPhase("cards", 6)).toBe("ready_to_offer");
+    expect(consentStateForPhase("gate", 6)).toBe("ready_to_offer");
   });
 
   it("activates only in the challenge phase", () => {
-    expect(consentStateForPhase("challenge", 3)).toBe("active");
-    expect(canShowChallengeQuestion(consentStateForPhase("challenge", 3))).toBe(
+    expect(consentStateForPhase("challenge", 6)).toBe("active");
+    expect(canShowChallengeQuestion(consentStateForPhase("challenge", 6))).toBe(
       true
     );
   });
 
   it("marks complete after results", () => {
-    expect(consentStateForPhase("results", 3)).toBe("complete");
-    expect(consentStateForPhase("complete", 3)).toBe("complete");
+    expect(consentStateForPhase("results", 6)).toBe("complete");
+    expect(consentStateForPhase("complete", 6)).toBe("complete");
   });
 });

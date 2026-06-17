@@ -16,7 +16,7 @@ export type ChallengeConsentState =
   | "complete"; // challenge finished — results shown
 
 /** Minimum concept cards a student must see before Challenge Mode is offered. */
-export const MIN_CONCEPT_CARDS_BEFORE_CHALLENGE = 3;
+export const MIN_CONCEPT_CARDS_BEFORE_CHALLENGE = 6;
 
 /**
  * The ONLY state in which a real (graded) challenge question may be rendered,

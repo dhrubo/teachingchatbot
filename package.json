@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "build": "tsx lib/db/migrate && tsx scripts/seed-all-curriculum.ts && tsx scripts/seed-question-archetypes.ts && tsx scripts/seed-curriculum-artifacts.ts && next build",
+    "build": "tsx lib/db/migrate && tsx scripts/seed-all-curriculum.ts && tsx scripts/seed-question-archetypes.ts && tsx scripts/seed-curriculum-artifacts.ts && tsx scripts/seed-six-card-topic-pack.ts && next build",
     "start": "next start",
     "check": "ultracite check",
     "lint": "ultracite check",
@@ -16,7 +16,7 @@
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
-    "seed": "npx tsx scripts/seed-all-curriculum.ts && npx tsx scripts/seed-question-archetypes.ts && npx tsx scripts/seed-curriculum-artifacts.ts",
+    "seed": "npx tsx scripts/seed-all-curriculum.ts && npx tsx scripts/seed-question-archetypes.ts && npx tsx scripts/seed-curriculum-artifacts.ts && npx tsx scripts/seed-six-card-topic-pack.ts",
     "seed:question-archetypes": "npx tsx scripts/seed-question-archetypes.ts",
     "seed:question-archetypes:csv": "npx tsx scripts/seed-question-archetypes-csv.ts",
     "test:unit": "vitest run",

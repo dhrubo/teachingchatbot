@@ -38,7 +38,7 @@ export function RegistrationPrompt() {
             className="rounded-full bg-[image:var(--gradient-sunset)] px-4 py-1.5 text-sm font-semibold text-white shadow-[var(--shadow-card)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
             href="/register"
           >
-            Sign up free ✨
+            Sign up 
           </Link>
           <Link
             className="rounded-full px-4 py-1.5 text-sm text-amber-700 underline underline-offset-2 hover:text-amber-600 dark:text-amber-300/70"

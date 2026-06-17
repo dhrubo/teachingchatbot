@@ -82,6 +82,28 @@ export function ChallengeMode({
   const [explanationText, setExplanationText] = useState<string | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
 
+  // Confidence check: ask before first question
+  const [showConfidenceCheck, setShowConfidenceCheck] = useState(true);
+
+  const recordConfidence = async (level: number) => {
+    setShowConfidenceCheck(false);
+    try {
+      await fetch("/api/adaptive-challenge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "record-confidence",
+          skillSlug: missionSlug,
+          subject: "maths",
+          confidence: level,
+          topic: missionTitle,
+        }),
+      });
+    } catch {
+      // non-blocking — confidence recording is optional
+    }
+  };
+
   const handleGetHint = async () => {
     if (!currentQuestion || hintLoading) return;
     setHintLoading(true);
@@ -302,6 +324,45 @@ export function ChallengeMode({
         >
           Keep learning
         </Button>
+      </motion.div>
+    );
+  }
+
+  // Confidence check before the first question
+  if (showConfidenceCheck) {
+    return (
+      <motion.div
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#090915] text-white px-6"
+        exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+      >
+        <div className="flex flex-col items-center gap-6 max-w-sm text-center">
+          <span className="text-4xl">🧠</span>
+          <h2 className="text-xl font-bold">How confident do you feel?</h2>
+          <p className="text-sm text-indigo-300/80">
+            Before we start the challenge, let us know how you're feeling about{" "}
+            <strong className="text-indigo-200">{missionTitle}</strong>.
+          </p>
+          <div className="flex gap-3 flex-wrap justify-center">
+            {[
+              { emoji: "😟", label: "1", desc: "Very unsure" },
+              { emoji: "😕", label: "2", desc: "Unsure" },
+              { emoji: "🙂", label: "3", desc: "Neutral" },
+              { emoji: "😃", label: "4", desc: "Confident" },
+              { emoji: "🚀", label: "5", desc: "Very confident" },
+            ].map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => recordConfidence(Number(opt.label))}
+                className="flex flex-col items-center gap-1 rounded-2xl border border-indigo-800/40 bg-indigo-950/30 px-5 py-4 transition-all duration-200 hover:border-amber-500/50 hover:bg-indigo-950/60 hover:scale-105 active:scale-95"
+              >
+                <span className="text-2xl">{opt.emoji}</span>
+                <span className="text-xs font-semibold text-indigo-300">{opt.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </motion.div>
     );
   }

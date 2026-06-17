@@ -58,7 +58,7 @@ export function useStartTopic() {
         const fallback = fallbackConceptCards(input.title);
         cards = [...cards, ...fallback].slice(
           0,
-          Math.max(MIN_CONCEPT_CARDS_BEFORE_CHALLENGE, cards.length)
+          MIN_CONCEPT_CARDS_BEFORE_CHALLENGE
         );
       }
 

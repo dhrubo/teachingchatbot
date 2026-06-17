@@ -142,6 +142,15 @@ export function SaraDashboard() {
     return getMissionsByYear(year);
   }, [apiData, year]);
 
+  // Retrieval practice data (logged-in users only)
+  const { data: retrievalData } = useSWR(
+    isLoggedIn
+      ? `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/retrieval-practice`
+      : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
   const guestMission = useMemo(() => pickGuestMission(), []);
 
   const continueMission = useMemo(() => {
@@ -210,6 +219,37 @@ export function SaraDashboard() {
             SARA adapts to your syllabus — every subject, one lesson at a time.
           </p>
         </section>
+
+        {/* ---- Today's Retrieval Practice (logged-in only) ---- */}
+        {isLoggedIn && retrievalData?.dueCount > 0 && (
+          <section className="rounded-2xl border border-emerald-500/15 bg-emerald-950/10 p-4 backdrop-blur-md">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🧠</span>
+                <div>
+                  <p className="text-sm font-bold text-emerald-300">
+                    Today's Retrieval Practice
+                  </p>
+                  <p className="text-xs text-emerald-400/60">
+                    {retrievalData.dueCount} skills due for review
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {retrievalData.retrievalPractice?.slice(0, 3).map(
+                  (item: { skillSlug: string; masteryScore: number }) => (
+                    <span
+                      className="rounded-full bg-emerald-950/50 border border-emerald-500/20 px-3 py-1 text-[11px] font-medium text-emerald-300"
+                      key={item.skillSlug}
+                    >
+                      {item.skillSlug.replace(/_/g, " ")}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ---- Full-width Search Box ---- */}
         <section className="w-full">

@@ -8,6 +8,7 @@ import {
 import { getAppConfig } from "@/lib/app-config";
 import { countGuestAttemptsSince } from "@/lib/db/queries/questions";
 import { getStudentProfile } from "@/lib/db/queries/student";
+import { upsertConfidence } from "@/lib/db/queries/learning-science";
 
 // Resolve the caller into either a logged-in studentId or a guestSessionId.
 async function resolveCaller() {
@@ -141,6 +142,34 @@ export async function POST(req: NextRequest) {
       isCorrect: result.isCorrect,
       mastery: result.mastery,
     });
+  }
+
+  if (action === "record-confidence") {
+    const { subject, skillSlug, confidence, topic } = body as {
+      subject?: string;
+      skillSlug: string;
+      confidence: number;
+      topic?: string;
+    };
+
+    if (!skillSlug || typeof confidence !== "number") {
+      return NextResponse.json(
+        { error: "skillSlug and confidence are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!caller.isGuest && "studentId" in caller) {
+      await upsertConfidence({
+        studentId: caller.studentId,
+        subject: subject ?? "maths",
+        skillSlug,
+        topic,
+        confidence,
+      });
+    }
+
+    return NextResponse.json({ recorded: true });
   }
 
   return NextResponse.json(

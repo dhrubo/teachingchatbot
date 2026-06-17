@@ -5,6 +5,7 @@ import { getGoalsByStudentId } from "@/lib/db/queries/student";
 import { getSkillMasteryByStudentId } from "@/lib/db/queries/mastery";
 import { getTopicRequests } from "@/lib/db/queries/topic-requests";
 import { getAIEfficiencyStats } from "@/lib/db/queries/analytics";
+import { getReviewsDueCount } from "@/lib/db/queries/learning-science";
 import { db } from "@/lib/db/client";
 import { cookies } from "next/headers";
 import { eq, desc, sql } from "drizzle-orm";
@@ -14,6 +15,8 @@ import {
   questionAttempt,
   mission,
   questionArchetype,
+  studentConfidence,
+  revisionQueue,
 } from "@/lib/db/schema";
 
 export async function GET(req: Request) {
@@ -69,6 +72,9 @@ export async function GET(req: Request) {
       attemptsCountResult,
       missions,
       archetypeMappings,
+      reviewsDueCount,
+      confidenceStats,
+      revisionQueueItems,
     ] = await Promise.all([
       getSkillMasteryByStudentId({ studentId }),
       getGoalsByStudentId({ studentId }),
@@ -95,6 +101,23 @@ export async function GET(req: Request) {
         })
         .from(questionArchetype)
         .where(eq(questionArchetype.isActive, true)),
+      getReviewsDueCount(studentId),
+      db
+        .select({
+          skillSlug: studentConfidence.skillSlug,
+          confidence: studentConfidence.confidence,
+          updatedAt: studentConfidence.updatedAt,
+        })
+        .from(studentConfidence)
+        .where(eq(studentConfidence.studentId, studentId))
+        .orderBy(desc(studentConfidence.updatedAt))
+        .limit(5),
+      db
+        .select()
+        .from(revisionQueue)
+        .where(eq(revisionQueue.studentId, studentId))
+        .orderBy(revisionQueue.nextReviewDate)
+        .limit(10),
     ]);
 
     // 4. Calculate dynamic mission-level masteries
@@ -193,6 +216,9 @@ export async function GET(req: Request) {
       weeklyReports,
       efficiencyStats,
       topicRequests,
+      reviewsDueCount,
+      confidenceStats,
+      revisionQueueItems,
     });
   } catch (error) {
     console.error("Failed to load parent dashboard api:", error);

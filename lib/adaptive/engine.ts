@@ -13,6 +13,7 @@ import {
 } from "@/lib/questions/generate-from-archetype";
 import { gradeAnswer } from "@/lib/questions/grade-answer";
 import { detectMisconception } from "./detect-misconception";
+import { tryBatchAnalysis } from "@/lib/learning-science/batch-misconception-analysis";
 import {
   pickArchetypeSlug,
   type SkillMastery,
@@ -230,6 +231,11 @@ export async function recordAnswer(params: {
     recentWrongStreak: next.recentWrongStreak,
     isCorrect,
   });
+
+  // Fire-and-forget batch misconception analysis (non-blocking)
+  if (params.studentId) {
+    tryBatchAnalysis(params.studentId);
+  }
 
   return { isCorrect, mastery: next };
 }

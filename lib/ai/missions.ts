@@ -132,7 +132,7 @@ for (const m of MISSIONS) {
   }
 }
 
-// Deterministic fallback so EVERY lesson can show at least 3 concept cards
+// Deterministic fallback so EVERY lesson can show at least 6 concept cards
 // before Challenge Mode is offered, even if no authored cards exist.
 export function fallbackConceptCards(topic: string): ConceptCard[] {
   return [
@@ -145,11 +145,11 @@ export function fallbackConceptCards(topic: string): ConceptCard[] {
     },
     {
       id: `fallback-${topic}-2`,
-      title: "The key method",
-      visual: "step 1 → step 2 → answer",
-      example: "Follow the steps in order.",
+      title: "Key vocabulary",
+      visual: "word → definition",
+      example: `Learn the key terms used in ${topic}.`,
       explanation:
-        "Most questions on this topic follow the same few steps. Learn the steps and you can handle the variations.",
+        "Every topic has its own language. Knowing the key words helps you understand questions and explain your reasoning.",
     },
     {
       id: `fallback-${topic}-3`,
@@ -159,21 +159,45 @@ export function fallbackConceptCards(topic: string): ConceptCard[] {
       explanation:
         "Seeing one example worked through makes the steps concrete before you try them yourself.",
     },
+    {
+      id: `fallback-${topic}-4`,
+      title: "Common mistake to avoid",
+      visual: "❌ wrong → ✅ right",
+      example: `A typical error in ${topic} and how to fix it.`,
+      explanation:
+        "Knowing what usually goes wrong helps you spot and avoid the same trap.",
+    },
+    {
+      id: `fallback-${topic}-5`,
+      title: "Exam-style thinking",
+      visual: "exam tip",
+      example: `How ${topic} appears in GCSE questions.`,
+      explanation:
+        "GCSE questions often wrap the same ideas in different contexts. Practice spotting the maths underneath the words.",
+    },
+    {
+      id: `fallback-${topic}-6`,
+      title: "Quick recap",
+      visual: "✓ what you know now",
+      example: `You've covered the main ideas in ${topic}.`,
+      explanation:
+        "Before the challenge, remember: look for the key steps, watch out for common traps, and read each question carefully.",
+    },
   ];
 }
 
-// Cards for a lesson, guaranteeing at least 3 (pads with fallbacks if needed).
+// Cards for a lesson, guaranteeing at least 6 (pads with fallbacks if needed).
 export function conceptCardsForLesson(
   mission: MissionDefinition,
   lessonId: string
 ): ConceptCard[] {
   const authored =
     mission.lessons.find((l) => l.id === lessonId)?.conceptCards ?? [];
-  if (authored.length >= 3) {
+  if (authored.length >= 6) {
     return authored;
   }
   const fallback = fallbackConceptCards(mission.title);
-  return [...authored, ...fallback].slice(0, Math.max(3, authored.length));
+  return [...authored, ...fallback].slice(0, Math.max(6, authored.length));
 }
 
 export function getMission(id: string): MissionDefinition | undefined {

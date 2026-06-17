@@ -150,13 +150,19 @@ export async function GET(req: NextRequest) {
         : [];
 
       // Map DB rows → the UI ConceptCard shape (visual/example/explanation).
-      const uiCards = cards.map((c) => ({
+      let uiCards = cards.map((c) => ({
         id: `cc-${c.id}`,
         title: c.title,
         visual: c.visual ?? "",
         example: c.example ?? "",
         explanation: c.body,
       }));
+
+      // Shuffle so students see a different card order each session
+      for (let i = uiCards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [uiCards[i], uiCards[j]] = [uiCards[j], uiCards[i]];
+      }
 
       return NextResponse.json({ cards: uiCards });
     }

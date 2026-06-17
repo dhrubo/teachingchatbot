@@ -178,7 +178,17 @@ export function ChatShell() {
               {/* ---- Loading ---- */}
               {isInMission && phase === "loading" && mission && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 backdrop-blur-md px-4">
-                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-12 flex flex-col items-center justify-center gap-4 text-center">
+                  <div className="relative w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-12 flex flex-col items-center justify-center gap-4 text-center">
+                    <button
+                      onClick={exitMission}
+                      className="absolute top-3 right-3 flex size-7 items-center justify-center rounded-full text-indigo-400/60 transition-colors hover:bg-indigo-950/50 hover:text-indigo-200"
+                      aria-label="Close"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                    </button>
                     <span className="animate-pulse text-4xl">{mission.emoji}</span>
                     <p className="text-base font-medium text-indigo-200">
                       Loading {mission.title}…
@@ -190,7 +200,26 @@ export function ChatShell() {
               {/* ---- Concept Cards ---- */}
               {isInMission && phase === "cards" && mission && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center overflow-y-auto bg-[#090915]/80 p-4 backdrop-blur-md">
-                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                  <div className="relative w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <button
+                      onClick={exitMission}
+                      className="absolute top-3 right-3 flex size-7 items-center justify-center rounded-full text-indigo-400/60 transition-colors hover:bg-indigo-950/50 hover:text-indigo-200"
+                      aria-label="Close"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="size-4"
+                      >
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                    </button>
                     <div className="mb-5 text-center">
                       <span className="text-3xl">{mission.emoji}</span>
                       <h3 className="mt-2 text-xl font-bold text-foreground tracking-tight">
@@ -216,7 +245,26 @@ export function ChatShell() {
               {/* ---- Lesson Footer / Gate ---- */}
               {isInMission && phase === "gate" && mission && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
-                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 text-center transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                  <div className="relative w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 text-center transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <button
+                      onClick={exitMission}
+                      className="absolute top-3 right-3 flex size-7 items-center justify-center rounded-full text-indigo-400/60 transition-colors hover:bg-indigo-950/50 hover:text-indigo-200"
+                      aria-label="Close"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="size-4"
+                      >
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                    </button>
                     <span className="text-4xl">{mission.emoji}</span>
                     <h3 className="mt-3 text-2xl font-bold text-foreground tracking-tight">
                       {mission.title}
@@ -258,7 +306,17 @@ export function ChatShell() {
               {/* ---- Review Mistakes ---- */}
               {isInMission && phase === "review_mistakes" && mission && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center overflow-y-auto bg-[#090915]/80 p-4 backdrop-blur-md">
-                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                  <div className="relative w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-6 md:p-8 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <button
+                      onClick={exitMission}
+                      className="absolute top-3 right-3 flex size-7 items-center justify-center rounded-full text-indigo-400/60 transition-colors hover:bg-indigo-950/50 hover:text-indigo-200"
+                      aria-label="Close"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                    </button>
                     <ReviewMistakesScreen
                       missionTitle={mission.title}
                       missionEmoji={mission.emoji}
@@ -273,7 +331,17 @@ export function ChatShell() {
               {/* ---- Content Complete (end of lesson cards) ---- */}
               {isInMission && phase === "content_complete" && mission && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
-                  <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                  <div className="relative w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <button
+                      onClick={exitMission}
+                      className="absolute top-3 right-3 flex size-7 items-center justify-center rounded-full text-indigo-400/60 transition-colors hover:bg-indigo-950/50 hover:text-indigo-200"
+                      aria-label="Close"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                    </button>
                     <ContentCompleteScreen
                       missionTitle={mission.title}
                       missionEmoji={mission.emoji}
@@ -290,7 +358,17 @@ export function ChatShell() {
                 challengeResults &&
                 mission && (
                   <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#090915]/80 px-4 backdrop-blur-md">
-                    <div className="w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <div className="relative w-full max-w-2xl border border-indigo-950/50 bg-indigo-950/25 shadow-xl shadow-indigo-950/50 rounded-2xl backdrop-blur-md p-8 md:p-10 transition-all duration-300 hover:border-indigo-800/40 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)]">
+                    <button
+                      onClick={exitMission}
+                      className="absolute top-3 right-3 flex size-7 items-center justify-center rounded-full text-indigo-400/60 transition-colors hover:bg-indigo-950/50 hover:text-indigo-200"
+                      aria-label="Close"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                    </button>
                       <ChallengeResultsScreen
                         missionTitle={mission.title}
                         onContinue={handleMissionContinue}

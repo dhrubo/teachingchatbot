@@ -39,7 +39,7 @@ function AuthButtons() {
         className="rounded-full bg-[image:var(--gradient-sunset)] px-4 font-semibold text-white shadow-md shadow-amber-500/10 transition-all duration-200 hover:scale-[1.03] hover:translate-y-[-1px] active:scale-[0.98] hover:shadow-[0_0_15px_-3px_rgba(244,63,94,0.3)] hover:border hover:border-amber-500/20"
         size="sm"
       >
-        <Link href="/register">Sign up free ✨</Link>
+        <Link href="/register">Sign up</Link>
       </Button>
     </>
   );

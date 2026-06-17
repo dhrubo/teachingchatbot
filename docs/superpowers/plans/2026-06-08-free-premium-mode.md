@@ -276,7 +276,7 @@ export function RegistrationPrompt() {
             href="/register"
             className="rounded-full bg-[image:var(--gradient-sunset)] px-4 py-1.5 text-sm font-semibold text-white shadow-[var(--shadow-card)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
           >
-            Sign up free ✨
+            Sign up
           </Link>
           <Link
             href="/login"

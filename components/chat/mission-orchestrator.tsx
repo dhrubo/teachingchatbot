@@ -203,7 +203,7 @@ export function MissionProvider({ children }: { children: ReactNode }) {
   }, [conceptCardsSeen, assertPhase]);
 
   const fastTrackChallenge = useCallback(() => {
-    setConceptCardsSeen(3); // satisfies the MIN_CONCEPT_CARDS_BEFORE_CHALLENGE gate in code
+    setConceptCardsSeen(6); // satisfies the MIN_CONCEPT_CARDS_BEFORE_CHALLENGE gate in code
     setChallengeResults(null);
     setWrongAnswers([]);
     setPhase("challenge");
