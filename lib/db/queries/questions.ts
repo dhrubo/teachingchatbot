@@ -160,23 +160,23 @@ export async function upsertMastery(
     isCorrect: boolean;
   }
 ) {
-  await db
-    .insert(studentSkillMastery)
-    .values({
-      studentId,
-      skillSlug: next.skillSlug,
-      masteryScore: next.masteryScore,
-      currentBand: next.currentBand,
-      attempts: 1,
-      correct: next.isCorrect ? 1 : 0,
-      recentCorrectStreak: next.recentCorrectStreak,
-      recentWrongStreak: next.recentWrongStreak,
-      lastAttemptAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [studentSkillMastery.studentId, studentSkillMastery.skillSlug],
-      set: {
+  // Manual read-check-upsert to avoid Drizzle onConflictDoUpdate issues
+  // with composite PKs across different Postgres/Drizzle versions.
+  const existing = await db
+    .select()
+    .from(studentSkillMastery)
+    .where(
+      and(
+        eq(studentSkillMastery.studentId, studentId),
+        eq(studentSkillMastery.skillSlug, next.skillSlug)
+      )
+    )
+    .limit(1);
+
+  if (existing.length > 0) {
+    await db
+      .update(studentSkillMastery)
+      .set({
         masteryScore: next.masteryScore,
         currentBand: next.currentBand,
         attempts: sql`${studentSkillMastery.attempts} + 1`,
@@ -187,6 +187,25 @@ export async function upsertMastery(
         recentWrongStreak: next.recentWrongStreak,
         lastAttemptAt: new Date(),
         updatedAt: new Date(),
-      },
+      })
+      .where(
+        and(
+          eq(studentSkillMastery.studentId, studentId),
+          eq(studentSkillMastery.skillSlug, next.skillSlug)
+        )
+      );
+  } else {
+    await db.insert(studentSkillMastery).values({
+      studentId,
+      skillSlug: next.skillSlug,
+      masteryScore: next.masteryScore,
+      currentBand: next.currentBand,
+      attempts: 1,
+      correct: next.isCorrect ? 1 : 0,
+      recentCorrectStreak: next.recentCorrectStreak,
+      recentWrongStreak: next.recentWrongStreak,
+      lastAttemptAt: new Date(),
+      updatedAt: new Date(),
     });
+  }
 }

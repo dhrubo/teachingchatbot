@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import { runCurriculumBuilder } from "@/lib/ai/agents/curriculum-builder";
+import { checkQuota } from "@/lib/ai/quota-monitor";
 
 async function requireAdmin() {
   const session = await auth();
@@ -25,6 +26,15 @@ export async function POST(request: NextRequest) {
         { error: "subject and yearGroup are required" },
         { status: 400 }
       );
+    }
+
+    // Quota check — curriculum generation is expensive, only proceed when green
+    const quota = await checkQuota("curriculum_generation");
+    if (!quota.allowed) {
+      return NextResponse.json({
+        error: "AI quota is near its daily limit. Try again tomorrow.",
+        queued: true,
+      }, { status: 429 });
     }
 
     const result = await runCurriculumBuilder({

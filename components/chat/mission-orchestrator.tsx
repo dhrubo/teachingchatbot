@@ -172,28 +172,20 @@ export function MissionProvider({ children }: { children: ReactNode }) {
 
   const completeCards = useCallback(() => {
     setPhase("gate");
-    assertPhase("gate");
-  }, [assertPhase]);
+  }, []);
 
   const continueLearning = useCallback(() => {
     // If no more cards, move to content_complete instead of gate loop.
     if (!hasMoreCards) {
       setPhase("content_complete");
-      assertPhase("content_complete");
       return;
     }
     setBatchIndex((i) => i + 1);
     setPhase("cards");
-    assertPhase("cards");
-  }, [hasMoreCards, assertPhase]);
+  }, [hasMoreCards]);
 
   const startChallengeMode = useCallback(() => {
-    if (
-      !canStartChallenge({
-        explicitUserClick: true,
-        conceptCardsSeen,
-      })
-    ) {
+    if (!canStartChallenge({ explicitUserClick: true, conceptCardsSeen })) {
       return;
     }
     setChallengeResults(null);
@@ -234,8 +226,7 @@ export function MissionProvider({ children }: { children: ReactNode }) {
   const showAnotherExample = useCallback(() => {
     // Show next batch of cards or return to teaching state.
     setPhase("cards");
-    assertPhase("cards");
-  }, [assertPhase]);
+  }, []);
 
   const performAction = useCallback(
     (action: LessonAction) => {

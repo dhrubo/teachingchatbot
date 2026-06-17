@@ -15,6 +15,7 @@ import {
   buildPromptFromDashboardData,
 } from "@/lib/ai/agents/guardian-insight";
 import { logAICall } from "@/lib/db/queries/analytics";
+import { checkQuota, invalidateQuotaCache } from "@/lib/ai/quota-monitor";
 
 async function requireAdmin() {
   const session = await auth();
@@ -117,6 +118,21 @@ export async function POST(request: NextRequest) {
         targetDate: g.targetDate,
       }))
     );
+
+    // Quota check — parent reports are deferrable
+    const quota = await checkQuota("parent_report");
+    if (!quota.allowed) {
+      return NextResponse.json({
+        report: null,
+        insight: {
+          strengths: [],
+          weaknesses: [],
+          revisionPriorities: [],
+          confidenceTrend: "Report generation is queued — AI quota is near its daily limit.",
+        },
+        queued: true,
+      });
+    }
 
     const insight = await generateWeeklyInsight(promptData);
 

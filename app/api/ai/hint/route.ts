@@ -6,6 +6,7 @@ import { getApprovalStatus } from "@/lib/db/queries/admin";
 import { cookies } from "next/headers";
 import { streamTextWithFallback } from "@/lib/ai/stream-with-provider-fallback";
 import { logAICall } from "@/lib/db/queries/analytics";
+import { checkQuota, invalidateQuotaCache } from "@/lib/ai/quota-monitor";
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,12 +43,24 @@ export async function POST(req: NextRequest) {
     const isPremiumUser = userType !== "guest" && approvalStatus === "approved";
     const candidates = getTutorProviderCandidates(isPremiumUser);
 
+    // Quota check — degrade gracefully when near limit
+    const quota = await checkQuota("hint");
+    if (!quota.allowed) {
+      return NextResponse.json({
+        hint: "Think about what the question is really asking. Break it into smaller steps and see what you know for sure.",
+      });
+    }
+
+    const effectiveCandidates = quota.preferLite
+      ? getTutorProviderCandidates(false)
+      : candidates;
+
     const promptContext = `Question: ${questionPrompt}${
       studentAnswer ? `\nStudent's Answer so far: ${studentAnswer}` : ""
     }${skillSlug ? `\nSkill: ${skillSlug}` : ""}`;
 
     const { result, model } = await streamTextWithFallback(
-      candidates,
+      effectiveCandidates,
       {
         system:
           "You are SARA, an encouraging GCSE tutor. Provide a highly concise, warm, supportive, Socratic hint for the following question. Do NOT solve the question or reveal the final answer. Give the student a clue or ask a guidance question. Keep it under 2 sentences.",
@@ -73,6 +86,7 @@ export async function POST(req: NextRequest) {
       promptTokens: finalUsage?.promptTokens ?? 0,
       completionTokens: finalUsage?.completionTokens ?? 0,
     });
+    invalidateQuotaCache();
 
     return NextResponse.json({ hint: text });
   } catch (error) {

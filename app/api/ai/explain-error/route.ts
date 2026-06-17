@@ -10,6 +10,7 @@ import { getTutorProviderCandidates, isQuotaError } from "@/lib/ai/providers";
 import { getApprovalStatus } from "@/lib/db/queries/admin";
 import { cookies } from "next/headers";
 import { logAICall } from "@/lib/db/queries/analytics";
+import { checkQuota, invalidateQuotaCache } from "@/lib/ai/quota-monitor";
 
 const explainSchema = z.object({
   misconception: z
@@ -73,6 +74,21 @@ export async function POST(req: NextRequest) {
     const isPremiumUser = userType !== "guest" && approvalStatus === "approved";
     const candidates = getTutorProviderCandidates(isPremiumUser);
 
+    // Quota check — degrade to deterministic tag when quota is tight
+    const quota = await checkQuota("explanation");
+    if (!quota.allowed) {
+      return NextResponse.json({
+        misconception: "Error pattern detected",
+        feedback:
+          "Focus on the method — double-check each step carefully.",
+        confidence: 0,
+      });
+    }
+
+    const effectiveCandidates = quota.preferLite
+      ? getTutorProviderCandidates(false)
+      : candidates;
+
     const promptContext = `Question: ${questionPrompt}
 Student's Wrong Answer: ${studentAnswer}
 Correct Answer: ${correctAnswer}
@@ -81,7 +97,7 @@ Worked Solution: ${explanation ?? "None available"}`;
     let objectResult = null;
     let modelUsed = "";
 
-    for (const candidate of candidates) {
+    for (const candidate of effectiveCandidates) {
       try {
         const result = await generateObject({
           model: candidate.model,
@@ -119,6 +135,7 @@ Worked Solution: ${explanation ?? "None available"}`;
       promptTokens: finalUsage?.promptTokens ?? 0,
       completionTokens: finalUsage?.completionTokens ?? 0,
     });
+    invalidateQuotaCache();
 
     // Persist misconception if profile is valid and skillSlug exists
     if (studentProfile && skillSlug) {
