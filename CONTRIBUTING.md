@@ -77,7 +77,7 @@ pnpm test:unit:watch
 
 Before making changes:
 - Read the relevant code
-- Check `agents.md` for project history
+- Check `docs/agents-log.md` for project history (see `AGENTS.md` for standards)
 - Search for related tests
 - Check `docs/` for product rules
 

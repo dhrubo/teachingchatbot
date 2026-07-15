@@ -2,7 +2,7 @@
 name: changelog-generator
 description: >
   Use before creating a release or milestone. Generates release notes from
-  agents.md and git commit history in the TeachingChatbot repository.
+  docs/agents-log.md and git commit history in the TeachingChatbot repository.
 ---
 
 # Changelog Generator
@@ -11,7 +11,7 @@ Use this skill to generate release notes, milestone summaries, or PR description
 
 ## Input Sources
 
-1. **`agents.md`** — the project's phase-by-phase changelog (primary source)
+1. **`docs/agents-log.md`** — the project's phase-by-phase changelog (primary source)
 2. **Git log** — `git log --oneline <range>` for recent commits
 3. **PR descriptions** — if available from `gh` CLI
 
@@ -53,7 +53,7 @@ Use this skill to generate release notes, milestone summaries, or PR description
 
 ## Process
 
-1. Read `agents.md` for the phase descriptions since the last release
+1. Read `docs/agents-log.md` for the phase descriptions since the last release
 2. Run `git log --oneline --no-decorate <last-release-tag>..HEAD`
 3. Cross-reference commits with phase descriptions
 4. Group by category
@@ -62,5 +62,5 @@ Use this skill to generate release notes, milestone summaries, or PR description
 ## Tips for Free-Tier Models
 
 - Keep commit ranges small (< 30 commits)
-- Use `agents.md` as the primary source — it's already summarised
+- Use `docs/agents-log.md` as the primary source — it's already summarised
 - Git log is secondary for exact timestamps and commit SHAs

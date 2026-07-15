@@ -31,7 +31,7 @@ These workflows activate automatically based on the task:
 | `code-security-auditor` | `skill tool load code-security-auditor` | Security review before releases |
 | `staff-engineer-review` | `skill tool load staff-engineer-review` | Architecture review for big changes |
 | `webapp-testing` | `skill tool load webapp-testing` | Validate UI flows and mobile responsiveness |
-| `changelog-generator` | `skill tool load changelog-generator` | Generate release notes from agents.md + git log |
+| `changelog-generator` | `skill tool load changelog-generator` | Generate release notes from docs/agents-log.md + git log |
 | `tutor-lesson-designer` | `skill tool load tutor-lesson-designer` | Design lesson structure for new topics |
 | `tutor-quiz-generator` | `skill tool load tutor-quiz-generator` | Generate quiz questions for challenge cards |
 | `curriculum-mapper` | `skill tool load curriculum-mapper` | Map topics to GCSE domains and prerequisites |
