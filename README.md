@@ -157,6 +157,90 @@ No paid AI subscriptions are required to build, test, or deploy this project.
 
 See [docs/opencode.md](docs/opencode.md) for the full OpenCode development workflow and [CONTRIBUTING.md](CONTRIBUTING.md) for contributor guidance.
 
+## Testing
+
+```bash
+pnpm test:unit         # Vitest unit tests (deterministic engines, helpers)
+pnpm test:unit:watch   # Vitest watch mode
+pnpm test              # Playwright e2e (sets PLAYWRIGHT=True)
+```
+
+E2E tests live in `tests/e2e` and use the page objects in `tests/pages`.
+
+## Building
+
+```bash
+pnpm build   # runs DB migrate + curriculum/archetype seeds, then `next build`
+pnpm start   # serve the production build
+```
+
+> `pnpm build` applies migrations and seeds the database first, so it needs a
+> reachable `POSTGRES_URL`.
+
+## Linting & formatting
+
+This repo uses **Biome + Ultracite** (not ESLint/Prettier). A `.editorconfig`
+keeps non-Biome editors consistent.
+
+```bash
+pnpm check   # lint + format check (alias: pnpm lint)
+pnpm fix     # auto-fix
+```
+
+## Environment variables
+
+Copy `.env.example` to `.env.local`. Everything is documented inline in
+`.env.example`; the essentials:
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `GOOGLE_GENERATIVE_AI_API_KEY` | ✅ (a provider) | Gemini API key (free tier) |
+| `POSTGRES_URL` | ✅ | Neon/Postgres connection string |
+| `AUTH_SECRET` | ✅ | NextAuth session secret (`openssl rand -base64 32`) |
+| `GROQ_API_KEY` / `OPENROUTER_API_KEY` | optional | Provider fallback |
+| `BLOB_READ_WRITE_TOKEN`, `REDIS_URL` | optional | Vercel Blob, resumable streams |
+| `CRON_SECRET` | optional | Guards the guest-cleanup cron |
+| `APP_MODE` | optional | `FREE` (default) or `PREMIUM` |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | dev-only | GitHub MCP server (see below) |
+
+## AI & MCP tooling
+
+This repository is configured for the **OpenCode** ecosystem and modern MCP
+tooling.
+
+- **OpenCode config:** [`opencode.json`](opencode.json) — Superpowers plugin,
+  project skills (`.opencode/skills/`), and MCP servers.
+- **Claude Code / Cursor parity:** [`.mcp.json`](.mcp.json) mirrors the same
+  MCP servers.
+- **Agent guidance:** [`AGENTS.md`](AGENTS.md) (standards),
+  [`SKILLS.md`](SKILLS.md) (workflows), [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
+Configured MCP servers:
+
+| Server | Type | Purpose | Needs |
+|---|---|---|---|
+| **Context7** | local | Up-to-date library/API docs | — |
+| **Sequential Thinking** | local | Structured multi-step reasoning | — |
+| **Filesystem** | local | Scoped file access to the repo | — |
+| **Playwright** | local | Drive the browser for UI/e2e verification | — |
+| **GitHub** | remote | Repos, issues, PRs, CI status | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| **PostgreSQL** | local | Read-only schema/data introspection | `POSTGRES_URL` |
+
+Servers that need credentials only activate when the relevant env var is set;
+never commit tokens. See [docs/opencode.md](docs/opencode.md) for the skill
+catalogue.
+
+## Development workflow
+
+1. Branch from `main`; keep changes small and focused.
+2. Build features/fix bugs following [`SKILLS.md`](SKILLS.md) (OpenCode skills
+   such as `brainstorming`, `systematic-debugging`, `test-driven-development`).
+3. Route data access through `lib/db/queries/*`; validate request bodies with
+   Zod; raise typed `ChatbotError`s.
+4. `pnpm check` + `pnpm test:unit` (and relevant e2e) before opening a PR.
+5. Work through the PR checklist in [`AGENTS.md`](AGENTS.md); note milestones in
+   [`docs/agents-log.md`](docs/agents-log.md).
+
 ## Documentation
 
 - [Provider setup guide](docs/providers.md) — switching models, enabling Gateway
