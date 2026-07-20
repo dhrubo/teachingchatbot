@@ -1,0 +1,16 @@
+{
+  "id": "worked-solution-maths-01",
+  "category": "worked_solution_maths_correctness",
+  "description": "The worked solution's stated final answer must be mathematically correct — graded with the SAME deterministic grader used in production (lib/questions/grade-answer.ts), not a separate ad hoc check.",
+  "mode": "worked_solution",
+  "studentMessage": "Can you show me the full worked solution?",
+  "context": { "finalAnswer": "4" },
+  "goodResponse": "Starting from 2x + 3 = 11, subtract 3 from both sides: 2x = 8. Divide both sides by 2: x = 4.",
+  "badResponse": "Starting from 2x + 3 = 11, subtract 3 from both sides: 2x = 8. Divide both sides by 2: x = 5.",
+  "mathsCheck": {
+    "correctAnswer": "4",
+    "rules": { "numeric": true },
+    "statedAnswerGood": "4",
+    "statedAnswerBad": "5"
+  }
+}

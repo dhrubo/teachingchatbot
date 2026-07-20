@@ -2,17 +2,31 @@ import type { GeneratedQuestionValue } from "@/lib/questions/generate-from-arche
 import { normaliseAnswer } from "@/lib/questions/grade-answer";
 
 /**
- * Best-effort misconception tagging from a wrong answer. Pure + zero LLM.
- *
- * We use the archetype's declared misconceptionTags plus a few generic signal
- * checks. The returned tag (if any) is stored on the attempt so the reteach flow
- * and parent reports can target the specific error.
+ * Result of misconception detection on a single wrong answer. `code` is null
+ * unless a concrete signal actually matched — a wrong answer alone is NEVER
+ * enough to assert a misconception (that requires repeated, independent
+ * evidence; see lib/learning-science/batch-misconception-analysis.ts). This
+ * is one data point, not a diagnosis: callers should treat a non-null code as
+ * "tentative" until the batch analysis promotes it.
+ */
+export type MisconceptionDetection = {
+  code: string | null;
+  /** 0-1. How confident this single-answer signal is, not the learner-level confidence. */
+  confidence: number;
+  reason: string;
+};
+
+/**
+ * Best-effort misconception signal-matching from a single wrong answer. Pure
+ * + zero LLM. Only returns a code when a concrete signal actually matches one
+ * of the archetype's declared tags — it never falls back to guessing the
+ * archetype's primary tag just because the answer was wrong.
  */
 export function detectMisconception(params: {
   question: Pick<GeneratedQuestionValue, "correctAnswer" | "rules">;
   studentAnswer: string;
   misconceptionTags: string[];
-}): string | null {
+}): MisconceptionDetection {
   const { studentAnswer, correctAnswer, misconceptionTags } = {
     studentAnswer: params.studentAnswer,
     correctAnswer: params.question.correctAnswer,
@@ -22,7 +36,7 @@ export function detectMisconception(params: {
   const student = normaliseAnswer(studentAnswer);
   const correct = normaliseAnswer(correctAnswer);
   if (student === "" || student === correct) {
-    return null;
+    return { code: null, confidence: 0, reason: "answer_correct_or_empty" };
   }
 
   const studentNum = Number(student);
@@ -37,7 +51,7 @@ export function detectMisconception(params: {
     correctNum !== 0 &&
     misconceptionTags.includes("sign_error")
   ) {
-    return "sign_error";
+    return { code: "sign_error", confidence: 0.8, reason: "magnitude_matches_sign_flipped" };
   }
 
   // Off-by-one inverse-operation slips are common in solving equations.
@@ -46,9 +60,14 @@ export function detectMisconception(params: {
     Math.abs(studentNum - correctNum) <= 1 &&
     misconceptionTags.includes("forgot_inverse_operation")
   ) {
-    return "forgot_inverse_operation";
+    return {
+      code: "forgot_inverse_operation",
+      confidence: 0.5,
+      reason: "off_by_one_numeric",
+    };
   }
 
-  // Default: surface the archetype's primary declared misconception, if any.
-  return misconceptionTags[0] ?? null;
+  // No concrete signal matched — do NOT guess. A wrong answer alone is not
+  // evidence of any specific misconception.
+  return { code: null, confidence: 0, reason: "no_signal_match" };
 }

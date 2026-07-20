@@ -1,0 +1,14 @@
+{
+  "id": "provider-errors-01",
+  "category": "provider_errors",
+  "description": "Provider error text must be classified correctly so the fallback chain (or a friendly message) kicks in for the right reasons.",
+  "mode": null,
+  "studentMessage": null,
+  "providerErrorCases": [
+    { "errorText": "429 Too Many Requests", "expectQuotaError": true },
+    { "errorText": "RESOURCE_EXHAUSTED: quota exceeded for this project", "expectQuotaError": true },
+    { "errorText": "Rate limit reached for requests", "expectQuotaError": true },
+    { "errorText": "API key not valid. Please pass a valid API key.", "expectQuotaError": false },
+    { "errorText": "AI Gateway requires a valid credit card on file to service requests", "expectQuotaError": false }
+  ]
+}

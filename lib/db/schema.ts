@@ -380,6 +380,70 @@ export const questionArchetype = pgTable("QuestionArchetype", {
 
 export type QuestionArchetype = InferSelectModel<typeof questionArchetype>;
 
+// ---- QuestionInstance: server-authoritative record of a question offered to
+// a student/guest. The canonical answer, grading rules and misconception tags
+// live ONLY here (and in the source archetype) — the browser only ever gets a
+// sanitised DTO built from this row. submit-answer is graded against THIS row,
+// never against client-supplied fields, and submittedAt + submittedIdempotencyKey
+// guard against replay/duplicate submission. ----
+export const questionInstance = pgTable("QuestionInstance", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  studentId: uuid("studentId").references(() => studentProfile.id, {
+    onDelete: "cascade",
+  }),
+  guestSessionId: text("guestSessionId"),
+  archetypeId: uuid("archetypeId")
+    .notNull()
+    .references(() => questionArchetype.id, { onDelete: "cascade" }),
+  skillSlug: text("skillSlug").notNull(),
+  difficultyBand: difficultyBandEnum("difficultyBand").notNull(),
+  questionType: questionTypeEnum("questionType")
+    .notNull()
+    .default("short_text"),
+  prompt: text("prompt").notNull(),
+  optionsJson: json("optionsJson").$type<string[] | null>(),
+  correctAnswer: text("correctAnswer").notNull(),
+  rulesJson: json("rulesJson").$type<Record<string, unknown>>().notNull().default({}),
+  misconceptionTagsJson: json("misconceptionTagsJson")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  hint: text("hint"),
+  explanation: text("explanation"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  submittedAt: timestamp("submittedAt"),
+  submittedIdempotencyKey: text("submittedIdempotencyKey"),
+});
+
+export type QuestionInstance = InferSelectModel<typeof questionInstance>;
+
+// ---- VoiceSession: server-owned binding for a tap-to-speak voice lesson.
+// Mirrors QuestionInstance's ownership/expiry pattern — the transcription
+// route validates a session against THIS row (owner + expiresAt/terminatedAt),
+// never against client-supplied claims. No audio is stored on this row or
+// anywhere else; it only tracks who is allowed to call the voice endpoints
+// and until when. ----
+export const voiceSession = pgTable("VoiceSession", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  studentId: uuid("studentId").references(() => studentProfile.id, {
+    onDelete: "cascade",
+  }),
+  guestSessionId: text("guestSessionId"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  lastActivityAt: timestamp("lastActivityAt").notNull().defaultNow(),
+  terminatedAt: timestamp("terminatedAt"),
+});
+
+export type VoiceSession = InferSelectModel<typeof voiceSession>;
+
+// Telemetry-only — never used for grading. inputMode/transcriptionConfidence/
+// learnerConfirmedTranscript describe HOW an answer arrived, not whether it's
+// correct; submitAnswerForInstance grades from correctAnswer/rulesJson
+// regardless of these fields.
+export const inputModeEnum = pgEnum("inputMode", ["text", "voice"]);
+
 // ---- GeneratedQuestion: optional runtime cache of rendered questions ----
 export const generatedQuestion = pgTable("GeneratedQuestion", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -438,6 +502,10 @@ export const questionAttempt = pgTable("QuestionAttempt", {
   questionId: uuid("questionId").references(() => generatedQuestion.id, {
     onDelete: "set null",
   }),
+  questionInstanceId: uuid("questionInstanceId").references(
+    () => questionInstance.id,
+    { onDelete: "set null" }
+  ),
   archetypeId: uuid("archetypeId")
     .notNull()
     .references(() => questionArchetype.id, { onDelete: "cascade" }),
@@ -450,6 +518,12 @@ export const questionAttempt = pgTable("QuestionAttempt", {
   timeTakenMs: integer("timeTakenMs"),
   misconceptionTag: text("misconceptionTag"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
+  // Voice telemetry — see the inputModeEnum comment above: none of this
+  // affects grading, it's audit trail only.
+  inputMode: inputModeEnum("inputMode").notNull().default("text"),
+  // STT provider confidence as a 0-100 integer (null for text input).
+  transcriptionConfidence: integer("transcriptionConfidence"),
+  learnerConfirmedTranscript: boolean("learnerConfirmedTranscript"),
 });
 
 export type QuestionAttempt = InferSelectModel<typeof questionAttempt>;
@@ -535,6 +609,13 @@ export const studentWeaknessProfile = pgTable("StudentWeaknessProfile", {
   misconception: text("misconception").notNull(),
   frequency: integer("frequency").notNull().default(1),
   confidence: integer("confidence").notNull().default(3),
+  // "tentative" = one independent observation; only promoted to "confirmed"
+  // once repeated, independent evidence has accumulated (see
+  // MIN_FREQUENCY_FOR_CONFIRMED in batch-misconception-analysis.ts). Consumers
+  // (tutor context, parent reports) should only surface "confirmed" entries.
+  status: varchar("status", { enum: ["tentative", "confirmed"] })
+    .notNull()
+    .default("tentative"),
   evidenceJson: json("evidenceJson").$type<Record<string, unknown>>().default({}),
   lastSeenAt: timestamp("lastSeenAt").notNull().defaultNow(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),

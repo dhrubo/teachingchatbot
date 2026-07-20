@@ -270,3 +270,39 @@ export async function recordStudentMisconception({
     );
   }
 }
+
+/**
+ * Delete a student profile and everything scoped to it (mastery, attempts,
+ * question instances, misconceptions, confidence, goals, mission progress —
+ * every learner-scoped table references studentProfile.id with
+ * `onDelete: "cascade"`, see lib/db/schema.ts). This is the real primitive
+ * behind "delete my child's account" (docs/privacy.md) — no parent-facing UI
+ * calls it yet, but the deletion itself is a genuine, tested cascade, not a
+ * stub.
+ */
+export async function deleteStudentAccount({
+  studentId,
+  ownerUserId,
+}: {
+  studentId: string;
+  /** Must match studentProfile.userId — refuses to delete another parent's child. */
+  ownerUserId: string;
+}): Promise<{ deleted: boolean }> {
+  try {
+    const deletedRows = await db
+      .delete(studentProfile)
+      .where(
+        and(
+          eq(studentProfile.id, studentId),
+          eq(studentProfile.userId, ownerUserId)
+        )
+      )
+      .returning({ id: studentProfile.id });
+    return { deleted: deletedRows.length > 0 };
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to delete student account"
+    );
+  }
+}

@@ -19,6 +19,7 @@ const REASONS = [
   "fallback_quota",
   "hint",
   "explanation",
+  "voice_tutor",
 ] as const;
 
 export type AiCallReason = (typeof REASONS)[number];
@@ -27,12 +28,14 @@ export function logAiCall(
   provider: string,
   model: string,
   reason: AiCallReason,
-  requestId: string
+  requestId: string,
+  promptVersion?: string
 ): void {
   console.info(
-    `[ai] provider=${provider} model=${model} reason=${reason} requestId=${requestId}`
+    `[ai] provider=${provider} model=${model} reason=${reason} requestId=${requestId}` +
+      (promptVersion ? ` promptVersion=${promptVersion}` : "")
   );
-  recordAiCall(provider, model, reason, requestId);
+  recordAiCall(provider, model, reason, requestId, { promptVersion });
 }
 
 export async function streamTextWithFallback(
@@ -40,7 +43,9 @@ export async function streamTextWithFallback(
   config: Omit<Parameters<typeof streamText>[0], "model" | "maxRetries" | "prompt"> & { messages: ModelMessage[] },
   onModelSwitch?: (name: string) => void,
   reason: AiCallReason = "lesson_bundle",
-  overrideRequestId?: string
+  overrideRequestId?: string,
+  /** Logged with every call — see lib/ai/prompts-tutor.ts TUTOR_PROMPT_VERSION. */
+  promptVersion?: string
 ): Promise<{
   result: Awaited<ReturnType<typeof streamText>>;
   requestId: string;
@@ -60,20 +65,21 @@ export async function streamTextWithFallback(
         maxRetries: 0,
       });
       if (attempted > 1) {
-        onModelSwitch?.(candidate.name);
+        onModelSwitch?.(candidate.id);
         logAiCall(
-          candidate.name,
+          candidate.id,
           candidate.modelName,
           "fallback_quota",
-          requestId
+          requestId,
+          promptVersion
         );
       } else {
-        logAiCall(candidate.name, candidate.modelName, reason, requestId);
+        logAiCall(candidate.id, candidate.modelName, reason, requestId, promptVersion);
       }
       return {
         result,
         requestId,
-        provider: candidate.name,
+        provider: candidate.id,
         model: candidate.modelName,
       };
     } catch (error) {

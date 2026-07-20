@@ -1,0 +1,11 @@
+{
+  "id": "reteach-01",
+  "category": "reteaching_different_representation",
+  "description": "Student asked to see the same concept explained a different way.",
+  "mode": "reteach",
+  "studentMessage": "Can you explain that differently? I didn't get it with numbers.",
+  "context": { "confirmedMisconceptions": [] },
+  "goodResponse": "Let's use pizza instead. Imagine a pizza cut into 4 equal slices — taking 1 slice is a quarter, or 25%. Two slices would be a half, or 50%.",
+  "badResponse": "Now try this: what fraction is 3 slices out of 4? What about 2 slices out of 8?",
+  "expectedViolations": ["question_not_allowed", "too_many_questions"]
+}

@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { XIcon } from "lucide-react";
+import { nanoid } from "nanoid";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,22 +10,19 @@ import {
   canShowChallengeQuestion,
   logSuppressedQuestion,
 } from "@/lib/challenge-gate";
-import { gradeAnswer } from "@/lib/questions/grade-answer";
 import { playSound } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
 
+// Sanitised DTO from the server — deliberately has no correctAnswer, grading
+// rules or misconception tags. The server grades the answer; see
+// submitAnswer below.
 type AdaptiveQuestion = {
-  archetypeId: string;
-  archetypeSlug: string;
+  questionInstanceId: string;
   skillSlug: string;
   difficultyBand: "must" | "should" | "could" | "gcse_bridge";
   questionType: string;
   prompt: string;
   options: string[] | null;
-  correctAnswer: string;
-  rules: Record<string, unknown>;
-  hint: string | null;
-  explanation: string | null;
 };
 
 export type WrongAnswerRecord = {
@@ -73,6 +71,13 @@ export function ChallengeMode({
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [textInput, setTextInput] = useState("");
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [isGrading, setIsGrading] = useState(false);
+  // Populated from the server's submit-answer response — the client never
+  // has the answer key until AFTER it submits.
+  const [answerResult, setAnswerResult] = useState<{
+    correctAnswer: string;
+    explanation: string | null;
+  } | null>(null);
 
   const wrongRef = useRef<WrongAnswerRecord[]>([]);
 
@@ -132,7 +137,7 @@ export function ChallengeMode({
   };
 
   const handleGetExplanation = async () => {
-    if (!currentQuestion || explanationLoading) return;
+    if (!currentQuestion || !answerResult || explanationLoading) return;
     setExplanationLoading(true);
     setExplanationText(null);
     try {
@@ -142,8 +147,8 @@ export function ChallengeMode({
         body: JSON.stringify({
           questionPrompt: currentQuestion.prompt,
           studentAnswer: selectedAnswer || textInput,
-          correctAnswer: currentQuestion.correctAnswer,
-          explanation: currentQuestion.explanation,
+          correctAnswer: answerResult.correctAnswer,
+          explanation: answerResult.explanation,
           skillSlug: currentQuestion.skillSlug,
         }),
       });
@@ -199,24 +204,43 @@ export function ChallengeMode({
     }
   }, [gateOpen, missionSlug]);
 
-  const submitAnswer = async (question: AdaptiveQuestion, answer: string) => {
+  // Grades server-side: the client has no correctAnswer/rules to grade
+  // locally, only the sanitised question DTO. Returns the server's verdict
+  // (or null on network failure) so the caller can render feedback from it.
+  const submitAnswer = async (
+    question: AdaptiveQuestion,
+    answer: string
+  ): Promise<{
+    isCorrect: boolean;
+    correctAnswer: string;
+    explanation: string | null;
+  } | null> => {
     try {
-      await fetch("/api/adaptive-challenge", {
+      const response = await fetch("/api/adaptive-challenge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "submit-answer",
-          archetypeId: question.archetypeId,
-          skillSlug: question.skillSlug,
-          difficultyBand: question.difficultyBand,
-          prompt: question.prompt,
+          questionInstanceId: question.questionInstanceId,
           studentAnswer: answer,
-          correctAnswer: question.correctAnswer,
-          rules: question.rules,
+          idempotencyKey: nanoid(),
         }),
       });
+      if (!response.ok) {
+        return null;
+      }
+      const data = await response.json();
+      if (typeof data.isCorrect !== "boolean") {
+        return null;
+      }
+      return {
+        isCorrect: data.isCorrect,
+        correctAnswer: data.correctAnswer,
+        explanation: data.explanation ?? null,
+      };
     } catch (error) {
       console.error("Failed to submit answer", error);
+      return null;
     }
   };
 
@@ -224,18 +248,29 @@ export function ChallengeMode({
     fetchNextQuestion();
   }, [fetchNextQuestion]);
 
-  const handleAnswer = (answer: string) => {
-    if (feedback || !currentQuestion) {
+  const handleAnswer = async (answer: string) => {
+    if (feedback || isGrading || !currentQuestion) {
       return;
     }
     setSelectedAnswer(answer);
-    const isCorrect = gradeAnswer({
-      studentAnswer: answer,
-      correctAnswer: currentQuestion.correctAnswer,
-      rules: currentQuestion.rules,
+    setIsGrading(true);
+
+    const result = await submitAnswer(currentQuestion, answer);
+    setIsGrading(false);
+
+    if (!result) {
+      // Network/server failure — let the student retry rather than silently
+      // showing wrong/no feedback.
+      setSelectedAnswer(null);
+      return;
+    }
+
+    setAnswerResult({
+      correctAnswer: result.correctAnswer,
+      explanation: result.explanation,
     });
 
-    if (isCorrect) {
+    if (result.isCorrect) {
       playSound("success");
     } else {
       playSound("wrong");
@@ -243,15 +278,14 @@ export function ChallengeMode({
         questionNumber,
         prompt: currentQuestion.prompt,
         studentAnswer: answer,
-        correctAnswer: currentQuestion.correctAnswer,
-        explanation: currentQuestion.explanation,
+        correctAnswer: result.correctAnswer,
+        explanation: result.explanation,
         skillSlug: currentQuestion.skillSlug,
         difficultyBand: currentQuestion.difficultyBand,
       });
     }
 
-    setFeedback(isCorrect ? "correct" : "wrong");
-    submitAnswer(currentQuestion, answer);
+    setFeedback(result.isCorrect ? "correct" : "wrong");
   };
 
   const handleNext = () => {
@@ -272,6 +306,7 @@ export function ChallengeMode({
       setScore(newScore);
       setFeedback(null);
       setSelectedAnswer(null);
+      setAnswerResult(null);
       setTextInput("");
       setHintText(null);
       setExplanationText(null);
@@ -427,7 +462,7 @@ export function ChallengeMode({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               initial={{ opacity: 0, y: 12 }}
-              key={`${currentQuestion.archetypeSlug}-${questionNumber}`}
+              key={`${currentQuestion.questionInstanceId}-${questionNumber}`}
               transition={{ duration: 0.25 }}
             >
               <div className="mb-6 bg-indigo-950/30 border border-indigo-950/60 shadow-lg shadow-indigo-950/50 backdrop-blur-md rounded-2xl p-6 text-center">
@@ -495,7 +530,7 @@ export function ChallengeMode({
                       >
                         <Button
                           className={buttonClass}
-                          disabled={!!feedback}
+                          disabled={!!feedback || isGrading}
                           onClick={() => handleAnswer(option)}
                           size="lg"
                           variant="ghost"
@@ -522,10 +557,10 @@ export function ChallengeMode({
                         feedback === "correct" && "border-green-500 bg-green-500/10 text-green-300 shadow-[0_0_15px_rgba(16,185,129,0.15)]",
                         feedback === "wrong" && "border-red-500 bg-red-500/10 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.15)]"
                       )}
-                      disabled={!!feedback}
+                      disabled={!!feedback || isGrading}
                       onChange={(e) => setTextInput(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && textInput.trim()) {
+                        if (e.key === "Enter" && textInput.trim() && !isGrading) {
                           handleAnswer(textInput.trim());
                         }
                       }}
@@ -536,11 +571,11 @@ export function ChallengeMode({
                   {!feedback && (
                     <Button
                       className="self-center rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-violet-600 hover:from-orange-600 hover:to-violet-700 font-semibold text-white shadow-lg shadow-orange-500/20 px-8 py-2.5 transition-all duration-200 hover:translate-y-[-1px] active:scale-[0.98]"
-                      disabled={!textInput.trim()}
+                      disabled={!textInput.trim() || isGrading}
                       onClick={() => handleAnswer(textInput.trim())}
                       size="sm"
                     >
-                      Check answer
+                      {isGrading ? "Checking..." : "Check answer"}
                     </Button>
                   )}
                 </div>
@@ -567,7 +602,7 @@ export function ChallengeMode({
                       <p className="text-sm text-indigo-200/80">
                         The correct answer is:{" "}
                         <span className="font-semibold text-green-400 underline decoration-green-400/30 decoration-2 underline-offset-2">
-                          {question.correctAnswer}
+                          {answerResult?.correctAnswer}
                         </span>
                       </p>
 

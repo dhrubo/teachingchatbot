@@ -22,16 +22,24 @@ import {
   DEFAULT_CHAT_MODEL,
   getModelCapabilities,
 } from "@/lib/ai/models";
-import { TUTOR_SYSTEM_PROMPT } from "@/lib/ai/prompts-tutor";
+import { buildTutorPrompt, TUTOR_PROMPT_VERSION } from "@/lib/ai/prompts-tutor";
+import { resolveTutorMode } from "@/lib/ai/resolve-tutor-mode";
+import {
+  createTutorValidationTransform,
+  type TutorTransformOutcome,
+} from "@/lib/ai/tutor-response-transform";
 import { VISIBLE_TOOL_TYPES, hasRenderableContent } from "@/lib/ai/visible-tools";
 import { getTutorProviderCandidates, isUsingGateway } from "@/lib/ai/providers";
 import { streamTextWithFallback } from "@/lib/ai/stream-with-provider-fallback";
+import { recordAiCall } from "@/lib/ai/ai-call-log";
+import { notifyHighRiskMessage } from "@/lib/privacy/escalation";
 import { createChatTitle, isLLMTitleEnabled } from "@/lib/ai/title";
 import { askQuestion } from "@/lib/ai/tools/ask-question";
 import { getCurriculumTopics } from "@/lib/ai/tools/get-curriculum-topics";
 import { manageGoals } from "@/lib/ai/tools/manage-goals";
 import { startNewTopicSession } from "@/lib/ai/tools/start-new-topic-session";
 import { logAICall } from "@/lib/db/queries/analytics";
+import { getConfirmedWeaknesses } from "@/lib/db/queries/learning-science";
 import { updateStudentProfile } from "@/lib/ai/tools/update-student-profile";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
@@ -41,6 +49,7 @@ import {
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
+  getStudentProfile,
   saveChat,
   saveMessages,
   updateChatTitleById,
@@ -54,6 +63,10 @@ import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
+// The app decides the tutor's mode — never the model. Today the one
+// concrete, existing signal for a graded-answer turn is the `[CORRECT`/
+// `[INCORRECT` directive text built client-side in
+// hooks/use-active-chat.tsx and forwarded verbatim as the user message.
 export const maxDuration = 60;
 
 function getStreamContext() {
@@ -105,8 +118,8 @@ export async function POST(request: Request) {
     // than paying for serial DB round-trips before the model can start.
     // getMessagesByChatId keyed on the request id returns [] for a not-yet-created
     // chat, which is harmless: we only use it when `chat` exists.
-    const [messageCount, chat, chatMessages, approvalStatus] = await Promise.all(
-      [
+    const [messageCount, chat, chatMessages, approvalStatus, studentProfile] =
+      await Promise.all([
         getMessageCountByUserId({
           id: session.user.id,
           differenceInHours: 1,
@@ -117,10 +130,21 @@ export async function POST(request: Request) {
         userType === "guest"
           ? Promise.resolve(null)
           : getApprovalStatus(session.user.id),
-      ]
-    );
+        // Read-only learner evidence for the tutor's context, fetched server
+        // side before the model call — the model never sees anything beyond
+        // this (no raw transcripts, no PII).
+        userType === "guest"
+          ? Promise.resolve(null)
+          : getStudentProfile(session.user.id),
+      ]);
 
     const isPremiumUser = userType !== "guest" && approvalStatus === "approved";
+
+    const confirmedMisconceptions = studentProfile
+      ? await getConfirmedWeaknesses(studentProfile.id)
+          .then((rows) => rows.slice(0, 3).map((r) => r.misconception))
+          .catch(() => [])
+      : [];
 
     if (messageCount > getEntitlements(userType).maxMessagesPerHour) {
       return new ChatbotError("rate_limit:chat").toResponse();
@@ -193,6 +217,16 @@ export async function POST(request: Request) {
         message as ChatMessage,
       ];
     }
+
+    // The app resolves the tutor's mode from the last user turn — the model
+    // is never asked or allowed to pick it.
+    const lastUserText = [...uiMessages]
+      .reverse()
+      .find((m) => m.role === "user")
+      ?.parts?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+      .map((p) => p.text)
+      .join("\n") ?? "";
+    const tutorMode = resolveTutorMode(lastUserText);
 
     if (message?.role === "user") {
       // Persist the user message off the critical path. The current turn builds
@@ -325,6 +359,10 @@ export async function POST(request: Request) {
     let llmResultRef: Awaited<
       ReturnType<typeof streamTextWithFallback>
     >["result"] | null = null;
+    let transformOutcomeRef: TutorTransformOutcome | null = null;
+    let providerRef = "unknown";
+    let modelRef = "unknown";
+    let requestIdRef = "unknown";
 
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
@@ -335,6 +373,7 @@ export async function POST(request: Request) {
         let questionAsked = false;
 
         const candidates = getTutorProviderCandidates(isPremiumUser);
+        const basePrompt = buildTutorPrompt(tutorMode, { confirmedMisconceptions });
 
         const {
           result: llmResult,
@@ -344,10 +383,26 @@ export async function POST(request: Request) {
         } = await streamTextWithFallback(
           candidates,
           {
-            system: TUTOR_SYSTEM_PROMPT,
+            system: basePrompt,
             messages: modelMessages,
             stopWhen: stepCountIs(8),
             experimental_activeTools: activeTools,
+            // Buffers the whole turn (across every tool-calling step) and
+            // validates + repairs the visible text ONCE before any of it
+            // reaches the client — see lib/ai/tutor-response-transform.ts
+            // for the trade-off this makes (no live token streaming).
+            ...(candidates.length > 0 && {
+              experimental_transform: createTutorValidationTransform({
+                mode: tutorMode,
+                basePrompt,
+                validationContext: { mode: tutorMode, confirmedMisconceptions },
+                repairModel: candidates[0].model,
+                messages: modelMessages,
+                onResult: (outcome) => {
+                  transformOutcomeRef = outcome;
+                },
+              }),
+            }),
             providerOptions: {
               ...(isUsingGateway() &&
                 modelConfig?.gatewayOrder && {
@@ -384,10 +439,16 @@ export async function POST(request: Request) {
           },
           (name) => {
             console.info("provider fallback switched to", name);
-          }
+          },
+          undefined,
+          undefined,
+          TUTOR_PROMPT_VERSION
         );
 
         llmResultRef = llmResult;
+        providerRef = provider;
+        modelRef = model;
+        requestIdRef = requestId;
 
         dataStream.merge(
           llmResult.toUIMessageStream({ sendReasoning: isReasoningModel })
@@ -464,6 +525,36 @@ export async function POST(request: Request) {
             });
           } catch {
             /* non-fatal — logging should never block the response */
+          }
+        }
+
+        // The response was already validated (and repaired at most once)
+        // BEFORE the client ever received it — see the experimental_transform
+        // wired above (lib/ai/tutor-response-transform.ts). This just records
+        // the outcome: provider, model, promptVersion, latency, repair
+        // status, and violation CODES only (never raw text).
+        if (transformOutcomeRef) {
+          recordAiCall(providerRef, modelRef, "lesson_bundle", requestIdRef, {
+            promptVersion: TUTOR_PROMPT_VERSION,
+            repairStatus: transformOutcomeRef.repairStatus,
+            violations: transformOutcomeRef.violations,
+          });
+          if (transformOutcomeRef.repairStatus !== "none") {
+            console.warn("[chat] tutor response required repair/fallback:", {
+              chatId: id,
+              mode: tutorMode,
+              repairStatus: transformOutcomeRef.repairStatus,
+              violations: transformOutcomeRef.violations,
+            });
+            if (transformOutcomeRef.repairStatus === "fallback") {
+              notifyHighRiskMessage({
+                studentId: studentProfile?.id,
+                mode: tutorMode,
+                violations: transformOutcomeRef.violations,
+              }).catch(() => {
+                /* best-effort — never block or fail the response */
+              });
+            }
           }
         }
       },

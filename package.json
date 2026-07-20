@@ -21,11 +21,13 @@
     "seed:question-archetypes:csv": "npx tsx scripts/seed-question-archetypes-csv.ts",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
-    "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
+    "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
+    "eval:tutor": "tsx evals/tutor/run.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.80",
     "@ai-sdk/groq": "^3.0.39",
+    "@ai-sdk/openai": "^3.0.86",
     "@ai-sdk/provider": "^3.0.3",
     "@ai-sdk/react": "3.0.118",
     "@codemirror/lang-python": "^6.1.6",

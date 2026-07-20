@@ -6,12 +6,33 @@ This document explains how AI providers work in the tutor app.
 
 The app supports multiple AI providers with **automatic fallback**. If the primary provider hits a quota/rate-limit error, it transparently retries with the next configured provider.
 
-**Provider priority (top wins):**
+Every provider has a **stable id**, independent of its display name, used for
+logging and for `AI_PROVIDER_ORDER` matching:
+
+| Stable id | Provider |
+|---|---|
+| `vercel-ai-gateway` | Vercel AI Gateway |
+| `gemini-premium` | Google Gemini (premium key) |
+| `gemini-free` | Google Gemini (free key) |
+| `openai` | OpenAI (direct) |
+| `groq` | Groq |
+| `openrouter` | OpenRouter |
+
+**Provider priority (top wins) unless `AI_PROVIDER_ORDER` overrides it:**
 
 1. **Vercel AI Gateway** — if `USE_VERCEL_AI_GATEWAY=1` and `AI_GATEWAY_API_KEY` is set
-2. **Google Gemini** — if `GOOGLE_GENERATIVE_AI_API_KEY` is set
-3. **Groq** — if `GROQ_API_KEY` is set
-4. **OpenRouter** — if `OPENROUTER_API_KEY` is set
+2. **Google Gemini (premium)** — for signed-in/approved users, if a premium key is set
+3. **Google Gemini (free)** — if `GOOGLE_GENERATIVE_AI_API_KEY` is set
+4. **OpenAI** — if both `OPENAI_API_KEY` and `OPENAI_MODEL` are set
+5. **Groq** — if `GROQ_API_KEY` is set
+6. **OpenRouter** — if `OPENROUTER_API_KEY` is set
+
+`AI_PROVIDER_ORDER` is a comma-separated list of **stable ids** (not display
+names), compared case-insensitively, e.g.:
+
+```env
+AI_PROVIDER_ORDER=openai,gemini-free,groq,openrouter
+```
 
 If the first provider returns a quota error (429, RESOURCE_EXHAUSTED, rate-limit), the app tries the next one automatically. Non-quota errors (invalid key, model not found) fail immediately.
 
@@ -65,6 +86,33 @@ OpenRouter's `:free` models have no cost. Popular free models:
 - `deepseek/deepseek-chat-v3-0324:free`
 - `google/gemini-2.5-flash-lite-preview-05-06:free`
 - `meta-llama/llama-4-maverick:free`
+
+## Setting up OpenAI (optional, direct)
+
+```env
+OPENAI_API_KEY=your_openai_key_here
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Both variables are **required together** — there is no hardcoded default
+OpenAI model. If `OPENAI_API_KEY` is set without `OPENAI_MODEL`, the OpenAI
+candidate is skipped (not silently defaulted) and a setup warning is logged.
+
+Get a key at [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+
+**Important — read before relying on "free"/complimentary OpenAI tokens:**
+
+- Any complimentary or discounted token programme OpenAI offers is
+  **eligibility-based and requires a positive account balance** — it is not
+  something this app grants or guarantees. Check your OpenAI dashboard for
+  current eligibility; don't assume any specific model is "free" going
+  forward, which is exactly why `OPENAI_MODEL` has no default here.
+- **Tool use is excluded** from OpenAI's complimentary-token programmes in
+  general — if you rely on such a programme, avoid enabling `tools` for the
+  OpenAI candidate, or expect those calls to be billed normally.
+- **Data-sharing / model-training opt-out is configured in the OpenAI
+  dashboard** (Settings → Data controls), not in this codebase. This app does
+  not and cannot toggle that setting on your behalf.
 
 ## Using Vercel AI Gateway (advanced)
 
@@ -139,7 +187,7 @@ Restart the dev server after changing env vars.
 **For local development, prefer Groq first:**
 
 ```env
-AI_PROVIDER_ORDER=groq,gemini,openrouter
+AI_PROVIDER_ORDER=groq,gemini-free,openrouter
 ```
 
-This tries Groq first, then Gemini, then OpenRouter — useful when testing fallback or avoiding Gemini quota limits.
+This tries Groq first, then Gemini, then OpenRouter — useful when testing fallback or avoiding Gemini quota limits. Use the stable ids from the table above, not display names.

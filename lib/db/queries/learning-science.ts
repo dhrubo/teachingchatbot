@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, desc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
+import { statusForFrequency } from "@/lib/learning-science/misconception-status";
 import {
   studentConfidence,
   type StudentConfidence,
@@ -240,13 +241,17 @@ export async function upsertWeakness(params: {
     )
     .limit(1);
 
+  // Status is derived from the resulting evidence count, never passed in by
+  // the caller — a single call site can't jump straight to "confirmed".
   if (existing.length > 0) {
+    const newFrequency = existing[0].frequency + 1;
     await db
       .update(studentWeaknessProfile)
       .set({
-        frequency: existing[0].frequency + 1,
+        frequency: newFrequency,
         confidence: params.confidence ?? existing[0].confidence,
         evidenceJson: params.evidence ?? existing[0].evidenceJson,
+        status: statusForFrequency(newFrequency),
         lastSeenAt: new Date(),
       })
       .where(eq(studentWeaknessProfile.id, existing[0].id));
@@ -259,6 +264,7 @@ export async function upsertWeakness(params: {
       topic: params.topic ?? null,
       confidence: params.confidence ?? 3,
       evidenceJson: params.evidence ?? {},
+      status: statusForFrequency(1),
     });
   }
 }
@@ -270,6 +276,26 @@ export async function getWeaknesses(
     .select()
     .from(studentWeaknessProfile)
     .where(eq(studentWeaknessProfile.studentId, studentId))
+    .orderBy(desc(studentWeaknessProfile.frequency));
+}
+
+/**
+ * Only "confirmed" weaknesses — repeated, independent evidence, not a single
+ * wrong answer. This is the set that's safe to surface to the tutor prompt or
+ * a parent report; "tentative" entries are for internal tracking only.
+ */
+export async function getConfirmedWeaknesses(
+  studentId: string
+): Promise<StudentWeaknessProfile[]> {
+  return db
+    .select()
+    .from(studentWeaknessProfile)
+    .where(
+      and(
+        eq(studentWeaknessProfile.studentId, studentId),
+        eq(studentWeaknessProfile.status, "confirmed")
+      )
+    )
     .orderBy(desc(studentWeaknessProfile.frequency));
 }
 

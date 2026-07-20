@@ -1,14 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import {
-  recordAnswer,
   selectNextQuestionForLesson,
   selectNextQuestionForMission,
+  submitAnswerForInstance,
 } from "@/lib/adaptive/engine";
 import { getAppConfig } from "@/lib/app-config";
 import { countGuestAttemptsSince } from "@/lib/db/queries/questions";
 import { getStudentProfile } from "@/lib/db/queries/student";
 import { upsertConfidence } from "@/lib/db/queries/learning-science";
+import { tryBatchAnalysis } from "@/lib/learning-science/batch-misconception-analysis";
 
 // Resolve the caller into either a logged-in studentId or a guestSessionId.
 async function resolveCaller() {
@@ -98,50 +100,80 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Never leak the answer key to guests? Local grading needs it client-side,
-    // and these are low-stakes practice questions, so we return it for instant
-    // feedback with zero round-trips.
+    // `next` is already a sanitised DTO (lib/adaptive/question-instance.ts) —
+    // it contains no correctAnswer, grading rules or misconception tags. The
+    // canonical QuestionInstance row was already persisted server-side by the
+    // engine before this response was built.
     return NextResponse.json({ question: next });
   }
 
   if (action === "submit-answer") {
-    const {
-      archetypeId,
-      skillSlug,
-      difficultyBand,
-      prompt,
-      studentAnswer,
-      correctAnswer,
-      rules,
-      misconceptionTags,
-      timeTakenMs,
-    } = body;
+    const { questionInstanceId, studentAnswer, timeTakenMs, confidence, idempotencyKey } =
+      body as {
+        questionInstanceId?: string;
+        studentAnswer?: string;
+        timeTakenMs?: unknown;
+        confidence?: unknown;
+        idempotencyKey?: string;
+      };
 
-    if (!(archetypeId && skillSlug && difficultyBand)) {
+    if (!questionInstanceId || typeof studentAnswer !== "string") {
       return NextResponse.json(
-        { error: "archetypeId, skillSlug and difficultyBand are required" },
+        { error: "questionInstanceId and studentAnswer are required" },
         { status: 400 }
       );
     }
 
-    const result = await recordAnswer({
+    const result = await submitAnswerForInstance({
+      questionInstanceId,
+      studentAnswer,
+      timeTakenMs,
+      confidence,
+      idempotencyKey: idempotencyKey ?? null,
       studentId: "studentId" in caller ? caller.studentId : undefined,
       guestSessionId: caller.isGuest ? caller.guestSessionId : undefined,
-      archetypeId,
-      skillSlug,
-      difficultyBand,
-      prompt: prompt ?? "",
-      studentAnswer: studentAnswer ?? "",
-      correctAnswer: correctAnswer ?? "",
-      rules,
-      misconceptionTags,
-      timeTakenMs,
     });
 
-    return NextResponse.json({
-      isCorrect: result.isCorrect,
-      mastery: result.mastery,
-    });
+    switch (result.status) {
+      case "not_found":
+        return NextResponse.json(
+          { error: "Question not found or already expired." },
+          { status: 404 }
+        );
+      case "forbidden":
+        return NextResponse.json(
+          { error: "This question was not issued to you." },
+          { status: 403 }
+        );
+      case "expired":
+        return NextResponse.json(
+          { error: "This question has expired. Request a new one." },
+          { status: 410 }
+        );
+      case "duplicate":
+        return NextResponse.json(
+          { error: "This question has already been answered." },
+          { status: 409 }
+        );
+      case "ok": {
+        // Defer batch misconception analysis past the response instead of
+        // leaving an untracked promise — Next.js keeps the function alive
+        // until this resolves, without delaying the client's response.
+        const analysisStudentId =
+          "studentId" in caller ? caller.studentId : undefined;
+        if (analysisStudentId) {
+          after(() => tryBatchAnalysis(analysisStudentId));
+        }
+        return NextResponse.json({
+          isCorrect: result.isCorrect,
+          correctAnswer: result.correctAnswer,
+          explanation: result.explanation,
+          mastery: result.mastery,
+        });
+      }
+      default:
+        return NextResponse.json({ error: "Unknown error." }, { status: 500 });
+    }
   }
 
   if (action === "record-confidence") {

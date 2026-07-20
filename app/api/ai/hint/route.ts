@@ -2,6 +2,10 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import { getStudentProfile } from "@/lib/db/queries/student";
 import { getTutorProviderCandidates } from "@/lib/ai/providers";
+import { buildTutorPrompt, TUTOR_PROMPT_VERSION } from "@/lib/ai/prompts-tutor";
+import { runTutorTurn } from "@/lib/ai/tutor-validator";
+import { recordAiCall } from "@/lib/ai/ai-call-log";
+import { notifyHighRiskMessage } from "@/lib/privacy/escalation";
 import { getApprovalStatus } from "@/lib/db/queries/admin";
 import { cookies } from "next/headers";
 import { streamTextWithFallback } from "@/lib/ai/stream-with-provider-fallback";
@@ -57,38 +61,73 @@ export async function POST(req: NextRequest) {
 
     const promptContext = `Question: ${questionPrompt}${
       studentAnswer ? `\nStudent's Answer so far: ${studentAnswer}` : ""
-    }${skillSlug ? `\nSkill: ${skillSlug}` : ""}`;
+    }`;
 
-    const { result, model } = await streamTextWithFallback(
-      effectiveCandidates,
-      {
-        system:
-          "You are SARA, an encouraging GCSE tutor. Provide a highly concise, warm, supportive, Socratic hint for the following question. Do NOT solve the question or reveal the final answer. Give the student a clue or ask a guidance question. Keep it under 2 sentences.",
-        messages: [
-          {
-            role: "user",
-            content: promptContext,
-          },
-        ],
-      },
-      undefined,
-      "hint"
-    );
+    const startedAt = Date.now();
+    let lastModel = "unknown";
+    let lastProvider = "unknown";
+    let lastRequestId = "unknown";
+    let promptTokens = 0;
+    let completionTokens = 0;
 
-    const text = await result.text;
-    const finalUsage = (await result.usage) as any;
+    const generate = async (systemPrompt: string): Promise<string> => {
+      const { result, model, provider, requestId } = await streamTextWithFallback(
+        effectiveCandidates,
+        {
+          system: systemPrompt,
+          messages: [{ role: "user", content: promptContext }],
+        },
+        undefined,
+        "hint",
+        undefined,
+        TUTOR_PROMPT_VERSION
+      );
+      lastModel = model;
+      lastProvider = provider;
+      lastRequestId = requestId;
+      const text = await result.text;
+      const usage = (await result.usage) as { inputTokens?: number; outputTokens?: number };
+      promptTokens += usage?.inputTokens ?? 0;
+      completionTokens += usage?.outputTokens ?? 0;
+      return text;
+    };
+
+    // Deliberately no finalAnswer in context — hint mode must never receive
+    // the answer, so there's nothing for the model to leak even if it tried.
+    const turn = await runTutorTurn({
+      mode: "hint",
+      basePrompt: buildTutorPrompt("hint", { currentTopic: skillSlug ?? null }),
+      validation: { mode: "hint", finalAnswer: null },
+      generate,
+    });
+
+    recordAiCall(lastProvider, lastModel, "hint", lastRequestId, {
+      promptVersion: TUTOR_PROMPT_VERSION,
+      latencyMs: Date.now() - startedAt,
+      repairStatus: turn.repairStatus,
+      violations: turn.violations,
+    });
+    if (turn.repairStatus === "fallback") {
+      notifyHighRiskMessage({
+        studentId: studentProfile?.id,
+        mode: "hint",
+        violations: turn.violations,
+      }).catch(() => {
+        /* best-effort — never block or fail the response */
+      });
+    }
 
     // Log AI call metrics
     await logAICall({
       studentId: studentProfile?.id ?? null,
       purpose: "hint",
-      modelUsed: model,
-      promptTokens: finalUsage?.promptTokens ?? 0,
-      completionTokens: finalUsage?.completionTokens ?? 0,
+      modelUsed: lastModel,
+      promptTokens,
+      completionTokens,
     });
     invalidateQuotaCache();
 
-    return NextResponse.json({ hint: text });
+    return NextResponse.json({ hint: turn.text });
   } catch (error) {
     console.error("[api/ai/hint] error:", error);
     return NextResponse.json(

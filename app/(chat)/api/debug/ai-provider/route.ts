@@ -13,18 +13,23 @@ export async function GET() {
 
   const candidates = getTutorProviderCandidates();
   const configured: string[] = [];
-  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) configured.push("gemini");
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) configured.push("gemini-free");
   if (process.env.GROQ_API_KEY) configured.push("groq");
   if (process.env.OPENROUTER_API_KEY) configured.push("openrouter");
+  if (process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL) {
+    configured.push("openai");
+  }
 
   return Response.json({
     providerOrder: process.env.AI_PROVIDER_ORDER?.split(",").map((s) =>
-      s.trim()
+      s.trim().toLowerCase()
     ) ?? ["default"],
     resolvedProviders: candidates.map((c) => ({
-      provider: c.name,
+      id: c.id,
+      displayName: c.displayName,
       model: c.modelName,
-      configured: configured.includes(c.name),
+      capabilities: c.capabilities,
+      configured: configured.includes(c.id),
     })),
     env: {
       GOOGLE_GENERATIVE_AI_MODEL:

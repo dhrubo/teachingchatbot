@@ -98,6 +98,7 @@ type ActiveChatContextValue = {
   confirmLeave: () => void;
   cancelLeave: () => void;
   requestHarderChallenge: () => void;
+  requestReteach: () => void;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
@@ -489,9 +490,10 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // If the answer already contains a CORRECT/INCORRECT directive block
-      // (e.g. from answer-panel's "Explain differently 🔄" handler), pass it
-      // through as-is — the student asked for reteaching, so we call the LLM.
+      // If the answer already contains a CORRECT/INCORRECT directive block,
+      // pass it through as-is rather than re-wrapping it — the server (see
+      // resolveTutorMode in app/(chat)/api/chat/route.ts) reads this marker
+      // to pick the tutor's mode; the model never gets to choose it.
       if (/\[(CORRECT|INCORRECT)/.test(answer)) {
         sendMessage({
           role: "user",
@@ -528,6 +530,24 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         {
           type: "text",
           text: `I got every challenge right - give me harder questions on the same topic to really challenge me.`,
+        },
+      ],
+    });
+  }, [sendMessage]);
+
+  // Distinct from submitAnswer's [CORRECT/INCORRECT] directive: this is an
+  // explicit "explain it differently" request with no right/wrong answer
+  // attached. The `[RETEACH]` marker is a deterministic signal the server's
+  // resolveTutorMode (app/(chat)/api/chat/route.ts) reads to pick "reteach"
+  // mode specifically, rather than folding it into "mistake_explanation" —
+  // the model never decides this, only the marker does.
+  const requestReteach = useCallback(() => {
+    sendMessage({
+      role: "user",
+      parts: [
+        {
+          type: "text",
+          text: "[RETEACH] Please explain the current idea a different way — use a different example or representation, keep the same difficulty, and don't ask a new challenge question.",
         },
       ],
     });
@@ -702,6 +722,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       confirmLeave,
       cancelLeave,
       requestHarderChallenge,
+      requestReteach,
     }),
     [
       chatId,
@@ -745,6 +766,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       confirmLeave,
       cancelLeave,
       requestHarderChallenge,
+      requestReteach,
     ]
   );
 

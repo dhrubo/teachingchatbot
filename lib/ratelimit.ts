@@ -67,6 +67,27 @@ export async function checkIpRateLimit(ip: string | undefined) {
   }
 }
 
+// Simple in-memory rate limiter for the voice endpoints (session create +
+// transcribe) — keyed by caller (studentId/guestSessionId), not IP, since a
+// household may share an IP. Independent of Redis, same style as the admin
+// limiter below: good enough for a single-instance/dev deployment, and this
+// repo has no multi-instance requirement today (see docs/deployment).
+const voiceStore = new Map<string, { count: number; resetAt: number }>();
+
+export function checkVoiceRateLimit(
+  callerId: string,
+  maxPerHour: number
+): boolean {
+  const now = Date.now();
+  const entry = voiceStore.get(callerId);
+  if (!entry || now > entry.resetAt) {
+    voiceStore.set(callerId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    return true;
+  }
+  entry.count += 1;
+  return entry.count <= maxPerHour;
+}
+
 // Simple in-memory rate limiter for admin/auth endpoints.
 // Independent of Redis — always uses the in-memory store.
 const adminStore = new Map<string, { count: number; resetAt: number }>();

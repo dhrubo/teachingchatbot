@@ -1,12 +1,14 @@
 import "server-only";
 
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import type { DifficultyBand } from "@/lib/adaptive/update-mastery";
 import {
   type QuestionArchetype,
   questionArchetype,
   questionAttempt,
+  type QuestionInstance,
+  questionInstance,
   type StudentSkillMastery,
   studentSkillMastery,
 } from "../schema";
@@ -142,10 +144,27 @@ export async function countGuestAttemptsSince(
   return rows[0]?.count ?? 0;
 }
 
+// Loosely typed so callers can pass either the module `db` or a
+// `db.transaction` callback's `tx` handle — both implement the same
+// select/insert/update query-builder surface used below.
+type DbClient = Pick<typeof db, "select" | "insert" | "update">;
+
 export async function recordAttempt(
-  values: typeof questionAttempt.$inferInsert
+  values: typeof questionAttempt.$inferInsert,
+  dbHandle: DbClient = db
 ) {
-  await db.insert(questionAttempt).values(values);
+  await dbHandle.insert(questionAttempt).values(values);
+}
+
+export async function getAttemptByQuestionInstanceId(
+  questionInstanceId: string
+) {
+  const rows = await db
+    .select()
+    .from(questionAttempt)
+    .where(eq(questionAttempt.questionInstanceId, questionInstanceId))
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 /** Upsert mastery after applying an answer result. */
@@ -158,11 +177,12 @@ export async function upsertMastery(
     recentCorrectStreak: number;
     recentWrongStreak: number;
     isCorrect: boolean;
-  }
+  },
+  dbHandle: DbClient = db
 ) {
   // Manual read-check-upsert to avoid Drizzle onConflictDoUpdate issues
   // with composite PKs across different Postgres/Drizzle versions.
-  const existing = await db
+  const existing = await dbHandle
     .select()
     .from(studentSkillMastery)
     .where(
@@ -174,7 +194,7 @@ export async function upsertMastery(
     .limit(1);
 
   if (existing.length > 0) {
-    await db
+    await dbHandle
       .update(studentSkillMastery)
       .set({
         masteryScore: next.masteryScore,
@@ -195,7 +215,7 @@ export async function upsertMastery(
         )
       );
   } else {
-    await db.insert(studentSkillMastery).values({
+    await dbHandle.insert(studentSkillMastery).values({
       studentId,
       skillSlug: next.skillSlug,
       masteryScore: next.masteryScore,
@@ -208,4 +228,125 @@ export async function upsertMastery(
       updatedAt: new Date(),
     });
   }
+}
+
+// =====================================================================
+// QuestionInstance — server-authoritative record of an offered question.
+// The canonical answer/rules/misconception tags live ONLY here; the browser
+// only ever receives a sanitised DTO. See lib/adaptive/question-instance.ts
+// for the pure DTO/ownership/expiry helpers built on top of these rows.
+// =====================================================================
+
+const QUESTION_INSTANCE_TTL_MS = 30 * 60 * 1000;
+
+export async function createQuestionInstance(values: {
+  studentId?: string | null;
+  guestSessionId?: string | null;
+  archetypeId: string;
+  skillSlug: string;
+  difficultyBand: DifficultyBand;
+  questionType: QuestionInstance["questionType"];
+  prompt: string;
+  options: string[] | null;
+  correctAnswer: string;
+  rules: Record<string, unknown>;
+  misconceptionTags: string[];
+  hint: string | null;
+  explanation: string | null;
+}): Promise<QuestionInstance> {
+  const now = new Date();
+  const rows = await db
+    .insert(questionInstance)
+    .values({
+      studentId: values.studentId ?? null,
+      guestSessionId: values.guestSessionId ?? null,
+      archetypeId: values.archetypeId,
+      skillSlug: values.skillSlug,
+      difficultyBand: values.difficultyBand,
+      questionType: values.questionType,
+      prompt: values.prompt,
+      optionsJson: values.options,
+      correctAnswer: values.correctAnswer,
+      rulesJson: values.rules,
+      misconceptionTagsJson: values.misconceptionTags,
+      hint: values.hint,
+      explanation: values.explanation,
+      createdAt: now,
+      expiresAt: new Date(now.getTime() + QUESTION_INSTANCE_TTL_MS),
+    })
+    .returning();
+  return rows[0];
+}
+
+export async function getQuestionInstanceById(
+  id: string
+): Promise<QuestionInstance | null> {
+  const rows = await db
+    .select()
+    .from(questionInstance)
+    .where(eq(questionInstance.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Atomically claim an instance for submission: only succeeds if no submission
+ * has been recorded yet. Returns the claimed row, or null if another
+ * concurrent request already claimed it (or it was never found).
+ */
+export async function claimQuestionInstanceForSubmission(
+  id: string,
+  idempotencyKey: string | null
+): Promise<QuestionInstance | null> {
+  const rows = await db
+    .update(questionInstance)
+    .set({
+      submittedAt: new Date(),
+      submittedIdempotencyKey: idempotencyKey,
+    })
+    .where(and(eq(questionInstance.id, id), isNull(questionInstance.submittedAt)))
+    .returning();
+  return rows[0] ?? null;
+}
+
+/**
+ * Purge guest-only question data older than `olderThanHours` — the same
+ * retention window already applied to guest chats
+ * (`deleteExpiredGuestChats`, called from the existing
+ * `/api/cron/cleanup-guests` job). Logged-in students' data (studentId set)
+ * is never touched here. Deletes attempts before instances since the
+ * instance FK is `onDelete: "set null"`, not cascade.
+ */
+export async function deleteExpiredGuestQuestionData({
+  olderThanHours = 24,
+}: { olderThanHours?: number } = {}): Promise<{
+  deletedAttempts: number;
+  deletedInstances: number;
+}> {
+  const cutoff = new Date(Date.now() - olderThanHours * 60 * 60 * 1000);
+
+  const deletedAttempts = await db
+    .delete(questionAttempt)
+    .where(
+      and(
+        isNotNull(questionAttempt.guestSessionId),
+        lt(questionAttempt.createdAt, cutoff)
+      )
+    )
+    .returning();
+
+  const deletedInstances = await db
+    .delete(questionInstance)
+    .where(
+      and(
+        isNotNull(questionInstance.guestSessionId),
+        lt(questionInstance.createdAt, cutoff)
+      )
+    )
+    .returning();
+
+  return {
+    deletedAttempts: deletedAttempts.length,
+    deletedInstances: deletedInstances.length,
+  };
 }

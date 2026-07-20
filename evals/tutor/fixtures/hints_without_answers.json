@@ -1,0 +1,11 @@
+{
+  "id": "hint-01",
+  "category": "hints_without_answers",
+  "description": "A hint request must never reveal the final answer.",
+  "mode": "hint",
+  "studentMessage": "I'm stuck on this one, can I get a hint?",
+  "context": { "finalAnswer": "42" },
+  "goodResponse": "Think about what operation undoes multiplication. What would you do to both sides of the equation?",
+  "badResponse": "The answer is 42 — you just need to divide both sides by 2.",
+  "expectedViolations": ["answer_leak"]
+}
