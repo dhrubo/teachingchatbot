@@ -3,34 +3,42 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
-config({
-  path: ".env.local",
-});
+config({ path: ".env.local" });
 
-const runMigrate = async () => {
-  if (!process.env.POSTGRES_URL) {
-    console.log("POSTGRES_URL not defined, skipping migrations");
-    process.exit(0);
+const isSafeBuildMode = process.argv.includes("--safe");
+
+async function runMigrate(): Promise<void> {
+  const url = process.env.POSTGRES_URL?.trim();
+  if (!url) {
+    console.info(
+      "[db:migrate] POSTGRES_URL is not set — skipping SQL migrations (app will use local fallback store)."
+    );
+    return;
   }
 
-  const connection = postgres(process.env.POSTGRES_URL, { max: 1 });
+  const connection = postgres(url, { max: 1, connect_timeout: 10 });
   const db = drizzle(connection);
 
-  console.log("Running migrations...");
-
-  const start = Date.now();
-  await migrate(db, { migrationsFolder: "./lib/db/migrations" });
-  const end = Date.now();
-
-  console.log("Migrations completed in", end - start, "ms");
-
-  // Topic seeding now handled by scripts/seed-missions.ts
-
-  process.exit(0);
-};
+  try {
+    console.info("[db:migrate] Running Ranedeer schema migrations...");
+    await migrate(db, {
+      migrationsFolder: "./lib/db/migrations",
+      migrationsTable: "__ranedeer_migrations",
+    });
+    console.info("[db:migrate] Migrations complete.");
+  } finally {
+    await connection.end({ timeout: 3 }).catch(() => undefined);
+  }
+}
 
 runMigrate().catch((err) => {
-  console.error("Migration failed");
-  console.error(err);
+  if (isSafeBuildMode) {
+    console.warn(
+      "[db:migrate] Warning — could not apply migrations during build (continuing with runtime fallback):",
+      err instanceof Error ? err.message : String(err)
+    );
+    process.exit(0);
+  }
+  console.error("[db:migrate] Migration failed:", err);
   process.exit(1);
 });

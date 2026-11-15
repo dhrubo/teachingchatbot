@@ -1,301 +1,71 @@
-# 🚀 GCSE Mastery: Gamified GCSE Learning App & AI Tutor
+# 🦌 Mr. Ranedeer Maths — Voice-First Edexcel GCSE (`1MA1`) Tutor
 
-Build a personalized Duolingo-style GCSE learning platform for your child, complete with local template-based challenge engines, multi-student selector onboarding, and parent insight dashboards.
+A clean, 100% free-tier **Voice-First AI Mathematics Tutor** built on the pedagogical principles of [**Mr. Ranedeer AI Tutor**](https://github.com/JushBJJ/Mr.-Ranedeer-AI-Tutor), tailored exclusively to **Pearson Edexcel GCSE (9–1) Mathematics (`1MA1`)** across both **Foundation (Grades 1–5)** and **Higher (Grades 4–9)** tiers, with **Duolingo-style daily practice streaks and Web Push reminders**.
 
-Powered by:
+---
 
-- [Next.js](https://nextjs.org) App Router
-- [AI SDK](https://ai-sdk.dev) by Vercel
-- [Gemini](https://ai.google.dev) by Google
-- [Neon](https://neon.tech) Serverless Postgres
-- [Tailwind CSS](https://tailwindcss.com)
+## ✨ Key Principles & Features
 
-## Features
+1. **Explain Every Concept in 5 Distinct Ways (Mr. Ranedeer Learning Styles)**
+   - **Visual Diagram (`Visual + Intuitive`):** Interactive SVG Fraction Walls, Compound-Interest Multiplier Timelines, Area/Box Grids, Number Lines, Balance Scales, and Trigonometry Triangles drawn alongside KaTeX steps.
+   - **Real-World Story (`Storytelling + Analogical`):** Snowball bank accounts, chocolate trays, and everyday UK contexts.
+   - **Why It Works (`Inductive + Causal`):** Unpacks *why* rules like `invert and multiply` or `× 1.05^n` work so students never memorize blindly.
+   - **Edexcel Exam Method (`Formal + Deductive`):** Exact `1MA1` Paper 1 (Non-Calc) and Paper 2/3 (Calc) `M1/A1` mark-scheme working.
+   - **Socratic Guided Check (`Active + Socratic`):** Micro-step back-and-forth checks.
+   - Say **"Explain it another way"** (or click the button) at any moment to rotate to an untried lens!
 
-- **Syllabus-Gated Learning Map** — Circular mission nodes (Duolingo-style) guiding students through the Year 8 & Year 9 Maths curriculum.
-- **Adaptive GCSE-style Archetype Engine** — Generates thousands of unique, context-aware questions dynamically from JSON-defined skill templates with zero LLM API costs.
-- **GCSE Subject Switcher** — Beautiful row cards toggling between GCSE Maths 📐 and a stunning GCSE Science 🧪 placeholder with keyframe glow animation.
-- **Netflix-Style Multi-Student Selection** — Circular avatar switcher allowing parents of multiple children to manage profiles, paired with a 4-step onboarding stepper (Name -> Year -> Subjects -> Board).
-- **Socratic AI Hints Drawer** — Pinned trigger card providing students with short, encouraging scaffolding clues *without* revealing mathematical solutions.
-- **Socratic "Why Was I Wrong?" Explainer** — Structured feedback diagnosing the exact misconception committed on any incorrect answer and recording/upserting the error counts inside the database.
-- **Syllabus Mastery Heatmap Grid** — Color-coded parent grid mapping student skill levels (Gold for Mastered $\ge 75$, Amber for Secure, Indigo for In-Progress, and Grey for Locked).
-- **AI Efficiency Dashboard** — High-fidelity telemetry card metrics tracking questions served, cost per learner, and total prompt/completion tokens saved by using deterministic question templates.
-- **Parent Goal-Setter** — Direct goal assigner permitting guardians to select any syllabus topic, enter descriptions, and push custom missions directly to children dashboards.
-- **XP, Badges & Streaks** — Complete gamified motivation layer including local Web Audio sound effects (success/wrong) and floating achievements.
-- **Deterministic Question Selection** — Selects the next question dynamically based on the student's weakest skills and current difficulty band.
-- **Socrates Mastery Scoring** — Updates student skill mastery on a 0-100 scale mapping to must/should/could/gcse_bridge bands.
-- **Interactive fullscreen quizzes** — 5-question fullscreen adaptive challenges with zero LLM calls.
+2. **Mr. Ranedeer Curriculum Ladder & `/config` Personalization**
+   - **`0.1 → 0.x` Prerequisite Ladder:** Step back into foundational building blocks whenever a topic feels tough.
+   - **`3/10 → 6/10 → 9/10` Mastery `/test` Ramp:** Deterministic GCSE answer checker (`lib/math/check-answer.ts`) handles fractions, decimals, currency rounding hints, ratios, and spoken-maths disambiguation (`lib/voice/spoken-maths.ts`) with zero LLM latency.
+   - **`/config` Profile (`/settings`):** Configure `Foundation (1–5)` vs `Higher (4–9)`, Target Grade `1–9`, Default Explanation Lens, Tone Style, British Voice Speed (`0.85x / 1.0x / 1.15x`), and Daily Goal Minutes.
 
-## Free Mode Limitations
+3. **100% Free Voice + LLM Stack**
+   - **Speech-to-Text (STT):** Groq Free Tier `whisper-large-v3-turbo` (`POST /api/voice/stt`) with automatic client fallback to browser `SpeechRecognition` (`en-GB`).
+   - **LLM Reasoning & Open Q&A:** Automatic fallback router (`lib/ai/providers.ts`) across **Groq Free Tier** (`qwen/qwen3-32b` → `llama-3.3-70b-versatile`) ⇄ **Google AI Studio Free Tier** (`gemini-3.1-flash-lite` → `gemini-2.5-flash`) ⇄ **OpenRouter `:free`** — plus **Zero-Key Curated Mode** so every topic, visual model, lens switch, and test works out of the box even before adding an API key!
+   - **Text-to-Speech (TTS):** British Neural Voice (`en-GB-SoniaNeural` via `edge-tts-universal` at `POST /api/voice/tts`) with automatic browser `speechSynthesis` (`en-GB`) fallback.
 
-When `APP_MODE=FREE` (the default), guest users (not signed in) have limited
-access:
+4. **Duolingo-Style Daily Practice Streaks & Reminders**
+   - **5-Minute Daily Voice Warmup (`/warmup`):** Picks 3 due spaced-repetition Edexcel checks.
+   - **Streaks & Streak Freezes:** Tracks daily streaks, awards `+1` bonus Streak Freeze every 5 streak days (max 3), and automatically consumes a freeze if a single day is missed.
+   - **Free Web Push Notifications:** Service Worker (`public/sw.js`) + VAPID (`web-push`) + daily cron (`GET /api/cron/daily-reminders`).
 
-- **5 questions per day** — after reaching the limit, guests are prompted to
-  sign up or come back the next day.
-- **1 conversation** — the current chat session; previous chats are not
-  retained.
-- **24-hour chat retention** — guest conversations are auto-cleaned after
-  24 hours.
-- **No history sidebar** — guests cannot browse previous conversations.
-- **No admin or parent dashboards** — these features are available only in
-  PREMIUM mode.
+---
 
-Set `APP_MODE=PREMIUM` in your environment to unlock all features for all
-users (registered user features remain unchanged; guest limits still apply).
-
-## Quick Start
-
-### 1. Get a free Gemini API key
-
-Visit [Google AI Studio](https://aistudio.google.com/apikey) and create an API key.
-
-No credit card required.
-
-### 2. Clone and set up
+## 🚀 Quick Start (Zero-Config Local Run)
 
 ```bash
-git clone <your-repo-url>
-cd teachingchatbot
 pnpm install
-```
-
-### 3. Configure environment
-
-Copy `.env.example` to `.env.local` and add your keys:
-
-```bash
 cp .env.example .env.local
-```
-
-The minimum required config:
-
-```env
-GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_key_here
-GOOGLE_GENERATIVE_AI_MODEL=gemini-3.1-flash-lite
-POSTGRES_URL=your_neon_database_url
-AUTH_SECRET=your_random_secret
-```
-
-### 4. Set up the database
-
-```bash
-pnpm db:migrate
-```
-
-### 5. Run locally
-
-```bash
 pnpm dev
 ```
 
-Open [localhost:3000](http://localhost:3000) and start teaching.
+Open **http://localhost:3000** — the app runs immediately with **zero database setup** (automatically persisting to `.data/local-store.json` when `POSTGRES_URL` is omitted, and auto-generating local dev VAPID keys in `.data/vapid-dev.json`).
 
-### 6. Deploy to Vercel
+### Recommended Free API Keys (`.env.local`)
 
-Import the repository into Vercel and add these environment variables:
+1. **Groq Free Tier** ([console.groq.com/keys](https://console.groq.com/keys)) — unlocks sub-second `whisper-large-v3-turbo` voice transcription + `qwen/qwen3-32b` & `llama-3.3-70b-versatile` Q&A:
+   ```env
+   GROQ_API_KEY=gsk_...
+   ```
+2. **Google AI Studio Free Tier** ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) — unlocks `gemini-3.1-flash-lite` (`500 RPD` free) + `gemini-2.5-flash` structured whiteboard fallback:
+   ```env
+   GOOGLE_GENERATIVE_AI_API_KEY=AIza...
+   ```
+3. **Production Neon Postgres & VAPID Keys (Optional for Vercel Deploy):**
+   ```bash
+   pnpm vapid:generate   # prints NEXT_PUBLIC_VAPID_PUBLIC_KEY & VAPID_PRIVATE_KEY
+   pnpm db:migrate       # applies Drizzle schema when POSTGRES_URL is set
+   ```
 
-- `GOOGLE_GENERATIVE_AI_API_KEY`
-- `GOOGLE_GENERATIVE_AI_MODEL`
-- `POSTGRES_URL`
-- `AUTH_SECRET`
+---
 
-Deploy. Done.
+## 🧪 Commands
 
-## AI Providers
-
-The tutor works out-of-the-box with **Gemini** (free tier, no credit card needed). Add Groq and/or OpenRouter for **automatic fallback** when quota runs out.
-
-| Provider | Requirement | Default Model |
-|---|---|---|
-| **Gemini** (default) | `GOOGLE_GENERATIVE_AI_API_KEY` | `gemini-3.1-flash-lite` |
-| **Groq** (fallback) | `GROQ_API_KEY` | `llama-3.3-70b-versatile` |
-| **OpenRouter** (fallback) | `OPENROUTER_API_KEY` | `deepseek/deepseek-chat-v3-0324:free` |
-| **Vercel AI Gateway** (advanced) | `USE_VERCEL_AI_GATEWAY=1` + `AI_GATEWAY_API_KEY` | configurable |
-
-See [docs/providers.md](docs/providers.md) for details.
-
-## FAQ
-
-### Is Gemini free?
-
-Yes. Google provides a generous free tier suitable for families, students, and hobby projects. Most tutoring deployments fit comfortably within it.
-
-### Do I need a credit card?
-
-No — Gemini requires no billing information.
-
-### Do I need Vercel AI Gateway?
-
-No. The default setup uses Gemini directly. AI Gateway is only needed if you want to route through multiple providers via a single endpoint.
-
-### Can I use another model?
-
-Yes — Gemini, Groq, OpenRouter, or any model accessible through Vercel AI Gateway are supported. The app automatically falls back to the next configured provider on quota errors.
-
-### What is provider fallback?
-
-If Gemini hits a rate limit or quota cap, the app transparently retries with Groq, then OpenRouter. No error message, no interruption. Just add the extra API keys.
-
-### Do I need to deploy on Vercel?
-
-No. The app runs anywhere that supports Node.js. Environment variables work the same on any platform.
-
-## Built with Free AI Tools
-
-This project can be developed entirely using **free tiers**:
-
-| Tool | Free Tier Details |
+| Command | Purpose |
 |---|---|
-| **Gemini** (model provider) | Free API key at [aistudio.google.com](https://aistudio.google.com/apikey) — no credit card |
-| **OpenCode** (coding agent) | Open-source CLI — use with Gemini, Groq, or any OpenAI-compatible provider |
-| **Obra Superpowers** (workflows) | Free, open-source — installs as an OpenCode plugin |
-| **Neon** (database) | Free Postgres tier at [neon.tech](https://neon.tech) |
-| **Vercel** (hosting) | Hobby plan — free for personal projects |
-
-No paid AI subscriptions are required to build, test, or deploy this project.
-
-See [docs/opencode.md](docs/opencode.md) for the full OpenCode development workflow and [CONTRIBUTING.md](CONTRIBUTING.md) for contributor guidance.
-
-## Testing
-
-```bash
-pnpm test:unit         # Vitest unit tests (deterministic engines, helpers)
-pnpm test:unit:watch   # Vitest watch mode
-pnpm test              # Playwright e2e (sets PLAYWRIGHT=True)
-```
-
-E2E tests live in `tests/e2e` and use the page objects in `tests/pages`.
-
-## Building
-
-```bash
-pnpm build   # runs DB migrate + curriculum/archetype seeds, then `next build`
-pnpm start   # serve the production build
-```
-
-> `pnpm build` applies migrations and seeds the database first, so it needs a
-> reachable `POSTGRES_URL`.
-
-## Linting & formatting
-
-This repo uses **Biome + Ultracite** (not ESLint/Prettier). A `.editorconfig`
-keeps non-Biome editors consistent.
-
-```bash
-pnpm check   # lint + format check (alias: pnpm lint)
-pnpm fix     # auto-fix
-```
-
-## Environment variables
-
-Copy `.env.example` to `.env.local`. Everything is documented inline in
-`.env.example`; the essentials:
-
-| Variable | Required | Purpose |
-|---|---|---|
-| `GOOGLE_GENERATIVE_AI_API_KEY` | ✅ (a provider) | Gemini API key (free tier) |
-| `POSTGRES_URL` | ✅ | Neon/Postgres connection string |
-| `AUTH_SECRET` | ✅ | NextAuth session secret (`openssl rand -base64 32`) |
-| `GROQ_API_KEY` / `OPENROUTER_API_KEY` | optional | Provider fallback |
-| `BLOB_READ_WRITE_TOKEN`, `REDIS_URL` | optional | Vercel Blob, resumable streams |
-| `CRON_SECRET` | optional | Guards the guest-cleanup cron |
-| `APP_MODE` | optional | `FREE` (default) or `PREMIUM` |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | dev-only | GitHub MCP server (see below) |
-
-## AI & MCP tooling
-
-This repository is configured for the **OpenCode** ecosystem and modern MCP
-tooling.
-
-- **OpenCode config:** [`opencode.json`](opencode.json) — Superpowers plugin,
-  project skills (`.opencode/skills/`), and MCP servers.
-- **Claude Code / Cursor parity:** [`.mcp.json`](.mcp.json) mirrors the same
-  MCP servers.
-- **Agent guidance:** [`AGENTS.md`](AGENTS.md) (standards),
-  [`SKILLS.md`](SKILLS.md) (workflows), [`ARCHITECTURE.md`](ARCHITECTURE.md).
-
-Configured MCP servers:
-
-| Server | Type | Purpose | Needs |
-|---|---|---|---|
-| **Context7** | local | Up-to-date library/API docs | — |
-| **Sequential Thinking** | local | Structured multi-step reasoning | — |
-| **Filesystem** | local | Scoped file access to the repo | — |
-| **Playwright** | local | Drive the browser for UI/e2e verification | — |
-| **GitHub** | remote | Repos, issues, PRs, CI status | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| **PostgreSQL** | local | Read-only schema/data introspection | `POSTGRES_URL` |
-
-Servers that need credentials only activate when the relevant env var is set;
-never commit tokens. See [docs/opencode.md](docs/opencode.md) for the skill
-catalogue.
-
-## Development workflow
-
-1. Branch from `main`; keep changes small and focused.
-2. Build features/fix bugs following [`SKILLS.md`](SKILLS.md) (OpenCode skills
-   such as `brainstorming`, `systematic-debugging`, `test-driven-development`).
-3. Route data access through `lib/db/queries/*`; validate request bodies with
-   Zod; raise typed `ChatbotError`s.
-4. `pnpm check` + `pnpm test:unit` (and relevant e2e) before opening a PR.
-5. Work through the PR checklist in [`AGENTS.md`](AGENTS.md); note milestones in
-   [`docs/agents-log.md`](docs/agents-log.md).
-
-## Documentation
-
-- [Provider setup guide](docs/providers.md) — switching models, enabling Gateway
-- Curriculum and topics are configured in `lib/ai/curriculum.ts`
-- System prompt lives in `lib/ai/prompts-tutor.ts`
-- Mission and lesson content is configured in `lib/ai/missions.ts`
-- Question archetypes are seeded into Postgres via `scripts/seed-question-archetypes.ts` from `data/question-archetypes/`
-- REST endpoint at `/api/adaptive-challenge` serves dynamic adaptive questions from archetypes
-
-## Running locally (full setup)
-
-```bash
-pnpm install
-pnpm db:migrate
-pnpm seed
-pnpm dev
-```
-
-Your app template should now be running on [localhost:3000](http://localhost:3000).
-
-> **Note:** `pnpm seed` populates the database with GCSE-style question archetypes and discrete skills. Without it, challenge modes and adaptive features will have no templates to generate questions from.
-
-## Reducing Free AI Usage
-
-This app is designed to minimise API calls so it works comfortably on free-tier AI providers.
-
-A normal lesson, challenge, and grading flow uses:
-
-- **0 AI calls** for lesson navigation, concept cards, and challenges
-- **0 AI calls** for adaptive question selection (deterministic engine)
-- **0 AI calls** for question generation (pure template-based substitution)
-- **0 AI calls** for answer grading (deterministic string matching)
-- **0 AI calls** for mastery scoring, streaks, and progress updates (computed in code)
-- **0 AI calls** for chat titles (deterministic by default)
-
-To keep usage low:
-
-- Dynamic question selection is powered entirely by the deterministic Adaptive Mastery Engine (`lib/adaptive/engine.ts`)
-- Questions are dynamically generated from JSON-defined question archetypes instead of querying an LLM
-- Answers are graded locally via simple string comparison or algebraic solvers
-- XP, streaks, badges, skill masteries, and progress are computed purely in code
-- The LLM is **only** used for advanced tutoring features: explaining concepts differently, visual illustrations, open-ended dialogues, or when generating parent summaries.
-- Chat titles are deterministic by default (first 40 characters of the first message)
-- Set `ENABLE_LLM_TITLE_GENERATION=1` to restore LLM-generated titles
-
-### Provider Fallback
-
-If Gemini hits a quota limit, the app transparently falls back to Groq, then OpenRouter:
-
-```env
-GOOGLE_GENERATIVE_AI_API_KEY=your_key_here
-GROQ_API_KEY=your_groq_key
-OPENROUTER_API_KEY=your_openrouter_key
-```
-
-No error message, no interruption — just add the extra API keys.
-
-See [docs/providers.md](docs/providers.md) for the full provider setup guide.
+| `pnpm dev` | Start Next.js 16 (Turbopack) dev server on `http://localhost:3000` |
+| `pnpm check` | Run Biome + Ultracite lint & format checks (`pnpm fix` to autofix) |
+| `pnpm test:unit` | Run Vitest unit test suite (spoken maths, voice commands, Edexcel 1MA1, grading, streaks, Ranedeer engine) |
+| `pnpm test` | Run Playwright end-to-end smoke tests |
+| `pnpm build` | Production Next.js 16 build |
+| `pnpm vapid:generate` | Generate free Web Push VAPID keypair |

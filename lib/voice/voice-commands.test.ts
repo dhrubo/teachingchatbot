@@ -170,9 +170,7 @@ describe("resolveVoiceCommand — pause_lesson", () => {
   });
 
   it("matches wait a second", () => {
-    expect(resolveVoiceCommand("wait a second")?.command).toBe(
-      "pause_lesson"
-    );
+    expect(resolveVoiceCommand("wait a second")?.command).toBe("pause_lesson");
   });
 });
 
@@ -200,9 +198,7 @@ describe("resolveVoiceCommand — end_lesson", () => {
   });
 
   it("matches stop the lesson and finish", () => {
-    expect(resolveVoiceCommand("stop the lesson")?.command).toBe(
-      "end_lesson"
-    );
+    expect(resolveVoiceCommand("stop the lesson")?.command).toBe("end_lesson");
     expect(resolveVoiceCommand("finish")?.command).toBe("end_lesson");
   });
 });
@@ -242,10 +238,7 @@ describe("resolveVoiceCommand — multiple-choice answers are never commands (ma
 describe("resolveVoiceCommand — conservative, whole-utterance anchoring", () => {
   it("does NOT match 'next' merely appearing inside an ordinary maths sentence", () => {
     expect(
-      resolveVoiceCommand(
-        "what comes next in the sequence",
-        "numeric"
-      )
+      resolveVoiceCommand("what comes next in the sequence", "numeric")
     ).toBeNull();
   });
 
@@ -268,5 +261,41 @@ describe("resolveVoiceCommand — conservative, whole-utterance anchoring", () =
     expect(
       resolveVoiceCommand("i think the train will stop at the station")
     ).toBeNull();
+  });
+});
+
+describe("resolveVoiceCommand — Mr. Ranedeer multi-lens & ladder commands", () => {
+  it("matches 'explain it another way' and synonyms", () => {
+    expect(resolveVoiceCommand("explain it another way")?.command).toBe(
+      "explain_differently"
+    );
+    expect(
+      resolveVoiceCommand("Can you explain differently please?")?.command
+    ).toBe("explain_differently");
+  });
+
+  it("matches specific representation lens commands", () => {
+    expect(resolveVoiceCommand("show me visually")?.command).toBe(
+      "visual_lens"
+    );
+    expect(resolveVoiceCommand("real world example")?.command).toBe(
+      "story_lens"
+    );
+    expect(resolveVoiceCommand("why does it work")?.command).toBe(
+      "pattern_lens"
+    );
+    expect(resolveVoiceCommand("show me the exam method")?.command).toBe(
+      "exam_lens"
+    );
+    expect(resolveVoiceCommand("guide me step by step")?.command).toBe(
+      "socratic_lens"
+    );
+  });
+
+  it("matches 'test me' and 'prerequisite_step'", () => {
+    expect(resolveVoiceCommand("test me")?.command).toBe("test_me");
+    expect(resolveVoiceCommand("go back to basics")?.command).toBe(
+      "prerequisite_step"
+    );
   });
 });

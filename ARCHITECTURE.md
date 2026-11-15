@@ -1,129 +1,66 @@
-# ARCHITECTURE.md
+# Architecture — Mr. Ranedeer Voice Maths Tutor (Edexcel GCSE `1MA1`)
 
-System architecture for **GCSE Mastery / TeachingChatbot**. For coding
-standards and conventions see [`AGENTS.md`](AGENTS.md); for reusable workflows
-see [`SKILLS.md`](SKILLS.md).
+## 1. System Overview
 
----
+```mermaid
+flowchart LR
+  subgraph Client["Next.js 16 Client (PWA + Service Worker)"]
+    Mic["VoiceOrbBar + useVoiceEngine (VAD + RMS)"]
+    Board["LiveMathsBoard (6 SVG Primitives + KaTeX)"]
+    Studio["VoiceTutorStudio (5 Lenses + 0.x Prereqs + /test)"]
+    PushSW["public/sw.js (Web Push Notifications)"]
+  end
 
-## 1. System architecture
+  subgraph Server["Next.js App Router APIs"]
+    TurnAPI["POST /api/tutor/turn"]
+    SttAPI["POST /api/voice/stt"]
+    TtsAPI["POST /api/voice/tts"]
+    ConfigAPI["GET/PATCH /api/learner/config"]
+    RemindAPI["POST /api/reminders/subscribe & /test"]
+    CronAPI["GET /api/cron/daily-reminders"]
+  end
 
-A single Next.js 16 (App Router) application deployed on Vercel, backed by
-serverless PostgreSQL (Neon) and Redis, calling free-tier LLM providers through
-the Vercel AI SDK.
+  subgraph Engine["Deterministic + Free-Tier AI Core"]
+    Ranedeer["lib/ai/ranedeer-engine.ts"]
+    Edexcel["lib/curriculum/edexcel-1ma1.ts (6 Strands, 5 Lenses)"]
+    MathCheck["lib/math/check-answer.ts + lib/voice/spoken-maths.ts"]
+    Router["lib/ai/providers.ts (Groq ⇄ Gemini ⇄ OpenRouter)"]
+    Streaks["lib/reminders/streaks.ts + web-push.ts"]
+  end
 
+  subgraph Storage["Dual-Mode Storage (lib/db/queries/*)"]
+    Neon["Neon Postgres (Drizzle ORM)"]
+    Local[".data/local-store.json (Zero-DB Fallback)"]
+  end
+
+  Mic --> SttAPI
+  Studio --> TurnAPI
+  TurnAPI --> Ranedeer
+  Ranedeer --> Edexcel
+  Ranedeer --> MathCheck
+  Ranedeer --> Router
+  TurnAPI --> Streaks
+  TurnAPI --> Neon
+  TurnAPI --> Local
+  Studio --> TtsAPI
+  Studio --> Board
+  ConfigAPI --> Storage
+  RemindAPI --> Streaks
+  CronAPI --> PushSW
 ```
-┌──────────────────────────── Browser (React 19) ────────────────────────────┐
-│  Student chat UI · Learning map · Quizzes · Guardian dashboard              │
-└───────────────┬──────────────────────────────────────────────┬─────────────┘
-                │ SWR / Server Actions / streamed UI messages    │
-┌───────────────▼──────────────────────────────────────────────▼─────────────┐
-│                       Next.js App Router (Vercel)                            │
-│  Route groups:  (auth)   (chat)   (parent)        app/api/*                  │
-│  Route Handlers → auth() · Zod validation · entitlements · rate limit        │
-│                                                                              │
-│  lib/ai         providers + fallback, prompts, tools/, agents/               │
-│  lib/questions  deterministic archetype engine (no LLM)                      │
-│  lib/adaptive · lib/learning-science   mastery / spaced repetition           │
-│  lib/db         Drizzle schema + queries/*                                   │
-└───────┬───────────────────────┬──────────────────────────┬──────────────────┘
-        │                       │                          │
- ┌──────▼──────┐        ┌───────▼────────┐         ┌───────▼─────────┐
- │ Neon Postgres│       │  Redis          │         │ LLM providers    │
- │ (Drizzle ORM)│       │ (resumable      │         │ Gemini / Groq /  │
- │              │       │  streams, cache)│         │ OpenRouter       │
- └──────────────┘       └────────────────┘         └──────────────────┘
-```
 
-## 2. Folder responsibilities
+## 2. Core Design Decisions
 
-| Path | Responsibility |
-|---|---|
-| `app/(auth)` | Login/register pages + NextAuth route handlers |
-| `app/(chat)` | Chat UI and the core chat/lesson/model/document APIs |
-| `app/(parent)` | Guardian dashboard, admin UI, and admin **agent** routes |
-| `app/api` | Cross-cutting APIs: AI hints/explain-error, guardian goals, profiles, learning-science, retrieval-practice |
-| `components` | Presentational + interactive React (`ui/`, `ai-elements/`, `chat/`, `brand/`) |
-| `lib/ai` | Provider selection & fallback, tutor prompts, model-agnostic `tools/`, multi-step `agents/`, curriculum, entitlements |
-| `lib/questions` | Deterministic GCSE archetype question generator (zero-LLM) |
-| `lib/adaptive` | Adaptive challenge selection by weakest skill / difficulty band |
-| `lib/learning-science` | Mastery scoring, misconception tracking, spaced repetition |
-| `lib/db` | Drizzle `schema.ts`, `migrations/`, `queries/*`, `client.ts`, `migrate.ts` |
-| `lib/artifacts`, `lib/editor` | Artifact documents + ProseMirror/CodeMirror editing |
-| `data`, `docs/*.json` | Seed inputs: curriculum + question archetypes |
-| `scripts` | Seed scripts run during `pnpm build` and `pnpm seed` |
-| `tests` | Playwright e2e (`e2e/`, `pages/`, fixtures/helpers) |
+1. **Free-Tier First & Zero-Key Resilient**
+   - Starting a lesson, switching between any of the **5 Explanation Lenses** (`visual`, `story`, `pattern`, `exam`, `socratic`), stepping back through **`0.1 → 0.x` Prerequisites**, and grading **`3/10 → 6/10 → 9/10` Mastery Tests** are 100% deterministic (`0 ms`, `0` LLM tokens).
+   - Open-ended voice Q&A routes through `generateStructuredWithFallback` (`lib/ai/providers.ts`), cycling across Groq (`qwen/qwen3-32b`, `llama-3.3-70b-versatile`), Google AI Studio (`gemini-3.1-flash-lite`, `gemini-2.5-flash`), and OpenRouter (`:free`). `<think>...</think>` blocks from reasoning models are stripped prior to Zod `whiteboardStateSchema` validation.
 
-## 3. Data flow
+2. **Voice-First Spoken-Maths Pipeline**
+   - Student speech is captured via `MediaRecorder` + Web Audio RMS silence detection (`1.25s` auto-pause) and transcribed by Groq `whisper-large-v3-turbo` (or browser `SpeechRecognition` `en-GB` fallback).
+   - `lib/voice/voice-commands.ts` intercepts natural Mr. Ranedeer spoken commands (*"explain it another way"*, *"show me visually"*, *"show me the exam method"*, *"test me"*, *"go back to basics"*).
+   - `lib/voice/spoken-maths.ts` + `lib/math/check-answer.ts` evaluate spoken numbers, fractions (`"nineteen over twenty"` = `19/20` = `0.95`), money rounding near-misses, and spoken ambiguities (`"negative three squared"`).
+   - `sanitizeForSpeech` ensures TTS (`edge-tts-universal` `en-GB-SoniaNeural` or `speechSynthesis` fallback) speaks natural British English rather than raw LaTeX.
 
-**Chat / tutoring (LLM path)**
-
-1. Client `useChat` POSTs to `app/(chat)/api/chat/route.ts`.
-2. Route: `botid` check → `auth()` → Zod parse (`schema.ts`) → entitlements →
-   IP rate limit.
-3. Provider candidates resolved in `lib/ai/providers`; `streamTextWithFallback`
-   tries providers in order with the tutor system prompt + curriculum-aware
-   tools (`lib/ai/tools/*`).
-4. Response streamed via `createUIMessageStream`; long generations use
-   `resumable-stream` (Redis) so reloads can resume.
-5. Messages/chat persisted through `lib/db/queries/*`; analytics via
-   `logAICall`.
-
-**Practice / quizzes (deterministic path — no LLM)**
-
-1. Adaptive challenge & archetype routes call `lib/adaptive` + `lib/questions`.
-2. Questions are generated from JSON archetype templates; answers scored by
-   `lib/learning-science` mastery logic.
-3. Mastery, misconceptions, XP/streaks upserted via `lib/db/queries/*`.
-
-**Guardian / admin**
-
-1. `app/(parent)` reads mastery/analytics via queries.
-2. Admin **agents** (`lib/ai/agents/*` + `app/(parent)/api/admin/agents/*`) run
-   batch LLM tasks: curriculum builder, quiz builder, artifact validator,
-   misconception analysis, guardian insight.
-
-## 4. State management
-
-- **Server state:** RSC + Server Actions; client reads via **SWR**.
-- **AI streaming:** `@ai-sdk/react` `useChat` ⇄ `createUIMessageStream`;
-  resumable via Redis.
-- **Local UI:** React hooks + `usehooks-ts`; theming via `next-themes`. No
-  global store by default.
-
-## 5. API design
-
-- Route Handlers under `app/**/api/**/route.ts`.
-- Contract: `botid` (where applicable) → `auth()` → **Zod** body validation →
-  entitlements → rate limit → handler.
-- Errors: typed `ChatbotError` (`` `${type}:${surface}` ``) →
-  `error.toResponse()`; `"log"` surfaces return generic messages.
-- Data access is centralized in `lib/db/queries/*` (no inline Drizzle in
-  handlers).
-
-## 6. Build pipeline
-
-`pnpm build` (see `package.json`) runs, in order:
-
-1. `tsx lib/db/migrate` — apply Drizzle migrations.
-2. Seed scripts — `seed-all-curriculum`, `seed-question-archetypes`,
-   `seed-curriculum-artifacts`, `seed-six-card-topic-pack`.
-3. `next build`.
-
-⇒ A reachable `POSTGRES_URL` is required at build time. Lint/format is Biome +
-Ultracite (`pnpm check` / `pnpm fix`); types via `tsc` (Next). Migrations are
-generated with drizzle-kit (`pnpm db:generate`).
-
-## 7. Deployment
-
-- **Platform:** Vercel, framework preset `nextjs`, region `lhr1`
-  (`vercel.json`).
-- **Cron:** `/api/cron/cleanup-guests` daily at 03:00 (guest chat retention),
-  guarded by `CRON_SECRET`.
-- **Runtime services:** Neon Postgres, Redis, Vercel Blob, plus LLM provider
-  keys — all via environment variables (`.env.example` documents them).
-- **Modes:** `APP_MODE=FREE` (default) limits guests (5 questions/day, 24h
-  retention, no history); `PREMIUM` gates admin/approval features. Provider
-  routing is independent of `APP_MODE`.
-- No repository CI workflows today; quality gates run locally / in review. See
-  the follow-up recommendations in the upgrade summary.
+3. **5-Table Schema with Zero-DB Local Fallback**
+   - Defined in `lib/db/schema.ts` (`Learner`, `TopicProgress`, `TutorSession`, `PushSubscriptionRecord`, `DailyPracticeLog`) and accessed exclusively through `lib/db/queries/*`.
+   - When `POSTGRES_URL` is configured, Drizzle queries Neon Postgres; when omitted in local dev or CI, `lib/db/local-store.ts` persists seamlessly to `.data/local-store.json`.

@@ -1,18 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
 import "./globals.css";
-import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://chat.vercel.ai"),
-  title: "SARA — Smart AI Reasoning Assistant",
-  description: "Learn bright. Level up. — Your AI tutor & quiz master for GCSE subjects.",
+  title: "Mr. Ranedeer — Edexcel GCSE Maths Voice Tutor",
+  description:
+    "Voice-first Pearson Edexcel GCSE (9–1) Mathematics (1MA1) AI tutor that explains every topic in 5 distinct ways with Duolingo-style daily practice streaks.",
 };
 
-export const viewport = {
+export const viewport: Viewport = {
+  themeColor: "#0B1026",
   maximumScale: 1,
 };
 
@@ -28,19 +28,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
-// App is locked to the dark indigo theme.
-const DARK_THEME_COLOR = "#1E1B4B";
-const THEME_COLOR_SCRIPT = `\
-(function() {
-  var meta = document.querySelector('meta[name="theme-color"]');
-  if (!meta) {
-    meta = document.createElement('meta');
-    meta.setAttribute('name', 'theme-color');
-    document.head.appendChild(meta);
-  }
-  meta.setAttribute('content', '${DARK_THEME_COLOR}');
-})();`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,29 +36,11 @@ export default function RootLayout({
   return (
     <html
       className={`${geist.variable} ${geistMono.variable} dark`}
-      lang="en"
+      lang="en-GB"
       style={{ colorScheme: "dark" }}
       suppressHydrationWarning
     >
-      <head>
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-1QTC6KLH10"
-        />
-        <script
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-1QTC6KLH10');`,
-          }}
-        />
-        <script
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
-          dangerouslySetInnerHTML={{
-            __html: THEME_COLOR_SCRIPT,
-          }}
-        />
-      </head>
-      <body className="antialiased">
+      <body className="min-h-dvh font-sans antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -79,11 +48,10 @@ export default function RootLayout({
           enableSystem={false}
           forcedTheme="dark"
         >
-          <SessionProvider
-            basePath={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/auth`}
-          >
-            <TooltipProvider>{children}</TooltipProvider>
-          </SessionProvider>
+          <TooltipProvider>
+            {children}
+            <Toaster position="top-center" richColors theme="dark" />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

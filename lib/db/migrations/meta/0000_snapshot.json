@@ -1,0 +1,473 @@
+{
+  "id": "7f9f2288-22b3-4cd5-8df1-8f6097e09d41",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.RanedeerDailyPracticeLog": {
+      "name": "RanedeerDailyPracticeLog",
+      "schema": "",
+      "columns": {
+        "learnerId": {
+          "name": "learnerId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "practiceDate": {
+          "name": "practiceDate",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "minutesPracticed": {
+          "name": "minutesPracticed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "xpEarned": {
+          "name": "xpEarned",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "turnsCompleted": {
+          "name": "turnsCompleted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "usedFreeze": {
+          "name": "usedFreeze",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "RanedeerDailyPracticeLog_learnerId_RanedeerLearner_id_fk": {
+          "name": "RanedeerDailyPracticeLog_learnerId_RanedeerLearner_id_fk",
+          "tableFrom": "RanedeerDailyPracticeLog",
+          "tableTo": "RanedeerLearner",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "RanedeerDailyPracticeLog_learnerId_practiceDate_pk": {
+          "name": "RanedeerDailyPracticeLog_learnerId_practiceDate_pk",
+          "columns": [
+            "learnerId",
+            "practiceDate"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "public.RanedeerLearner": {
+      "name": "RanedeerLearner",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nickname": {
+          "name": "nickname",
+          "type": "varchar(48)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Scholar'"
+        },
+        "tier": {
+          "name": "tier",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'foundation'"
+        },
+        "targetGrade": {
+          "name": "targetGrade",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "preferredLens": {
+          "name": "preferredLens",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'visual'"
+        },
+        "toneStyle": {
+          "name": "toneStyle",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'encouraging'"
+        },
+        "speechSpeed": {
+          "name": "speechSpeed",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'1.0'"
+        },
+        "dailyGoalMinutes": {
+          "name": "dailyGoalMinutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "reminderEnabled": {
+          "name": "reminderEnabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "reminderHour": {
+          "name": "reminderHour",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 17
+        },
+        "reminderMinute": {
+          "name": "reminderMinute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Europe/London'"
+        },
+        "currentStreak": {
+          "name": "currentStreak",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "longestStreak": {
+          "name": "longestStreak",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "streakFreezes": {
+          "name": "streakFreezes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "lastPracticedDate": {
+          "name": "lastPracticedDate",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "totalXp": {
+          "name": "totalXp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.RanedeerPushSubscription": {
+      "name": "RanedeerPushSubscription",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "learnerId": {
+          "name": "learnerId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endpoint": {
+          "name": "endpoint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "p256dh": {
+          "name": "p256dh",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auth": {
+          "name": "auth",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userAgent": {
+          "name": "userAgent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastNotifiedDate": {
+          "name": "lastNotifiedDate",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "RanedeerPushSubscription_learnerId_RanedeerLearner_id_fk": {
+          "name": "RanedeerPushSubscription_learnerId_RanedeerLearner_id_fk",
+          "tableFrom": "RanedeerPushSubscription",
+          "tableTo": "RanedeerLearner",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.RanedeerTopicProgress": {
+      "name": "RanedeerTopicProgress",
+      "schema": "",
+      "columns": {
+        "learnerId": {
+          "name": "learnerId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "topicSlug": {
+          "name": "topicSlug",
+          "type": "varchar(96)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "masteryScore": {
+          "name": "masteryScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "currentStage": {
+          "name": "currentStage",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'1.1'"
+        },
+        "lensesTried": {
+          "name": "lensesTried",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::json"
+        },
+        "questionsAnswered": {
+          "name": "questionsAnswered",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "questionsCorrect": {
+          "name": "questionsCorrect",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "intervalDays": {
+          "name": "intervalDays",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "nextReviewAt": {
+          "name": "nextReviewAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastStudiedAt": {
+          "name": "lastStudiedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "RanedeerTopicProgress_learnerId_RanedeerLearner_id_fk": {
+          "name": "RanedeerTopicProgress_learnerId_RanedeerLearner_id_fk",
+          "tableFrom": "RanedeerTopicProgress",
+          "tableTo": "RanedeerLearner",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "RanedeerTopicProgress_learnerId_topicSlug_pk": {
+          "name": "RanedeerTopicProgress_learnerId_topicSlug_pk",
+          "columns": [
+            "learnerId",
+            "topicSlug"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "public.RanedeerTutorSession": {
+      "name": "RanedeerTutorSession",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "learnerId": {
+          "name": "learnerId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "topicSlug": {
+          "name": "topicSlug",
+          "type": "varchar(96)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activeLens": {
+          "name": "activeLens",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'visual'"
+        },
+        "stage": {
+          "name": "stage",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'1.1'"
+        },
+        "turnsJson": {
+          "name": "turnsJson",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::json"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "RanedeerTutorSession_learnerId_RanedeerLearner_id_fk": {
+          "name": "RanedeerTutorSession_learnerId_RanedeerLearner_id_fk",
+          "tableFrom": "RanedeerTutorSession",
+          "tableTo": "RanedeerLearner",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

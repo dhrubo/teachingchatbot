@@ -17,6 +17,10 @@
       "!components/ui",
       "!hooks/use-mobile.ts",
       "!lib/utils.ts",
+      "!lib/db/migrations",
+      "!public/sw.js",
+      "!docs/design",
+      "!.data",
       "!.superpowers"
     ]
   },
@@ -26,16 +30,13 @@
         "noExplicitAny": "off",
         "noUnknownAtRules": "off",
         "noConsole": "off",
-        "noBitwiseOperators": "off"
+        "noBitwiseOperators": "off",
+        "noMisplacedAssertion": "off"
       },
       "style": {
         "noMagicNumbers": "off",
         "noNestedTernary": "off",
         "useConsistentTypeDefinitions": "off"
-      },
-      "nursery": {
-        "noUnnecessaryConditions": "off",
-        "useSortedClasses": "off"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off",

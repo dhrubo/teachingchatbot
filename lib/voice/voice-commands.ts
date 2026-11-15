@@ -46,7 +46,15 @@ export type VoiceCommand =
   | "do_not_know"
   | "pause_lesson"
   | "resume_lesson"
-  | "end_lesson";
+  | "end_lesson"
+  | "explain_differently"
+  | "visual_lens"
+  | "story_lens"
+  | "pattern_lens"
+  | "exam_lens"
+  | "socratic_lens"
+  | "test_me"
+  | "prerequisite_step";
 
 export type ExpectedResponseType =
   | "multiple_choice"
@@ -54,9 +62,10 @@ export type ExpectedResponseType =
   | "numeric"
   | "free_text";
 
-export type VoiceCommandMatch =
-  | { command: VoiceCommand; matchedPhrase: string }
-  | null;
+export type VoiceCommandMatch = {
+  command: VoiceCommand;
+  matchedPhrase: string;
+} | null;
 
 // Fixed, small set of known phrasings per command. Every entry here is
 // already in "normalized" form (lowercase, no apostrophes, no trailing
@@ -97,7 +106,13 @@ const COMMAND_PHRASES: Record<VoiceCommand, readonly string[]> = {
     "i need a clue",
     "hint please",
   ],
-  next: ["next question", "skip this", "skip this question", "move on", "next one"],
+  next: [
+    "next question",
+    "skip this",
+    "skip this question",
+    "move on",
+    "next one",
+  ],
   back: [
     "go back",
     "previous question",
@@ -158,14 +173,76 @@ const COMMAND_PHRASES: Record<VoiceCommand, readonly string[]> = {
     "finish the lesson",
     "thats enough",
   ],
+  explain_differently: [
+    "explain it another way",
+    "explain that another way",
+    "explain another way",
+    "explain differently",
+    "explain it differently",
+    "try another way",
+    "teach me another way",
+    "different explanation",
+    "show me another way",
+  ],
+  visual_lens: [
+    "show me visually",
+    "explain visually",
+    "explain it visually",
+    "draw a diagram",
+    "show a diagram",
+    "visual explanation",
+  ],
+  story_lens: [
+    "give me a real life example",
+    "real life example",
+    "real world example",
+    "give me an analogy",
+    "tell me a story",
+    "story mode",
+  ],
+  pattern_lens: [
+    "why does it work",
+    "why does that work",
+    "explain why it works",
+    "show me the pattern",
+  ],
+  exam_lens: [
+    "show me the exam method",
+    "exam method",
+    "edexcel method",
+    "how do i get the marks",
+    "mark scheme method",
+  ],
+  socratic_lens: [
+    "quiz me step by step",
+    "guide me step by step",
+    "ask me step by step",
+    "socratic mode",
+  ],
+  test_me: [
+    "test me",
+    "give me a test",
+    "start the test",
+    "start test",
+    "ready for a test",
+  ],
+  prerequisite_step: [
+    "step back",
+    "this is too hard",
+    "go back to basics",
+    "check prerequisites",
+    "teach the basics first",
+  ],
 };
 
 // Reverse lookup built once at module load: normalized phrase -> command.
 // A flat Map (rather than iterating each command's array per call) keeps the
 // hot path a single O(1) lookup.
 const PHRASE_TO_COMMAND: ReadonlyMap<string, VoiceCommand> = new Map(
-  (Object.entries(COMMAND_PHRASES) as [VoiceCommand, readonly string[]][]).flatMap(
-    ([command, phrases]) => phrases.map((phrase) => [phrase, command] as const)
+  (
+    Object.entries(COMMAND_PHRASES) as [VoiceCommand, readonly string[]][]
+  ).flatMap(([command, phrases]) =>
+    phrases.map((phrase) => [phrase, command] as const)
   )
 );
 

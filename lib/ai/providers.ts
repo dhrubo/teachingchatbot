@@ -1,323 +1,282 @@
+import "server-only";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createOpenAI } from "@ai-sdk/openai";
+import { createGroq } from "@ai-sdk/groq";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import type { LanguageModel } from "ai";
-import { gateway } from "ai";
-import { isTestEnvironment } from "../constants";
-import { chatModels } from "./models";
+import {
+  generateObject,
+  generateText,
+  type LanguageModel,
+  experimental_transcribe as transcribe,
+} from "ai";
+import type { z } from "zod";
+import { isTestEnvironment } from "@/lib/constants";
+import { isDatabaseConfigured } from "@/lib/db/client";
 
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-});
-
-const googlePremium = process.env.GOOGLE_GENERATIVE_AI_API_KEY_PREMIUM
-  ? createGoogleGenerativeAI({
-      apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY_PREMIUM,
-    })
-  : null;
-
-const hasGeminiKey = Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-const hasPremiumGeminiKey = Boolean(
-  process.env.GOOGLE_GENERATIVE_AI_API_KEY_PREMIUM
-);
-const hasGroqKey = Boolean(process.env.GROQ_API_KEY);
-const hasOpenRouterKey = Boolean(process.env.OPENROUTER_API_KEY);
-const hasOpenAiKey = Boolean(process.env.OPENAI_API_KEY);
-// No default model: complimentary/free-tier token eligibility is an OpenAI
-// account-level decision (balance- and eligibility-based, and it excludes
-// tool use — see docs/providers.md), not something this app should silently
-// assume by hardcoding a "free" model id. If the key is set but the model
-// isn't, the candidate is skipped rather than guessing.
-const OPENAI_MODEL = process.env.OPENAI_MODEL;
-const useGateway =
-  process.env.USE_VERCEL_AI_GATEWAY === "1" &&
-  Boolean(process.env.AI_GATEWAY_API_KEY);
-
-const GEMINI_MODEL =
-  process.env.GOOGLE_GENERATIVE_AI_MODEL ?? "gemini-3.1-flash-lite";
-const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
-const OPENROUTER_MODEL =
-  process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-chat-v3-0324:free";
-
-console.info("[ai-config] model=" + GEMINI_MODEL);
-console.info(
-  "[ai-config] keys: free=" +
-    (hasGeminiKey ? "SET ✓" : "unset") +
-    " premium=" +
-    (hasPremiumGeminiKey ? "SET ✓" : "unset") +
-    " groq=" +
-    (hasGroqKey ? "SET ✓" : "unset") +
-    " openrouter=" +
-    (hasOpenRouterKey ? "SET ✓" : "unset") +
-    " openai=" +
-    (hasOpenAiKey ? (OPENAI_MODEL ? "SET ✓" : "SET but OPENAI_MODEL missing — skipped") : "unset") +
-    " gateway=" +
-    (useGateway ? "SET ✓" : "unset")
-);
-
-export function isUsingGateway(): boolean {
-  return useGateway;
-}
-
-export function currentProvider(): string {
-  if (useGateway) return "vercel-ai-gateway";
-  if (hasGeminiKey) return "gemini-free";
-  if (hasOpenAiKey && OPENAI_MODEL) return "openai";
-  if (hasGroqKey) return "groq";
-  if (hasOpenRouterKey) return "openrouter";
-  return "none";
-}
-
-function getGroqModel() {
-  const { groq } = require("@ai-sdk/groq");
-  return groq(GROQ_MODEL);
-}
-
-function getOpenRouterModel() {
-  const openrouter = createOpenRouter({
-    apiKey: process.env.OPENROUTER_API_KEY,
-  });
-  return openrouter.chat(OPENROUTER_MODEL);
-}
-
-function getOpenAiModel(modelId: string) {
-  const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  return openai(modelId);
-}
-
-// Stable identifiers, independent of the human-readable display name — safe
-// to compare, log, and match against AI_PROVIDER_ORDER without caring how the
-// name is formatted for humans.
 export type ProviderId =
-  | "openai"
-  | "gemini-free"
-  | "gemini-premium"
   | "groq"
-  | "openrouter"
-  | "vercel-ai-gateway"
-  | "mock";
-
-export type ProviderCapabilities = {
-  tools: boolean;
-  streaming: boolean;
-  structuredOutputs: boolean;
-};
+  | "groq-fallback"
+  | "gemini-free"
+  | "gemini-backup"
+  | "openrouter";
 
 export type ProviderCandidate = {
   id: ProviderId;
-  /** Human-readable, for logs/UI only — never compared against for matching. */
   displayName: string;
-  model: LanguageModel;
   modelName: string;
-  capabilities: ProviderCapabilities;
+  model: LanguageModel;
+  supportsStructuredObject: boolean;
 };
 
-const DEFAULT_CAPABILITIES: ProviderCapabilities = {
-  tools: true,
-  streaming: true,
-  structuredOutputs: true,
+export type AiSetupStatus = {
+  anyLlmConfigured: boolean;
+  groqConfigured: boolean;
+  geminiConfigured: boolean;
+  openRouterConfigured: boolean;
+  serverSttConfigured: boolean;
+  neuralTtsAvailable: boolean;
+  databaseConfigured: boolean;
+  vapidEnvConfigured: boolean;
+  activePrimaryProvider: string;
 };
 
-export function getTutorProviderCandidates(
-  isPremium?: boolean
-): ProviderCandidate[] {
-  const candidates: ProviderCandidate[] = [];
+function cleanKey(val: string | undefined): string | undefined {
+  const trimmed = val?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
+}
 
-  if (isTestEnvironment) {
-    const { chatModel } = require("./models.mock");
-    candidates.push({
-      id: "mock",
-      displayName: "mock",
-      model: chatModel,
-      modelName: "mock",
-      capabilities: DEFAULT_CAPABILITIES,
-    });
-    return candidates;
-  }
+export function getAiSetupStatus(): AiSetupStatus {
+  const groqKey = cleanKey(process.env.GROQ_API_KEY);
+  const geminiKey = cleanKey(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+  const openRouterKey = cleanKey(process.env.OPENROUTER_API_KEY);
+  const candidates = getProviderCandidates();
 
-  if (useGateway) {
-    const modelName =
-      process.env.AI_GATEWAY_MODEL ?? "google/gemini-3.1-flash-lite";
-    candidates.push({
-      id: "vercel-ai-gateway",
-      displayName: "Vercel AI Gateway",
-      model: gateway.languageModel(modelName),
-      modelName,
-      capabilities: DEFAULT_CAPABILITIES,
-    });
-  }
+  return {
+    anyLlmConfigured: candidates.length > 0,
+    groqConfigured: Boolean(groqKey),
+    geminiConfigured: Boolean(geminiKey),
+    openRouterConfigured: Boolean(openRouterKey),
+    serverSttConfigured: Boolean(groqKey),
+    neuralTtsAvailable: true,
+    databaseConfigured: isDatabaseConfigured(),
+    vapidEnvConfigured: Boolean(
+      cleanKey(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) &&
+        cleanKey(process.env.VAPID_PRIVATE_KEY)
+    ),
+    activePrimaryProvider: candidates[0]
+      ? `${candidates[0].displayName} (${candidates[0].modelName})`
+      : "Curated Local Mode (Add free Groq or Gemini key for open Q&A)",
+  };
+}
 
-  // Premium Gemini key for signed-in users and admins. Falls back to the
-  // free key if no premium key is configured.
-  if (isPremium && hasPremiumGeminiKey) {
-    candidates.push({
-      id: "gemini-premium",
-      displayName: "Gemini (premium key)",
-      model: googlePremium!(GEMINI_MODEL),
-      modelName: GEMINI_MODEL,
-      capabilities: { tools: true, streaming: true, structuredOutputs: true },
-    });
-  }
+export function getProviderCandidates(): ProviderCandidate[] {
+  const groqKey = cleanKey(process.env.GROQ_API_KEY);
+  const geminiKey = cleanKey(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+  const openRouterKey = cleanKey(process.env.OPENROUTER_API_KEY);
 
-  if (hasGeminiKey) {
-    candidates.push({
-      id: "gemini-free",
-      displayName: "Gemini (free key)",
-      model: google(GEMINI_MODEL),
-      modelName: GEMINI_MODEL,
-      capabilities: { tools: true, streaming: true, structuredOutputs: true },
-    });
-  }
+  const groqPrimaryModel = process.env.GROQ_MODEL?.trim() || "qwen/qwen3-32b";
+  const groqFallbackModel =
+    process.env.GROQ_FALLBACK_MODEL?.trim() || "llama-3.3-70b-versatile";
+  const geminiPrimaryModel =
+    process.env.GOOGLE_GENERATIVE_AI_MODEL?.trim() || "gemini-3.1-flash-lite";
+  const openRouterModel =
+    process.env.OPENROUTER_MODEL?.trim() ||
+    "deepseek/deepseek-chat-v3-0324:free";
 
-  if (hasOpenAiKey && OPENAI_MODEL) {
-    candidates.push({
-      id: "openai",
-      displayName: "OpenAI",
-      model: getOpenAiModel(OPENAI_MODEL),
-      modelName: OPENAI_MODEL,
-      capabilities: { tools: true, streaming: true, structuredOutputs: true },
-    });
-  }
+  const pool: ProviderCandidate[] = [];
 
-  if (hasGroqKey) {
-    candidates.push({
+  if (groqKey) {
+    const groq = createGroq({ apiKey: groqKey });
+    pool.push({
       id: "groq",
-      displayName: "Groq",
-      model: getGroqModel(),
-      modelName: GROQ_MODEL,
-      capabilities: { tools: true, streaming: true, structuredOutputs: true },
+      displayName: "Groq Free Tier",
+      modelName: groqPrimaryModel,
+      model: groq(groqPrimaryModel),
+      supportsStructuredObject: false,
     });
+    if (groqFallbackModel !== groqPrimaryModel) {
+      pool.push({
+        id: "groq-fallback",
+        displayName: "Groq Backup Bucket",
+        modelName: groqFallbackModel,
+        model: groq(groqFallbackModel),
+        supportsStructuredObject: false,
+      });
+    }
   }
 
-  if (hasOpenRouterKey) {
-    candidates.push({
+  if (geminiKey) {
+    const google = createGoogleGenerativeAI({ apiKey: geminiKey });
+    pool.push({
+      id: "gemini-free",
+      displayName: "Google AI Studio (Gemini)",
+      modelName: geminiPrimaryModel,
+      model: google(geminiPrimaryModel),
+      supportsStructuredObject: true,
+    });
+    if (geminiPrimaryModel !== "gemini-2.5-flash") {
+      pool.push({
+        id: "gemini-backup",
+        displayName: "Google Gemini 2.5 Flash",
+        modelName: "gemini-2.5-flash",
+        model: google("gemini-2.5-flash"),
+        supportsStructuredObject: true,
+      });
+    }
+  }
+
+  if (openRouterKey) {
+    const openrouter = createOpenRouter({ apiKey: openRouterKey });
+    pool.push({
       id: "openrouter",
-      displayName: "OpenRouter",
-      model: getOpenRouterModel(),
-      modelName: OPENROUTER_MODEL,
-      capabilities: { tools: true, streaming: true, structuredOutputs: false },
+      displayName: "OpenRouter Free",
+      modelName: openRouterModel,
+      model: openrouter.chat(openRouterModel),
+      supportsStructuredObject: false,
     });
   }
 
-  // Respect AI_PROVIDER_ORDER if set (comma-separated stable provider ids —
-  // e.g. "openai,gemini-free,groq" — NOT display names).
-  const order = process.env.AI_PROVIDER_ORDER;
-  if (order) {
-    const preferred = order.split(",").map((s) => s.trim().toLowerCase());
-    const ordered: ProviderCandidate[] = [];
-    for (const id of preferred) {
-      const idx = candidates.findIndex((c) => c.id.toLowerCase() === id);
-      if (idx !== -1) {
-        ordered.push(candidates[idx]);
-        candidates.splice(idx, 1);
+  const orderRaw = cleanKey(process.env.AI_PROVIDER_ORDER);
+  if (!orderRaw) {
+    return pool;
+  }
+
+  const order = orderRaw.split(",").map((s) => s.trim().toLowerCase());
+  const sorted: ProviderCandidate[] = [];
+  const remaining = [...pool];
+
+  for (const prefix of order) {
+    for (let i = remaining.length - 1; i >= 0; i--) {
+      // Match both exact id ("groq") and family ("groq-fallback")
+      if (
+        remaining[i].id === prefix ||
+        remaining[i].id.startsWith(`${prefix}-`)
+      ) {
+        // Preserve primary before backup
       }
     }
-    // Append any remaining candidates not in the order list.
-    ordered.push(...candidates);
-    return ordered;
-  }
-
-  return candidates;
-}
-
-export function getTutorModel() {
-  const candidates = getTutorProviderCandidates();
-
-  if (candidates.length === 0) {
-    throw new Error(SETUP_ERROR);
-  }
-
-  return candidates[0].model;
-}
-
-export function isQuotaError(error: unknown): boolean {
-  const text =
-    error instanceof Error
-      ? `${error.name}\n${error.message}\n${error.stack ?? ""}`
-      : JSON.stringify(error);
-
-  return (
-    text.includes("429") ||
-    text.includes("RESOURCE_EXHAUSTED") ||
-    text.toLowerCase().includes("quota") ||
-    text.toLowerCase().includes("rate limit") ||
-    text.toLowerCase().includes("rate_limit") ||
-    text.toLowerCase().includes("too many requests")
-  );
-}
-
-/**
- * Resolve a specific model id to a LanguageModel — actually resolves it
- * (via the AI Gateway when active, or the static chatModels table
- * otherwise), rather than ignoring the argument and returning whatever the
- * default tutor candidate happens to be.
- */
-export function getLanguageModel(modelId: string): LanguageModel {
-  if (useGateway) {
-    return gateway.languageModel(modelId);
-  }
-
-  const known = chatModels.find((m) => m.id === modelId);
-  if (!known) {
-    throw new Error(
-      `[getLanguageModel] Unknown model id "${modelId}" — not found in chatModels and the AI Gateway is not active.`
+    const matching = remaining.filter(
+      (c) => c.id === prefix || c.id.startsWith(`${prefix}-`)
     );
-  }
-
-  // Models with a gatewayOrder are only ever meant to be routed through the
-  // AI Gateway (e.g. "openai/gpt-oss-20b") — their id isn't a valid direct
-  // provider-SDK model name, regardless of what `provider` says.
-  if (known.gatewayOrder) {
-    throw new Error(
-      `[getLanguageModel] Model "${modelId}" requires the AI Gateway, which is not active.`
-    );
-  }
-
-  switch (known.provider) {
-    case "google":
-      return google(modelId);
-    case "openai":
-      if (!hasOpenAiKey) {
-        throw new Error(
-          `[getLanguageModel] Model "${modelId}" requires OPENAI_API_KEY, which is not set.`
-        );
+    for (const m of matching) {
+      sorted.push(m);
+      const idx = remaining.indexOf(m);
+      if (idx !== -1) {
+        remaining.splice(idx, 1);
       }
-      return getOpenAiModel(modelId);
-    default:
-      throw new Error(
-        `[getLanguageModel] Model "${modelId}" (provider "${known.provider}") requires the AI Gateway, which is not active.`
-      );
+    }
   }
+
+  sorted.push(...remaining);
+  return sorted;
 }
 
-export function getTitleModel(): LanguageModel {
-  if (isTestEnvironment) {
-    const { titleModel } = require("./models.mock");
-    return titleModel;
+function extractFirstJsonObject(raw: string): unknown {
+  // Strip <think>...</think> blocks emitted by reasoning models such as Qwen3 / DeepSeek
+  const withoutThink = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const withoutFence = withoutThink
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  const start = withoutFence.indexOf("{");
+  const end = withoutFence.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("Model response did not contain a JSON object");
   }
 
-  const candidates = getTutorProviderCandidates();
+  return JSON.parse(withoutFence.slice(start, end + 1));
+}
+
+export async function generateStructuredWithFallback<T>({
+  system,
+  prompt,
+  schema,
+  schemaHint,
+}: {
+  system: string;
+  prompt: string;
+  schema: z.ZodType<T>;
+  schemaHint: string;
+}): Promise<{ data: T; providerUsed: string }> {
+  const candidates = getProviderCandidates();
   if (candidates.length === 0) {
-    throw new Error(SETUP_ERROR);
+    throw new Error("NO_AI_PROVIDERS_CONFIGURED");
   }
 
-  return candidates[0].model;
+  let lastError: unknown = null;
+
+  for (const candidate of candidates) {
+    try {
+      if (candidate.supportsStructuredObject) {
+        const res = await generateObject({
+          model: candidate.model,
+          system,
+          prompt,
+          schema,
+          maxRetries: 0,
+        });
+        return {
+          data: res.object,
+          providerUsed: `${candidate.displayName} (${candidate.modelName})`,
+        };
+      }
+
+      const textRes = await generateText({
+        model: candidate.model,
+        system: `${system}\n\nIMPORTANT OUTPUT CONTRACT:\nReturn ONLY a single valid JSON object matching this exact structure (no markdown fences, no commentary outside JSON):\n${schemaHint}`,
+        prompt,
+        maxRetries: 0,
+      });
+
+      const rawJson = extractFirstJsonObject(textRes.text);
+      const parsed = schema.parse(rawJson);
+      return {
+        data: parsed,
+        providerUsed: `${candidate.displayName} (${candidate.modelName})`,
+      };
+    } catch (err) {
+      lastError = err;
+      console.warn(
+        `[ai-fallback] Candidate ${candidate.id} (${candidate.modelName}) failed, trying next:`,
+        err instanceof Error ? err.message : String(err)
+      );
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("All configured AI providers failed or hit rate limits.");
 }
 
-const SETUP_ERROR = [
-  "No AI provider configured.",
-  "",
-  "Add one of these provider keys to your .env.local:",
-  "",
-  "GOOGLE_GENERATIVE_AI_API_KEY (recommended — free tier)",
-  "  https://aistudio.google.com/apikey",
-  "",
-  "GROQ_API_KEY",
-  "  https://console.groq.com/keys",
-  "",
-  "OPENROUTER_API_KEY",
-  "  https://openrouter.ai/settings/keys",
-  "",
-  "OPENAI_API_KEY + OPENAI_MODEL (both required — no default model)",
-  "  https://platform.openai.com/api-keys",
-].join("\n");
+export async function transcribeAudioWithGroq(audio: {
+  data: ArrayBuffer | Uint8Array;
+  mimeType: string;
+}): Promise<{ text: string; durationMs: number | null }> {
+  if (isTestEnvironment) {
+    return { text: "explain it another way", durationMs: 800 };
+  }
+
+  const groqKey = cleanKey(process.env.GROQ_API_KEY);
+  if (!groqKey) {
+    throw new Error("GROQ_API_KEY_MISSING");
+  }
+
+  const sttModel =
+    process.env.GROQ_STT_MODEL?.trim() || "whisper-large-v3-turbo";
+  const groq = createGroq({ apiKey: groqKey });
+  const bytes =
+    audio.data instanceof Uint8Array ? audio.data : new Uint8Array(audio.data);
+
+  const result = await transcribe({
+    model: groq.transcription(sttModel),
+    audio: bytes,
+  });
+
+  return {
+    text: result.text.trim(),
+    durationMs:
+      typeof result.durationInSeconds === "number"
+        ? Math.round(result.durationInSeconds * 1000)
+        : null,
+  };
+}

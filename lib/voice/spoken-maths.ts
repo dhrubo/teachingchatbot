@@ -57,33 +57,60 @@ const TENS: Record<string, number> = {
 // decimal reading, and for the "one four" digit-string-vs-fraction ambiguity
 // check (which only makes sense for single spoken digits, not e.g. "twelve").
 const SINGLE_DIGIT_WORDS = new Set([
-  "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
 ]);
 
 // Denominator nouns for spoken fractions — singular and plural map to the
 // same denominator ("quarter"/"quarters" -> 4).
 const FRACTION_DENOMINATORS: Record<string, number> = {
-  half: 2, halves: 2,
-  third: 3, thirds: 3,
-  quarter: 4, quarters: 4,
-  fifth: 5, fifths: 5,
-  sixth: 6, sixths: 6,
-  seventh: 7, sevenths: 7,
-  eighth: 8, eighths: 8,
-  ninth: 9, ninths: 9,
-  tenth: 10, tenths: 10,
+  half: 2,
+  halves: 2,
+  third: 3,
+  thirds: 3,
+  quarter: 4,
+  quarters: 4,
+  fifth: 5,
+  fifths: 5,
+  sixth: 6,
+  sixths: 6,
+  seventh: 7,
+  sevenths: 7,
+  eighth: 8,
+  eighths: 8,
+  ninth: 9,
+  ninths: 9,
+  tenth: 10,
+  tenths: 10,
 };
 
 // Phonetic spellings an STT engine commonly produces for a spoken
 // multiple-choice letter ("option bee" -> "B"). Scoped to A-F, which covers
 // this app's multiple-choice question sizes.
 const OPTION_LETTER_WORDS: Record<string, string> = {
-  a: "A", ay: "A", eh: "A",
-  b: "B", bee: "B", be: "B",
-  c: "C", see: "C", sea: "C",
-  d: "D", dee: "D",
-  e: "E", ee: "E",
-  f: "F", eff: "F",
+  a: "A",
+  ay: "A",
+  eh: "A",
+  b: "B",
+  bee: "B",
+  be: "B",
+  c: "C",
+  see: "C",
+  sea: "C",
+  d: "D",
+  dee: "D",
+  e: "E",
+  ee: "E",
+  f: "F",
+  eff: "F",
 };
 
 // Multi-word filler phrases stripped before tokenising. Longer/more-specific
@@ -200,20 +227,28 @@ export function wordsToNumber(phrase: string): number | null {
  * Reused both as the top-level fallback and to normalise the sub-phrases
  * inside the ambiguity detectors below (e.g. "two x" -> "2x").
  */
-function normalizeGeneric(cleaned: string): { expression: string; confidence: number } {
+function normalizeGeneric(cleaned: string): {
+  expression: string;
+  confidence: number;
+} {
   const tokens = cleaned.split(" ").filter(Boolean);
   const out: string[] = [];
   let unresolved = 0;
   let i = 0;
 
-  const lastOut = () => out[out.length - 1] ?? "";
+  const lastOut = () => out.at(-1) ?? "";
   const lastIsNumberLike = () => /^-?\d+(\.\d+)?$/.test(lastOut());
 
   while (i < tokens.length) {
     const t = tokens[i];
 
     // Mixed number: "<int> and a half" -> "<int> 1/2".
-    if (t === "and" && tokens[i + 1] === "a" && tokens[i + 2] === "half" && lastIsNumberLike()) {
+    if (
+      t === "and" &&
+      tokens[i + 1] === "a" &&
+      tokens[i + 2] === "half" &&
+      lastIsNumberLike()
+    ) {
       out.push("1/2");
       i += 3;
       continue;
@@ -221,7 +256,8 @@ function normalizeGeneric(cleaned: string): { expression: string; confidence: nu
 
     if (t === "negative" || t === "minus") {
       const prevTok = lastOut();
-      const isBinary = prevTok !== "" && !["+", "-", "*", "/", "=", "("].includes(prevTok);
+      const isBinary =
+        prevTok !== "" && !["+", "-", "*", "/", "=", "("].includes(prevTok);
       const run = consumeNumberWords(tokens, i + 1);
       if (run) {
         const numStr = String(run.value);
@@ -341,7 +377,10 @@ function normalizeGeneric(cleaned: string): { expression: string; confidence: nu
       continue;
     }
 
-    if (t === "a" && Object.hasOwn(FRACTION_DENOMINATORS, tokens[i + 1] ?? "")) {
+    if (
+      t === "a" &&
+      Object.hasOwn(FRACTION_DENOMINATORS, tokens[i + 1] ?? "")
+    ) {
       out.push(`1/${FRACTION_DENOMINATORS[tokens[i + 1]]}`);
       i += 2;
       continue;
@@ -395,12 +434,17 @@ function detectMultipleChoiceLetter(cleaned: string): string | null {
   return OPTION_LETTER_WORDS[match[1]] ?? match[1].toUpperCase();
 }
 
-type AmbiguityDetection = { candidates: SpokenMathsCandidate[]; ambiguityReason: string };
+type AmbiguityDetection = {
+  candidates: SpokenMathsCandidate[];
+  ambiguityReason: string;
+};
 
 // "two x plus one over three": does "over three" divide just the "one", or
 // the whole "2x plus one"? Both readings are common in spoken maths, so both
 // are returned rather than guessing which the student meant.
-function detectFractionScopeAmbiguity(cleaned: string): AmbiguityDetection | null {
+function detectFractionScopeAmbiguity(
+  cleaned: string
+): AmbiguityDetection | null {
   const match = cleaned.match(/^(.+?)\s+plus\s+(.+?)\s+over\s+(.+)$/);
   if (!match) {
     return null;
@@ -422,7 +466,9 @@ function detectFractionScopeAmbiguity(cleaned: string): AmbiguityDetection | nul
 
 // "negative three squared": does the minus sign bind before or after the
 // exponent? -3^2 = -9, but (-3)^2 = 9 — genuinely different answers.
-function detectNegationExponentAmbiguity(cleaned: string): AmbiguityDetection | null {
+function detectNegationExponentAmbiguity(
+  cleaned: string
+): AmbiguityDetection | null {
   const match = cleaned.match(/^(?:negative|minus)\s+(.+?)\s+(squared|cubed)$/);
   if (!match) {
     return null;
@@ -443,9 +489,15 @@ function detectNegationExponentAmbiguity(cleaned: string): AmbiguityDetection | 
 
 // "one four": a run of two single spoken digits could be a two-digit number
 // read aloud digit-by-digit ("14"), or a sloppy "one-fourth" fraction ("1/4").
-function detectDigitStringVsFractionAmbiguity(cleaned: string): AmbiguityDetection | null {
+function detectDigitStringVsFractionAmbiguity(
+  cleaned: string
+): AmbiguityDetection | null {
   const tokens = cleaned.split(" ").filter(Boolean);
-  if (tokens.length !== 2 || !SINGLE_DIGIT_WORDS.has(tokens[0]) || !SINGLE_DIGIT_WORDS.has(tokens[1])) {
+  if (
+    tokens.length !== 2 ||
+    !SINGLE_DIGIT_WORDS.has(tokens[0]) ||
+    !SINGLE_DIGIT_WORDS.has(tokens[1])
+  ) {
     return null;
   }
   const d1 = ONES[tokens[0]];
@@ -512,7 +564,10 @@ export function parseSpokenMaths(transcript: string): SpokenMathsParseResult {
   };
 }
 
-export type SpokenMathsClarification = { displayText: string; spokenText: string };
+export type SpokenMathsClarification = {
+  displayText: string;
+  spokenText: string;
+};
 
 /**
  * Deterministic (no LLM call) clarification question for an ambiguous or
@@ -542,7 +597,9 @@ export function buildClarificationQuestion(
   }
 
   if (result.ambiguityReason === "negation-vs-exponent-precedence") {
-    const parenCandidate = result.candidates.find((c) => c.value.startsWith("("));
+    const parenCandidate = result.candidates.find((c) =>
+      c.value.startsWith("(")
+    );
     const plainCandidate = result.candidates.find((c) => c !== parenCandidate);
     const expWord = result.raw.includes("cubed") ? "cubed" : "squared";
     const text = `I heard "${result.raw}". Do you mean the number ${expWord} first, then made negative — that's ${plainCandidate?.value} — or the negative number ${expWord} as a whole — that's ${parenCandidate?.value}?`;

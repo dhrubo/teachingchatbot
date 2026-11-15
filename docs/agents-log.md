@@ -946,3 +946,15 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
 - The `QuizBuilderAgent` has been implemented and API-tested but not yet verified against the real DB with a full end-to-end quiz build (depends on approved archetypes existing for the target subject/year).
 - The Geography importer (`scripts/import-geography.ts`) seeds into legacy `ConceptCard` table, not `CurriculumArtifact` — should be migrated when legacy tables are dropped.
 
+---
+
+## Phase 57: Clean-Slate Rebuild — Mr. Ranedeer Voice-First Edexcel GCSE (`1MA1`) Maths Tutor ✅
+
+- **Status:** Completed (Nov 2026)
+- **Summary:** Replaced the broken multi-subject legacy codebase with a fast, zero-bloat, 100% free-tier **Voice-First AI Maths Tutor** grounded in **Mr. Ranedeer AI Tutor** principles, scoped strictly to **Pearson Edexcel GCSE (9–1) Mathematics (`1MA1`, Foundation & Higher)**, with deep **5-Lens Multi-Representation Explanations** and **Duolingo-style daily practice streaks + Web Push reminders**.
+- **Key Deliverables:**
+  - **Curriculum & 5 Lenses (`lib/curriculum/*`):** Full 6-strand Edexcel `1MA1` curriculum (`Number`, `Algebra`, `Ratio & Proportion`, `Geometry & Measures`, `Probability`, `Statistics`) with flagship deep-dives on *Compound Interest & Growth (`R16`)* and *Fractions (`N2`)*, `0.1 → 0.x` Prerequisite Ladders, 5 explanation lenses (`visual`, `story`, `pattern`, `exam`, `socratic`), and `3/10 → 6/10 → 9/10` Mastery Tests.
+  - **Live Visual Maths Board (`components/whiteboard/*`):** 6 SVG visual primitives (`fraction-wall`, `multiplier-timeline`, `area-grid`, `number-line`, `equation-balance`, `triangle-trig`) paired with KaTeX step cards.
+  - **Free Voice + Dual-LLM Stack (`lib/ai/providers.ts`, `lib/ai/ranedeer-engine.ts`, `app/api/voice/*`):** Groq `whisper-large-v3-turbo` STT + Groq (`qwen/qwen3-32b`, `llama-3.3-70b-versatile`) ⇄ Google AI Studio (`gemini-3.1-flash-lite`, `gemini-2.5-flash`) ⇄ OpenRouter `:free` + `edge-tts-universal` (`en-GB-SoniaNeural`) British TTS + zero-key curated fallback.
+  - **Deterministic Spoken-Maths Grading (`lib/voice/*`, `lib/math/check-answer.ts`):** Preserved and extended spoken-maths disambiguation, Ranedeer voice commands, fraction/decimal/currency/ratio equivalence, and rounding-hint coaching.
+  - **Duolingo Streaks & Web Push Reminders (`lib/reminders/*`, `public/sw.js`, `app/warmup`, `app/settings`):** Daily streak state machine with auto-saving Streak Freezes, 5-minute spaced-repetition voice warmup, VAPID Web Push subscription & test endpoint, and `/api/cron/daily-reminders`.

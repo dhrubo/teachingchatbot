@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildClarificationQuestion, parseSpokenMaths, wordsToNumber } from "./spoken-maths";
+import {
+  buildClarificationQuestion,
+  parseSpokenMaths,
+  wordsToNumber,
+} from "./spoken-maths";
 
 // Helper: the common case in these tests is "exactly one high-confidence
 // candidate, no ambiguity" — assert that shape in one place.
