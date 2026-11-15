@@ -7,13 +7,109 @@ import { sanitizeForSpeech } from "@/lib/math/check-answer";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { voiceTtsPostSchema } from "./schema";
 
-export const maxDuration = 25;
+export const maxDuration = 15;
 
 const SPEED_TO_EDGE_RATE: Record<string, string> = {
   "0.85": "-15%",
   "1.0": "+0%",
   "1.15": "+15%",
 };
+
+function splitIntoShortChunks(text: string, maxLen = 185): string[] {
+  const sentences = text
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const chunks: string[] = [];
+
+  for (const sentence of sentences) {
+    if (sentence.length <= maxLen) {
+      chunks.push(sentence);
+      continue;
+    }
+    const words = sentence.split(/\s+/);
+    let current = "";
+    for (const word of words) {
+      if (`${current} ${word}`.trim().length <= maxLen) {
+        current = `${current} ${word}`.trim();
+      } else {
+        if (current) {
+          chunks.push(current);
+        }
+        current = word;
+      }
+    }
+    if (current) {
+      chunks.push(current);
+    }
+  }
+
+  return chunks.length > 0 ? chunks : [text.slice(0, maxLen)];
+}
+
+async function synthesizeWithEdgeNeural(
+  text: string,
+  voice: string,
+  rate: string
+): Promise<Buffer> {
+  const collectPromise = (async () => {
+    const communicate = new Communicate(text, {
+      voice,
+      rate,
+      connectionTimeout: 2500,
+    });
+    const audioChunks: Buffer[] = [];
+    for await (const chunk of communicate.stream()) {
+      if (chunk.type === "audio" && chunk.data) {
+        audioChunks.push(chunk.data);
+      }
+    }
+    if (audioChunks.length === 0) {
+      throw new Error("Empty Edge TTS stream");
+    }
+    return Buffer.concat(audioChunks);
+  })();
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error("Edge TTS timed out"));
+    }, 2600);
+  });
+
+  try {
+    return await Promise.race([collectPromise, timeoutPromise]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  }
+}
+
+async function synthesizeWithFastGbHttp(text: string): Promise<Buffer> {
+  const chunks = splitIntoShortChunks(text, 185);
+  const buffers: Buffer[] = [];
+
+  for (const piece of chunks) {
+    const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=en-GB&client=tw-ob&q=${encodeURIComponent(piece)}`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+      },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP TTS returned ${res.status}`);
+    }
+    const arr = await res.arrayBuffer();
+    buffers.push(Buffer.from(arr));
+  }
+
+  if (buffers.length === 0) {
+    throw new Error("No HTTP TTS buffers generated");
+  }
+  return Buffer.concat(buffers);
+}
 
 export async function POST(request: NextRequest) {
   let rawJson: unknown;
@@ -49,30 +145,18 @@ export async function POST(request: NextRequest) {
   const cleanSpoken = sanitizeForSpeech(parsed.data.text);
   const voice = process.env.TTS_VOICE?.trim() || "en-GB-SoniaNeural";
   const rate = SPEED_TO_EDGE_RATE[parsed.data.speed ?? "1.0"] ?? "+0%";
+  const isVercelDatacenter = Boolean(process.env.VERCEL);
 
   try {
-    const communicate = new Communicate(cleanSpoken, {
-      voice,
-      rate,
-      connectionTimeout: 6000,
-    });
+    // On Vercel AWS datacenters, Bing's consumer Edge WebSocket blocks connections;
+    // go straight to the fast ~300ms British English HTTP MP3 synthesizer.
+    const audioBuffer = isVercelDatacenter
+      ? await synthesizeWithFastGbHttp(cleanSpoken)
+      : await synthesizeWithEdgeNeural(cleanSpoken, voice, rate).catch(() =>
+          synthesizeWithFastGbHttp(cleanSpoken)
+        );
 
-    const audioChunks: Buffer[] = [];
-    for await (const chunk of communicate.stream()) {
-      if (chunk.type === "audio" && chunk.data) {
-        audioChunks.push(chunk.data);
-      }
-    }
-
-    if (audioChunks.length === 0) {
-      return new ChatbotError(
-        "offline:voice",
-        "No neural audio returned; fall back to browser speechSynthesis."
-      ).toResponse();
-    }
-
-    const combined = Buffer.concat(audioChunks);
-    return new Response(combined, {
+    return new Response(new Uint8Array(audioBuffer), {
       headers: {
         "Content-Type": "audio/mpeg",
         "Cache-Control": "private, max-age=1800",
@@ -81,7 +165,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     return new ChatbotError(
       "offline:voice",
-      err instanceof Error ? err.message : "Neural TTS temporarily unavailable"
+      err instanceof Error ? err.message : "TTS temporarily unavailable"
     ).toResponse();
   }
 }

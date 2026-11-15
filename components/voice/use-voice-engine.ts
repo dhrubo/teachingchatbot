@@ -133,6 +133,7 @@ export function useVoiceEngine({
               ? speechSpeed
               : "1.0",
           }),
+          signal: AbortSignal.timeout(6000),
         });
 
         if (!res.ok) {
@@ -144,6 +145,7 @@ export function useVoiceEngine({
         const url = URL.createObjectURL(blob);
         audioUrlRef.current = url;
         const audio = new Audio(url);
+        audio.playbackRate = Number.parseFloat(speechSpeed) || 1.0;
         audioElRef.current = audio;
 
         audio.onended = () => {
