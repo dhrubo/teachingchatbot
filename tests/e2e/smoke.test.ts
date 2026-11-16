@@ -45,5 +45,13 @@ test.describe("Mr. Ranedeer Edexcel GCSE Maths — Simplified Topics, Auth, Watc
         name: /Parent & Guardian Watcher Hub/i,
       })
     ).toBeVisible();
+
+    await page.goto("/chat");
+    await expect(
+      page.getByRole("heading", {
+        name: /Ask & Play Maths Chat/i,
+      })
+    ).toBeVisible();
+    await expect(page.getByText(/Your Mastery Progress/i)).toBeVisible();
   });
 });

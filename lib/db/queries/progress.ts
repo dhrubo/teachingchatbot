@@ -292,6 +292,36 @@ export async function appendTutorSessionTurns(input: {
   );
 }
 
+export async function clearTutorSessionTurns(
+  learnerId: string,
+  topicSlug: string
+): Promise<void> {
+  const now = new Date();
+  await runWithDbFallback(
+    async (db) => {
+      await db
+        .update(tutorSession)
+        .set({ turnsJson: [], updatedAt: now })
+        .where(
+          and(
+            eq(tutorSession.learnerId, learnerId),
+            eq(tutorSession.topicSlug, topicSlug)
+          )
+        );
+    },
+    () => {
+      const store = readLocalStore();
+      const key = `${learnerId}:${topicSlug}`;
+      const prev = store.sessions[key];
+      if (prev) {
+        prev.turnsJson = [];
+        prev.updatedAt = now.toISOString();
+        writeLocalStore(store);
+      }
+    }
+  );
+}
+
 export async function upsertDailyPracticeLog(input: {
   learnerId: string;
   practiceDate: string;

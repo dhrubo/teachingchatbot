@@ -130,6 +130,13 @@ export const topicProgress = pgTable(
 
 export type TopicProgressRecord = InferSelectModel<typeof topicProgress>;
 
+export type QuizGameRoundType =
+  | "step_choice"
+  | "missing_working"
+  | "fluency_solve"
+  | "exam_solve"
+  | "boss_solve";
+
 export type StoredTutorTurn = {
   id: string;
   role: "learner" | "tutor";
@@ -137,6 +144,11 @@ export type StoredTutorTurn = {
   spokenText?: string;
   lens?: ExplanationLens;
   stage?: string;
+  detectedTopicSlug?: string;
+  detectedTopicTitle?: string;
+  detectedEdexcelCode?: string;
+  boardSteps?: Array<{ label: string; latex: string; note?: string }>;
+  examTip?: string;
   createdAt: string;
 };
 
@@ -169,6 +181,9 @@ export type StoredQuizQuestion = {
   acceptedVariants?: string[];
   unit?: string;
   workedSolution: string;
+  roundType?: QuizGameRoundType;
+  choices?: string[];
+  workingLines?: string[];
   learnerAnswer?: string;
   isCorrect?: boolean;
   timeTakenMs?: number;

@@ -972,3 +972,16 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
   - Added deterministic Socratic homework/answer-seeking guard in `runRanedeerTurn`.
   - Built 5-question randomized procedural generators across all 14 Edexcel `1MA1` topics where `canonicalAnswer` and `workedSolution` never leave the server until graded.
   - Locked AI Tutor & explanation lenses during quizzes and recorded tab-switch, paste-attempt, and rapid-guessing integrity flags for Parent/Guardian Watchers on `/guardian`.
+
+---
+
+## 2026-11-16 — Ask-Anything Maths Chat, Automatic Topic Detection & Working Game Quests
+
+- **Automatic Edexcel `1MA1` Topic Detection (`lib/curriculum/detect-topic.ts`):** Deterministic weighted keyword + mathematical expression matcher across all 14 Edexcel `1MA1` topics (`high` / `medium` / `fallback` confidence), paired with LLM confirmation/refinement in `lib/ai/ask-chat-engine.ts`.
+- **Ask & Play Maths Chat (`app/chat/page.tsx`, `components/chat/ask-maths-chat.tsx`, `app/api/chat/ask/route.ts`):**
+  - Students can type or speak any GCSE Maths question from `/chat` or the home Quick-Ask bar without choosing a topic first.
+  - Detects the exact Edexcel `1MA1` topic, renders step-by-step KaTeX working lines + exam tip + British TTS voice readout, supports `"Explain Another Way"` lens rotation, persists chat history under `topicSlug = "__ask_chat__"` (zero SQL DDL required), and awards XP + updates topic mastery & daily streak.
+- **5-Round Working Game Quests (`lib/quiz/game-generator.ts`, `app/api/chat/game/{start,answer}/route.ts`, `components/chat/topic-game-arena.tsx`):**
+  - Progressive 5-round game per detected topic: `Round 1: Spot the Working` (4-choice Edexcel setup), `Round 2: Complete the Step` (interactive `[ ? ]` missing working line), `Round 3: Combo Builder`, `Round 4: Edexcel Exam Solve`, and `Round 5: Boss Challenge (2x XP!)`.
+  - Features 3 Hearts, `x1–x4` Combo Multipliers, Hint Shield, voice/typed/tile input, server-only grading (`canonicalAnswer` & `workedSolution` stripped from browser payloads), and real-time updates to `RanedeerTopicProgress`, `RanedeerLearner` XP/streaks, `RanedeerQuizAttempt` best scores on `/`, and Parent Watcher analytics on `/guardian`.
+

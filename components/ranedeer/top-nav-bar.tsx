@@ -6,6 +6,7 @@ import {
   Flame,
   LogIn,
   LogOut,
+  MessageCircle,
   Settings,
   UserCheck,
 } from "lucide-react";
@@ -89,6 +90,15 @@ export function TopNavBar({
         </Link>
 
         <nav className="flex flex-wrap items-center gap-2">
+          <Link
+            className="inline-flex items-center gap-1.5 rounded-xl border border-violet-400/40 bg-violet-500/15 px-3 py-1.5 font-bold text-violet-100 text-xs transition hover:bg-violet-500/25"
+            href="/chat"
+            title="Ask any maths question, see the worked answer & play 5-round games"
+          >
+            <MessageCircle className="size-3.5 text-violet-300" />
+            <span>Ask &amp; Play</span>
+          </Link>
+
           <Link
             className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/35 bg-orange-500/15 px-3 py-1.5 font-semibold text-orange-200 text-xs transition hover:bg-orange-500/25"
             href="/warmup"

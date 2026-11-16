@@ -5,12 +5,15 @@ import {
   CheckCircle2,
   Eye,
   Flame,
+  Gamepad2,
   Lock,
   Mic,
+  Send,
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { TopNavBar } from "@/components/ranedeer/top-nav-bar";
 import { EDEXCEL_STRANDS, EDEXCEL_TOPICS } from "@/lib/curriculum/edexcel-1ma1";
@@ -53,10 +56,12 @@ export function EdexcelDashboard({
   progressBySlug,
   quizScoresBySlug,
 }: EdexcelDashboardProps) {
+  const router = useRouter();
   const [selectedTier, setSelectedTier] = useState<EdexcelTier>(learner.tier);
   const [selectedStrand, setSelectedStrand] = useState<EdexcelStrandId | "all">(
     "all"
   );
+  const [quickQuestion, setQuickQuestion] = useState("");
 
   const handleTierToggle = async (nextTier: EdexcelTier) => {
     setSelectedTier(nextTier);
@@ -175,6 +180,45 @@ export function EdexcelDashboard({
             ) : null}
           </div>
         </section>
+
+        {/* Compact Ask-Anything Maths Chat + Game Quest Bar */}
+        <form
+          className="glass-panel flex flex-col gap-2.5 rounded-2xl border border-orange-400/20 bg-gradient-to-r from-orange-500/10 via-slate-900/60 to-violet-600/10 p-3.5 sm:flex-row sm:items-center"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const trimmed = quickQuestion.trim();
+            router.push(
+              trimmed ? `/chat?q=${encodeURIComponent(trimmed)}` : "/chat"
+            );
+          }}
+        >
+          <div className="flex items-center gap-2 text-xs">
+            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-orange-500/20 text-orange-300">
+              <Gamepad2 className="size-4" />
+            </span>
+            <span className="font-semibold text-slate-200">
+              Stuck on a question?
+            </span>
+          </div>
+          <label className="sr-only" htmlFor="home-quick-ask">
+            Ask any GCSE Maths question
+          </label>
+          <input
+            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-950/75 px-3.5 py-2 text-sm text-white placeholder:text-slate-400 focus:border-orange-400 focus:outline-none"
+            id="home-quick-ask"
+            onChange={(e) => setQuickQuestion(e.target.value)}
+            placeholder='Ask anything (e.g. "How do I find 5% compound interest on £800 for 3 years?") — get steps + a 5-round game!'
+            type="text"
+            value={quickQuestion}
+          />
+          <button
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-violet-600 px-4 py-2 font-bold text-white text-xs shadow-sm transition hover:brightness-110"
+            type="submit"
+          >
+            <Send className="size-3.5" />
+            Ask &amp; Play
+          </button>
+        </form>
 
         {/* Simple Filter Bar: Tier + Edexcel Strand */}
         <section className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
