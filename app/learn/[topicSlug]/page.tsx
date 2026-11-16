@@ -12,10 +12,15 @@ export const dynamic = "force-dynamic";
 
 export default async function LearnTopicPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ topicSlug: string }>;
+  searchParams: Promise<{ mode?: string }>;
 }) {
-  const { topicSlug } = await params;
+  const [{ topicSlug }, resolvedSearch] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const topic = getTopicBySlug(topicSlug);
   if (!topic) {
     notFound();
@@ -44,6 +49,7 @@ export default async function LearnTopicPage({
       }}
       initialLensesTried={progress?.lensesTried ?? []}
       initialMasteryScore={progress?.masteryScore ?? 0}
+      initialMode={resolvedSearch.mode === "quiz" ? "quiz" : "tutorial"}
       initialStage={session.stage || "1.1"}
       initialTurns={session.turnsJson}
       topic={topic}

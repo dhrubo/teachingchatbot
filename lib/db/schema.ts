@@ -19,6 +19,11 @@ export type ExplanationLens =
   | "exam"
   | "socratic";
 export type ToneStyle = "encouraging" | "calm" | "friendly" | "direct";
+export type AccountRole = "parent" | "student";
+export type GuardianRelationship =
+  | "created_by_parent"
+  | "watcher_code"
+  | "email_invite";
 
 export const learner = pgTable("RanedeerLearner", {
   id: uuid("id").primaryKey().notNull(),
@@ -55,6 +60,47 @@ export const learner = pgTable("RanedeerLearner", {
 });
 
 export type LearnerRecord = InferSelectModel<typeof learner>;
+
+export const account = pgTable("RanedeerAccount", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  role: varchar("role", { enum: ["parent", "student"] }).notNull(),
+  displayName: varchar("displayName", { length: 64 }).notNull(),
+  username: varchar("username", { length: 48 }).notNull().unique(),
+  email: varchar("email", { length: 160 }).unique(),
+  passwordHash: text("passwordHash"),
+  pinHash: text("pinHash"),
+  learnerId: uuid("learnerId").references(() => learner.id, {
+    onDelete: "set null",
+  }),
+  watcherCode: varchar("watcherCode", { length: 12 }).unique(),
+  invitedParentEmail: varchar("invitedParentEmail", { length: 160 }),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type AccountRecord = InferSelectModel<typeof account>;
+
+export const guardianLink = pgTable(
+  "RanedeerGuardianLink",
+  {
+    parentAccountId: uuid("parentAccountId")
+      .notNull()
+      .references(() => account.id, { onDelete: "cascade" }),
+    learnerId: uuid("learnerId")
+      .notNull()
+      .references(() => learner.id, { onDelete: "cascade" }),
+    relationship: varchar("relationship", {
+      enum: ["created_by_parent", "watcher_code", "email_invite"],
+    })
+      .notNull()
+      .default("watcher_code"),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.parentAccountId, table.learnerId] }),
+  })
+);
+
+export type GuardianLinkRecord = InferSelectModel<typeof guardianLink>;
 
 export const topicProgress = pgTable(
   "RanedeerTopicProgress",
@@ -111,6 +157,53 @@ export const tutorSession = pgTable("RanedeerTutorSession", {
 });
 
 export type TutorSessionRecord = InferSelectModel<typeof tutorSession>;
+
+export type StoredQuizQuestion = {
+  index: number;
+  difficultyLabel: string;
+  calculatorAllowed: boolean;
+  promptText: string;
+  spokenPrompt: string;
+  hintSpoken: string;
+  canonicalAnswer: string;
+  acceptedVariants?: string[];
+  unit?: string;
+  workedSolution: string;
+  learnerAnswer?: string;
+  isCorrect?: boolean;
+  timeTakenMs?: number;
+};
+
+export const quizAttempt = pgTable("RanedeerQuizAttempt", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  learnerId: uuid("learnerId")
+    .notNull()
+    .references(() => learner.id, { onDelete: "cascade" }),
+  topicSlug: varchar("topicSlug", { length: 96 }).notNull(),
+  status: varchar("status", { enum: ["in_progress", "completed"] })
+    .notNull()
+    .default("in_progress"),
+  totalQuestions: integer("totalQuestions").notNull().default(5),
+  currentIndex: integer("currentIndex").notNull().default(0),
+  correctCount: integer("correctCount").notNull().default(0),
+  scorePercent: integer("scorePercent").notNull().default(0),
+  tabSwitchCount: integer("tabSwitchCount").notNull().default(0),
+  pasteCount: integer("pasteCount").notNull().default(0),
+  rapidGuessCount: integer("rapidGuessCount").notNull().default(0),
+  hintsUsed: integer("hintsUsed").notNull().default(0),
+  integrityFlags: json("integrityFlags")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  questionsJson: json("questionsJson")
+    .$type<StoredQuizQuestion[]>()
+    .notNull()
+    .default([]),
+  startedAt: timestamp("startedAt").notNull().defaultNow(),
+  completedAt: timestamp("completedAt"),
+});
+
+export type QuizAttemptRecord = InferSelectModel<typeof quizAttempt>;
 
 export const pushSubscriptionRecord = pgTable("RanedeerPushSubscription", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),

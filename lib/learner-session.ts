@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { getAuthSession } from "@/lib/auth/session";
 import {
   DEFAULT_LEARNER_ID,
   isProductionEnvironment,
@@ -12,6 +13,11 @@ const UUID_REGEX =
 
 export async function resolveLearnerIdFromCookies(): Promise<string> {
   try {
+    const session = await getAuthSession();
+    if (session?.role === "student" && session.learnerId) {
+      return session.learnerId;
+    }
+
     const cookieStore = await cookies();
     const existing = cookieStore.get(LEARNER_COOKIE_NAME)?.value;
     if (existing && UUID_REGEX.test(existing)) {
@@ -24,6 +30,11 @@ export async function resolveLearnerIdFromCookies(): Promise<string> {
 }
 
 export async function ensureLearnerCookie(): Promise<string> {
+  const session = await getAuthSession();
+  if (session?.role === "student" && session.learnerId) {
+    return session.learnerId;
+  }
+
   const cookieStore = await cookies();
   const existing = cookieStore.get(LEARNER_COOKIE_NAME)?.value;
   if (existing && UUID_REGEX.test(existing)) {
@@ -39,4 +50,15 @@ export async function ensureLearnerCookie(): Promise<string> {
     maxAge: 60 * 60 * 24 * 365,
   });
   return freshId;
+}
+
+export async function setActiveLearnerCookie(learnerId: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(LEARNER_COOKIE_NAME, learnerId, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: isProductionEnvironment,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
 }

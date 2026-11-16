@@ -2,17 +2,23 @@ import "server-only";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
+  account,
   dailyPracticeLog,
+  guardianLink,
   learner,
   pushSubscriptionRecord,
+  quizAttempt,
   topicProgress,
   tutorSession,
 } from "./schema";
 
 const dbSchema = {
   learner,
+  account,
+  guardianLink,
   topicProgress,
   tutorSession,
+  quizAttempt,
   pushSubscriptionRecord,
   dailyPracticeLog,
 };

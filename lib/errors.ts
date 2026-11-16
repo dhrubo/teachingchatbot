@@ -6,7 +6,15 @@ export type ErrorType =
   | "rate_limit"
   | "offline";
 
-export type Surface = "api" | "tutor" | "voice" | "reminders" | "database";
+export type Surface =
+  | "api"
+  | "auth"
+  | "guardian"
+  | "quiz"
+  | "tutor"
+  | "voice"
+  | "reminders"
+  | "database";
 
 export type ErrorCode = `${ErrorType}:${Surface}`;
 
@@ -15,6 +23,9 @@ export type ErrorVisibility = "response" | "log" | "none";
 export const visibilityBySurface: Record<Surface, ErrorVisibility> = {
   database: "log",
   api: "response",
+  auth: "response",
+  guardian: "response",
+  quiz: "response",
   tutor: "response",
   voice: "response",
   reminders: "response",
@@ -68,6 +79,20 @@ export function getMessageByErrorCode(errorCode: ErrorCode): string {
   switch (errorCode) {
     case "bad_request:api":
       return "The request couldn't be processed. Please check your input and try again.";
+    case "bad_request:auth":
+      return "Please check your sign-in details and try again.";
+    case "unauthorized:auth":
+      return "Invalid username, email, password, or PIN.";
+    case "unauthorized:guardian":
+      return "Please sign in with a Parent or Guardian account to manage watched profiles.";
+    case "forbidden:guardian":
+      return "You do not have watcher access to that learner profile.";
+    case "not_found:guardian":
+      return "No student profile matched that 6-digit Watcher Code.";
+    case "bad_request:quiz":
+      return "Invalid quiz request. Please start a fresh quiz attempt.";
+    case "not_found:quiz":
+      return "Quiz session not found or already completed.";
     case "bad_request:tutor":
       return "The tutoring request was invalid. Please try again.";
     case "rate_limit:tutor":

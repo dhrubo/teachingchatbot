@@ -3,19 +3,33 @@ import fs from "node:fs";
 import path from "node:path";
 import { isTestEnvironment } from "@/lib/constants";
 import type {
+  AccountRecord,
   DailyPracticeLogRecord,
+  GuardianLinkRecord,
   LearnerRecord,
   PushSubscriptionRow,
+  QuizAttemptRecord,
   TopicProgressRecord,
   TutorSessionRecord,
 } from "./schema";
 
-type SerializedLearner = Omit<LearnerRecord, "createdAt" | "updatedAt"> & {
+export type SerializedLearner = Omit<
+  LearnerRecord,
+  "createdAt" | "updatedAt"
+> & {
   createdAt: string;
   updatedAt: string;
 };
 
-type SerializedProgress = Omit<
+export type SerializedAccount = Omit<AccountRecord, "createdAt"> & {
+  createdAt: string;
+};
+
+export type SerializedGuardianLink = Omit<GuardianLinkRecord, "createdAt"> & {
+  createdAt: string;
+};
+
+export type SerializedProgress = Omit<
   TopicProgressRecord,
   "nextReviewAt" | "lastStudiedAt"
 > & {
@@ -23,26 +37,40 @@ type SerializedProgress = Omit<
   lastStudiedAt: string;
 };
 
-type SerializedSession = Omit<TutorSessionRecord, "updatedAt"> & {
+export type SerializedSession = Omit<TutorSessionRecord, "updatedAt"> & {
   updatedAt: string;
 };
 
-type SerializedPushSub = Omit<PushSubscriptionRow, "createdAt"> & {
+export type SerializedQuizAttempt = Omit<
+  QuizAttemptRecord,
+  "startedAt" | "completedAt"
+> & {
+  startedAt: string;
+  completedAt: string | null;
+};
+
+export type SerializedPushSub = Omit<PushSubscriptionRow, "createdAt"> & {
   createdAt: string;
 };
 
 export type LocalStoreData = {
   learners: Record<string, SerializedLearner>;
+  accounts: Record<string, SerializedAccount>;
+  guardianLinks: Record<string, SerializedGuardianLink>;
   progress: Record<string, SerializedProgress>;
   sessions: Record<string, SerializedSession>;
+  quizAttempts: Record<string, SerializedQuizAttempt>;
   pushSubscriptions: Record<string, SerializedPushSub>;
   practiceLogs: Record<string, DailyPracticeLogRecord>;
 };
 
 const EMPTY_STORE: LocalStoreData = {
   learners: {},
+  accounts: {},
+  guardianLinks: {},
   progress: {},
   sessions: {},
+  quizAttempts: {},
   pushSubscriptions: {},
   practiceLogs: {},
 };
@@ -61,8 +89,11 @@ export function readLocalStore(): LocalStoreData {
       const parsed = JSON.parse(raw) as Partial<LocalStoreData>;
       memoryStore = {
         learners: parsed.learners ?? {},
+        accounts: parsed.accounts ?? {},
+        guardianLinks: parsed.guardianLinks ?? {},
         progress: parsed.progress ?? {},
         sessions: parsed.sessions ?? {},
+        quizAttempts: parsed.quizAttempts ?? {},
         pushSubscriptions: parsed.pushSubscriptions ?? {},
         practiceLogs: parsed.practiceLogs ?? {},
       };

@@ -8,4 +8,5 @@ export const isTestEnvironment = Boolean(
 );
 
 export const LEARNER_COOKIE_NAME = "ranedeer_learner_id";
+export const AUTH_SESSION_COOKIE_NAME = "ranedeer_auth_session";
 export const DEFAULT_LEARNER_ID = "00000000-0000-4000-8000-000000000001";

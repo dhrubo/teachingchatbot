@@ -958,3 +958,17 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
   - **Free Voice + Dual-LLM Stack (`lib/ai/providers.ts`, `lib/ai/ranedeer-engine.ts`, `app/api/voice/*`):** Groq `whisper-large-v3-turbo` STT + Groq (`qwen/qwen3-32b`, `llama-3.3-70b-versatile`) ⇄ Google AI Studio (`gemini-3.1-flash-lite`, `gemini-2.5-flash`) ⇄ OpenRouter `:free` + `edge-tts-universal` (`en-GB-SoniaNeural`) British TTS + zero-key curated fallback.
   - **Deterministic Spoken-Maths Grading (`lib/voice/*`, `lib/math/check-answer.ts`):** Preserved and extended spoken-maths disambiguation, Ranedeer voice commands, fraction/decimal/currency/ratio equivalence, and rounding-hint coaching.
   - **Duolingo Streaks & Web Push Reminders (`lib/reminders/*`, `public/sw.js`, `app/warmup`, `app/settings`):** Daily streak state machine with auto-saving Streak Freezes, 5-minute spaced-repetition voice warmup, VAPID Web Push subscription & test endpoint, and `/api/cron/daily-reminders`.
+
+
+---
+
+## 2026-11-16 — Simplified Topic Hub, Parent/Kid Watcher Auth & Full No-Cheat Quiz Engine
+
+- **Simplified Front Screen (`app/page.tsx`, `components/home/edexcel-dashboard.tsx`):** Replaced dense hero/config panels with a calm topic-first screen featuring Foundation/Higher + Strand filter pills and 2-step topic cards (`1. Tutorial` → `2. Quiz`).
+- **Authentication & Bidirectional Watcher Profiles (`lib/auth/*`, `lib/db/queries/accounts.ts`, `app/login`, `app/guardian`):**
+  - Added `RanedeerAccount` and `RanedeerGuardianLink` (`0001_overconfident_blockbuster.sql`).
+  - Supported Email/Username + Password login, Parent-created Kid profiles with 4-digit PIN login, Student self-signup with 6-digit Watcher Codes, and automatic Parent Email invite linking.
+- **Full Anti-Cheat Learning & Server-Only Procedural Quizzes (`lib/anti-cheat/homework-guard.ts`, `lib/quiz/procedural-generator.ts`, `app/api/quiz/*`, `components/quiz/anti-cheat-quiz.tsx`):**
+  - Added deterministic Socratic homework/answer-seeking guard in `runRanedeerTurn`.
+  - Built 5-question randomized procedural generators across all 14 Edexcel `1MA1` topics where `canonicalAnswer` and `workedSolution` never leave the server until graded.
+  - Locked AI Tutor & explanation lenses during quizzes and recorded tab-switch, paste-attempt, and rapid-guessing integrity flags for Parent/Guardian Watchers on `/guardian`.

@@ -329,19 +329,34 @@ export function SettingsClient({
       />
 
       <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 pt-6">
-        <div>
-          <Link
-            className="inline-flex items-center gap-1.5 text-slate-400 text-xs hover:text-orange-300"
-            href="/"
-          >
-            <ArrowLeft className="size-3.5" />
-            Back to Edexcel Dashboard
-          </Link>
-          <h1 className="mt-1 font-extrabold text-2xl text-white">
-            Mr. Ranedeer{" "}
-            <span className="font-mono text-violet-300">/config</span> &amp;
-            Daily Practice Reminders
-          </h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Link
+              className="inline-flex items-center gap-1.5 text-slate-400 text-xs hover:text-orange-300"
+              href="/"
+            >
+              <ArrowLeft className="size-3.5" />
+              Back to Topics
+            </Link>
+            <h1 className="mt-1 font-extrabold text-2xl text-white">
+              Learner Settings &amp; Daily Practice Reminders
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Link
+              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-400/35 bg-cyan-500/15 px-3.5 py-2 font-semibold text-cyan-100 text-xs transition hover:bg-cyan-500/25"
+              href="/guardian"
+            >
+              Watcher Code &amp; Parent Hub →
+            </Link>
+            <Link
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 font-semibold text-slate-200 text-xs transition hover:bg-white/10"
+              href="/login"
+            >
+              Accounts / Kid PIN
+            </Link>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-12">
