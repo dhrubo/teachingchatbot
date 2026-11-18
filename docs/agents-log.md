@@ -985,3 +985,14 @@ The app is a **teen-friendly, gamified Year 8/9 UK maths tutor** ("Duolingo for 
   - Progressive 5-round game per detected topic: `Round 1: Spot the Working` (4-choice Edexcel setup), `Round 2: Complete the Step` (interactive `[ ? ]` missing working line), `Round 3: Combo Builder`, `Round 4: Edexcel Exam Solve`, and `Round 5: Boss Challenge (2x XP!)`.
   - Features 3 Hearts, `x1–x4` Combo Multipliers, Hint Shield, voice/typed/tile input, server-only grading (`canonicalAnswer` & `workedSolution` stripped from browser payloads), and real-time updates to `RanedeerTopicProgress`, `RanedeerLearner` XP/streaks, `RanedeerQuizAttempt` best scores on `/`, and Parent Watcher analytics on `/guardian`.
 
+---
+
+## 2026-11-18 — Jori English Podcast Voice & Synchronized Live Printed Script
+
+- **Jori in English Podcast Mode (`lib/voice/gemini-tts.ts`, `app/api/voice/tts/route.ts`):**
+  - Switched primary tutor TTS to **Jori** in **English Podcast Mode** via Google Gemini TTS (`gemini-3.8-flash-lite-tts` / `gemini-3.8-flash-tts` Interactions API + Extended Voice Library `/v1beta/voices?search=Jori` lookup, with automatic WAV RIFF container handling and zero-key offline fallback).
+  - Updated tutor & chat prompts (`lib/ai/ranedeer-engine.ts`, `lib/ai/ask-chat-engine.ts`) so spoken explanations use warm, natural English podcast cadence.
+- **Synchronized Live Word-by-Word Script Teleprompter (`lib/voice/podcast-script.ts`, `components/voice/use-voice-engine.ts`, `components/voice/live-podcast-script.tsx`):**
+  - Added pause-weighted word timing (`tokenizeScriptWords`, `getPrintedScriptFrame`) driven at 60fps by `audio.currentTime / audio.duration` (and `onboundary` on browser fallback) so the spoken script prints word-by-word on screen in lockstep with Jori's voice across Tutorials, Ask & Play Chat, 5-Round Games, Quizzes, Warmup, and `/settings` Preview.
+
+

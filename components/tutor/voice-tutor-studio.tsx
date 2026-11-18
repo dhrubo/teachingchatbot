@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { AntiCheatQuiz } from "@/components/quiz/anti-cheat-quiz";
 import { TopNavBar } from "@/components/ranedeer/top-nav-bar";
+import { LivePodcastScript } from "@/components/voice/live-podcast-script";
 import { useVoiceEngine } from "@/components/voice/use-voice-engine";
 import { VoiceOrbBar } from "@/components/voice/voice-orb-bar";
 import { LiveMathsBoard } from "@/components/whiteboard/live-maths-board";
@@ -470,20 +471,20 @@ export function VoiceTutorStudio({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-violet-600 text-base">
-                        🦌
+                        🎙️
                       </span>
                       <div>
                         <div className="font-bold text-sm text-white">
-                          Mr. Ranedeer Tutor
+                          Jori · Podcast Tutor
                         </div>
                         <div className="text-[11px] text-slate-400">
-                          {currentTurn.providerUsed}
+                          English Podcast Mode · {currentTurn.providerUsed}
                         </div>
                       </div>
                     </div>
                     {voice.voiceState === "speaking" ? (
                       <span className="animate-pulse rounded-full bg-orange-500/20 px-2.5 py-0.5 font-semibold text-[11px] text-orange-300">
-                        Speaking...
+                        Jori Speaking...
                       </span>
                     ) : null}
                   </div>
@@ -508,7 +509,27 @@ export function VoiceTutorStudio({
                     </div>
                   ) : null}
 
-                  <p className="text-slate-100 text-sm leading-relaxed">
+                  {/* Live Synchronized Word-by-Word Podcast Script */}
+                  <LivePodcastScript
+                    activeScript={voice.activeScript || currentTurn.spokenText}
+                    activeWordIndex={
+                      voice.activeScript ? voice.activeWordIndex : -1
+                    }
+                    isLoadingAudio={voice.isLoadingAudio}
+                    onReplay={() => voice.speak(currentTurn.spokenText, true)}
+                    onStop={voice.stopSpeaking}
+                    printedWords={
+                      voice.activeScript
+                        ? voice.printedWords
+                        : currentTurn.spokenText.trim().split(/\s+/)
+                    }
+                    speechProgress={
+                      voice.activeScript ? voice.speechProgress : 1
+                    }
+                    voiceState={voice.voiceState}
+                  />
+
+                  <p className="text-slate-300 text-xs leading-relaxed">
                     {currentTurn.displayText}
                   </p>
 

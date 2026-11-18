@@ -15,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LivePodcastScript } from "@/components/voice/live-podcast-script";
 import { useVoiceEngine } from "@/components/voice/use-voice-engine";
 import type { PublicQuizQuestion } from "@/lib/quiz/procedural-generator";
 import { cn } from "@/lib/utils";
@@ -486,6 +487,19 @@ export function AntiCheatQuiz({
 
       {question ? (
         <div className="space-y-4">
+          {voice.activeScript ? (
+            <LivePodcastScript
+              activeScript={voice.activeScript}
+              activeWordIndex={voice.activeWordIndex}
+              compact
+              isLoadingAudio={voice.isLoadingAudio}
+              onReplay={() => voice.speak(question.spokenPrompt, true)}
+              onStop={voice.stopSpeaking}
+              printedWords={voice.printedWords}
+              speechProgress={voice.speechProgress}
+              voiceState={voice.voiceState}
+            />
+          ) : null}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="rounded-md border border-violet-400/35 bg-violet-500/15 px-2.5 py-1 font-bold text-violet-200 text-xs">

@@ -5,9 +5,10 @@ import { ChatbotError } from "@/lib/errors";
 import { resolveLearnerIdFromCookies } from "@/lib/learner-session";
 import { sanitizeForSpeech } from "@/lib/math/check-answer";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { synthesizeWithGeminiJoriPodcast } from "@/lib/voice/gemini-tts";
 import { voiceTtsPostSchema } from "./schema";
 
-export const maxDuration = 15;
+export const maxDuration = 20;
 
 const SPEED_TO_EDGE_RATE: Record<string, string> = {
   "0.85": "-15%",
@@ -138,28 +139,47 @@ export async function POST(request: NextRequest) {
 
   if (isTestEnvironment) {
     return new Response(new Uint8Array([0x49, 0x44, 0x33]), {
-      headers: { "Content-Type": "audio/mpeg" },
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "X-Voice-Persona": "Jori-Podcast-EN",
+      },
     });
   }
 
   const cleanSpoken = sanitizeForSpeech(parsed.data.text);
-  const voice = process.env.TTS_VOICE?.trim() || "en-GB-SoniaNeural";
-  const rate = SPEED_TO_EDGE_RATE[parsed.data.speed ?? "1.0"] ?? "+0%";
+  const speed = parsed.data.speed ?? "1.0";
+
+  // 1. Primary: Jori in English Podcast Mode via Gemini Studio TTS
+  const joriPodcast = await synthesizeWithGeminiJoriPodcast(cleanSpoken, speed);
+  if (joriPodcast) {
+    return new Response(new Uint8Array(joriPodcast.audioBuffer), {
+      headers: {
+        "Content-Type": joriPodcast.mimeType,
+        "Cache-Control": "private, max-age=1800",
+        "X-Voice-Engine": joriPodcast.engine,
+        "X-Voice-Persona": `${joriPodcast.voiceUsed}-Podcast-EN`,
+      },
+    });
+  }
+
+  // 2. Zero-key / offline fallback: Edge Neural locally or fast English HTTP MP3
+  const fallbackVoice = process.env.TTS_VOICE?.trim() || "en-GB-SoniaNeural";
+  const rate = SPEED_TO_EDGE_RATE[speed] ?? "+0%";
   const isVercelDatacenter = Boolean(process.env.VERCEL);
 
   try {
-    // On Vercel AWS datacenters, Bing's consumer Edge WebSocket blocks connections;
-    // go straight to the fast ~300ms British English HTTP MP3 synthesizer.
     const audioBuffer = isVercelDatacenter
       ? await synthesizeWithFastGbHttp(cleanSpoken)
-      : await synthesizeWithEdgeNeural(cleanSpoken, voice, rate).catch(() =>
-          synthesizeWithFastGbHttp(cleanSpoken)
+      : await synthesizeWithEdgeNeural(cleanSpoken, fallbackVoice, rate).catch(
+          () => synthesizeWithFastGbHttp(cleanSpoken)
         );
 
     return new Response(new Uint8Array(audioBuffer), {
       headers: {
         "Content-Type": "audio/mpeg",
         "Cache-Control": "private, max-age=1800",
+        "X-Voice-Engine": "fallback-http-en",
+        "X-Voice-Persona": "Fallback-EN",
       },
     });
   } catch (err) {

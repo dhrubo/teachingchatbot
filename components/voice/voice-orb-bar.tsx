@@ -102,7 +102,7 @@ export function VoiceOrbBar({
                 : isTranscribing
                   ? "Understanding maths..."
                   : isSpeaking
-                    ? "Mr. Ranedeer speaking..."
+                    ? "Jori speaking (Podcast Mode)..."
                     : isBusy
                       ? "Thinking..."
                       : "Tap Mic & Speak"}

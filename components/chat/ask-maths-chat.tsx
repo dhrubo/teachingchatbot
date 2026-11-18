@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TopicGameArena } from "@/components/chat/topic-game-arena";
 import { TopNavBar } from "@/components/ranedeer/top-nav-bar";
+import { LivePodcastScript } from "@/components/voice/live-podcast-script";
 import { useVoiceEngine } from "@/components/voice/use-voice-engine";
 import { KatexMath } from "@/components/whiteboard/katex-math";
 import { EDEXCEL_TOPICS, getTopicBySlug } from "@/lib/curriculum/edexcel-1ma1";
@@ -371,6 +372,33 @@ export function AskMathsChat({
                         Full 5-Lens Tutorial →
                       </Link>
                     </div>
+                  ) : null}
+
+                  {/* Live Printed Jori Podcast Script when this turn is active/latest */}
+                  {idx === turns.length - 1 &&
+                  (voice.activeScript || turn.spokenText) ? (
+                    <LivePodcastScript
+                      activeScript={
+                        voice.activeScript || turn.spokenText || turn.text
+                      }
+                      activeWordIndex={
+                        voice.activeScript ? voice.activeWordIndex : -1
+                      }
+                      isLoadingAudio={voice.isLoadingAudio}
+                      onReplay={() =>
+                        voice.speak(turn.spokenText ?? turn.text, true)
+                      }
+                      onStop={voice.stopSpeaking}
+                      printedWords={
+                        voice.activeScript
+                          ? voice.printedWords
+                          : (turn.spokenText ?? turn.text).trim().split(/\s+/)
+                      }
+                      speechProgress={
+                        voice.activeScript ? voice.speechProgress : 1
+                      }
+                      voiceState={voice.voiceState}
+                    />
                   ) : null}
 
                   {/* Clear Written Explanation */}

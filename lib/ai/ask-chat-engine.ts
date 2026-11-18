@@ -39,8 +39,8 @@ const askChatLlmSchema = z.object({
 
 const ASK_CHAT_SCHEMA_HINT = `{
   "detectedTopicSlug": "one of: ${VALID_TOPIC_SLUGS.join(" | ")}",
-  "spokenText": "2 to 4 clear spoken British English sentences explaining how to work out the answer and stating the result in words (NO raw LaTeX backslashes or carets).",
-  "displayText": "Friendly, crystal-clear written explanation of the method and the worked answer.",
+  "spokenText": "2 to 4 warm, conversational English podcast-host sentences for Jori explaining how to work out the answer and stating the result in natural words (NO raw LaTeX backslashes or carets).",
+  "displayText": "Friendly, crystal-clear written summary of the method and the worked answer.",
   "steps": [
     { "label": "Step 1: Find multiplier", "latex": "1 + 0.05 = 1.05", "note": "Add 5% to 100%" },
     { "label": "Step 2: Apply 3 years", "latex": "800 \\\\times 1.05^3 = £926.10", "note": "Round money to 2 d.p." }
@@ -98,7 +98,7 @@ export async function answerStudentMathsQuestion(input: {
     "1. Work out which Edexcel 1MA1 topic matches the student's question.",
     "2. Explain BOTH the underlying method AND the step-by-step worked answer clearly so the student genuinely understands every line of working.",
     "3. Put crisp numbered working equations in `steps[].latex` (valid KaTeX without surrounding `$` signs) with short plain-English notes in `steps[].note`.",
-    "4. `spokenText` is read aloud by a British voice: keep it to 2–4 warm, clear sentences (under 65 words) with spoken words ('three quarters', 'squared', 'pounds') and NEVER raw LaTeX symbols.",
+    "4. `spokenText` is voiced by Jori in English Podcast Mode AND printed live word-by-word as she speaks: keep it to 2–4 warm, conversational podcast-style sentences (under 65 words) using natural spoken words ('three quarters', 'squared', 'pounds') and NEVER raw LaTeX symbols.",
     "5. Stay strictly within secondary-school GCSE Mathematics and keep everything child-safe.",
   ].join("\n");
 

@@ -6,13 +6,17 @@ import {
   BellOff,
   CheckCircle2,
   Cpu,
+  Radio,
   Send,
   Shield,
   SlidersHorizontal,
+  Volume2,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { TopNavBar } from "@/components/ranedeer/top-nav-bar";
+import { LivePodcastScript } from "@/components/voice/live-podcast-script";
+import { useVoiceEngine } from "@/components/voice/use-voice-engine";
 import type { AiSetupStatus } from "@/lib/ai/providers";
 import { ALL_LENSES, LENS_META } from "@/lib/curriculum/types";
 import type { EdexcelTier, ExplanationLens, ToneStyle } from "@/lib/db/schema";
@@ -97,6 +101,12 @@ export function SettingsClient({
   const [configNotice, setConfigNotice] = useState<string | null>(null);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushStatus, setPushStatus] = useState<string | null>(null);
+
+  const previewVoice = useVoiceEngine({
+    speechSpeed,
+    autoSpeak: true,
+    onTranscript: () => undefined,
+  });
 
   useEffect(() => {
     try {
@@ -483,7 +493,7 @@ export function SettingsClient({
 
               <label className="flex flex-col gap-1.5 text-xs">
                 <span className="font-semibold text-slate-300">
-                  British Voice Speed
+                  Jori Podcast Voice Pace
                 </span>
                 <select
                   className="h-10 rounded-xl border border-white/15 bg-slate-950/80 px-3 text-white"
@@ -492,9 +502,9 @@ export function SettingsClient({
                   }
                   value={speechSpeed}
                 >
-                  <option value="0.85">0.85x (Steady)</option>
-                  <option value="1.0">1.0x (Natural)</option>
-                  <option value="1.15">1.15x (Brisk)</option>
+                  <option value="0.85">0.85x (Relaxed Podcast)</option>
+                  <option value="1.0">1.0x (Natural Podcast)</option>
+                  <option value="1.15">1.15x (Upbeat Podcast)</option>
                 </select>
               </label>
 
@@ -515,6 +525,53 @@ export function SettingsClient({
                   <option value={20}>20 mins / day (Exam Sprint)</option>
                 </select>
               </label>
+            </div>
+
+            {/* Active Voice Persona: Jori in English Podcast Mode + Live Script Preview */}
+            <div className="space-y-3 rounded-2xl border border-orange-400/25 bg-gradient-to-r from-orange-500/10 via-slate-950/70 to-violet-600/10 p-4 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 font-bold text-orange-200">
+                    <Radio className="size-3.5 text-orange-400" />
+                    Active Tutor Voice: Jori · Podcast Mode (English)
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Speaks every tutorial, Ask &amp; Play explanation, and hint
+                    in warm English podcast style — printing the live script
+                    word-by-word as Jori speaks.
+                  </p>
+                </div>
+
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-orange-400/40 bg-orange-500/20 px-3.5 py-2 font-bold text-orange-100 text-xs transition hover:bg-orange-500/30"
+                  onClick={() =>
+                    previewVoice.speak(
+                      "Hey there! I'm Jori in English podcast mode. Ask me any GCSE Maths topic — like compound interest or fractions — and watch the script print right here as I talk you through every step!",
+                      true
+                    )
+                  }
+                  type="button"
+                >
+                  <Volume2 className="size-3.5 text-orange-300" />
+                  Preview Jori Voice
+                </button>
+              </div>
+
+              {previewVoice.activeScript ? (
+                <LivePodcastScript
+                  activeScript={previewVoice.activeScript}
+                  activeWordIndex={previewVoice.activeWordIndex}
+                  compact
+                  isLoadingAudio={previewVoice.isLoadingAudio}
+                  onReplay={() =>
+                    previewVoice.speak(previewVoice.activeScript, true)
+                  }
+                  onStop={previewVoice.stopSpeaking}
+                  printedWords={previewVoice.printedWords}
+                  speechProgress={previewVoice.speechProgress}
+                  voiceState={previewVoice.voiceState}
+                />
+              ) : null}
             </div>
 
             {configNotice ? (

@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { TopNavBar } from "@/components/ranedeer/top-nav-bar";
+import { LivePodcastScript } from "@/components/voice/live-podcast-script";
 import { useVoiceEngine } from "@/components/voice/use-voice-engine";
 import { VoiceOrbBar } from "@/components/voice/voice-orb-bar";
 import { LiveMathsBoard } from "@/components/whiteboard/live-maths-board";
@@ -292,6 +293,22 @@ export function DailyWarmupClient({ learner, cards }: DailyWarmupClientProps) {
                 </button>
               </div>
             </div>
+
+            {voice.activeScript ? (
+              <LivePodcastScript
+                activeScript={voice.activeScript}
+                activeWordIndex={voice.activeWordIndex}
+                compact
+                isLoadingAudio={voice.isLoadingAudio}
+                onReplay={() =>
+                  voice.speak(activeCard.challenge.spokenQuestion, true)
+                }
+                onStop={voice.stopSpeaking}
+                printedWords={voice.printedWords}
+                speechProgress={voice.speechProgress}
+                voiceState={voice.voiceState}
+              />
+            ) : null}
 
             <div className="rounded-2xl border border-white/10 bg-slate-950/65 p-5">
               <p className="font-semibold text-base text-white leading-relaxed sm:text-lg">

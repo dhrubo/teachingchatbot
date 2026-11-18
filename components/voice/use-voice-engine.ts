@@ -1,7 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sanitizeForSpeech } from "@/lib/math/check-answer";
+import {
+  getPrintedScriptFrame,
+  tokenizeScriptWords,
+} from "@/lib/voice/podcast-script";
 
 export type VoiceEngineState =
   | "idle"
@@ -52,8 +56,15 @@ export function useVoiceEngine({
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [lastSpokenText, setLastSpokenText] = useState<string>("");
 
+  // Synchronized Live Podcast Teleprompter state
+  const [activeScript, setActiveScript] = useState<string>("");
+  const [speechProgress, setSpeechProgress] = useState<number>(0);
+  const [isLoadingAudio, setIsLoadingAudio] = useState<boolean>(false);
+
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  const speechSyncRafRef = useRef<number | null>(null);
+  const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -61,7 +72,30 @@ export function useVoiceEngine({
   const browserRecRef = useRef<BrowserSpeechRecognition | null>(null);
   const serverSttUnavailableRef = useRef(false);
 
+  const scriptTokens = useMemo(
+    () => tokenizeScriptWords(activeScript),
+    [activeScript]
+  );
+
+  const scriptFrame = useMemo(
+    () => getPrintedScriptFrame(scriptTokens, speechProgress),
+    [scriptTokens, speechProgress]
+  );
+
+  const clearSpeechSyncLoop = useCallback(() => {
+    if (speechSyncRafRef.current !== null) {
+      cancelAnimationFrame(speechSyncRafRef.current);
+      speechSyncRafRef.current = null;
+    }
+    if (fallbackTimerRef.current !== null) {
+      clearInterval(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
+  }, []);
+
   const stopSpeaking = useCallback(() => {
+    clearSpeechSyncLoop();
+    setIsLoadingAudio(false);
     if (audioElRef.current) {
       audioElRef.current.pause();
       audioElRef.current.currentTime = 0;
@@ -74,38 +108,84 @@ export function useVoiceEngine({
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
+    // Reveal the full script if the user stops playback mid-sentence
+    setSpeechProgress((prev) => (prev > 0 ? 1 : prev));
     setVoiceState((prev) => (prev === "speaking" ? "idle" : prev));
-  }, []);
+  }, [clearSpeechSyncLoop]);
 
   const speakWithBrowserFallback = useCallback(
-    (text: string) => {
+    (cleaned: string) => {
+      setIsLoadingAudio(false);
       if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+        setSpeechProgress(1);
         setVoiceState("idle");
         return;
       }
 
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(sanitizeForSpeech(text));
+      clearSpeechSyncLoop();
+      const utterance = new SpeechSynthesisUtterance(cleaned);
       utterance.lang = "en-GB";
-      utterance.rate = Number.parseFloat(speechSpeed) || 1.0;
+      const numericSpeed = Number.parseFloat(speechSpeed) || 1.0;
+      utterance.rate = numericSpeed;
 
       const voices = window.speechSynthesis.getVoices();
       const gbVoice =
         voices.find(
           (v) =>
-            v.lang.startsWith("en-GB") &&
-            /Sonia|Daniel|Martha|Kate|Google UK|Natural/i.test(v.name)
+            v.lang.startsWith("en") &&
+            /Jori|Sonia|Daniel|Martha|Kate|Google UK|Natural/i.test(v.name)
         ) ?? voices.find((v) => v.lang.startsWith("en-GB"));
       if (gbVoice) {
         utterance.voice = gbVoice;
       }
 
-      utterance.onstart = () => setVoiceState("speaking");
-      utterance.onend = () => setVoiceState("idle");
-      utterance.onerror = () => setVoiceState("idle");
+      const estimatedDurationMs = Math.max(
+        1200,
+        (cleaned.length / (14.5 * numericSpeed)) * 1000
+      );
+      let startedAt = Date.now();
+      let sawBoundaryEvent = false;
+
+      utterance.onstart = () => {
+        startedAt = Date.now();
+        setVoiceState("speaking");
+        setSpeechProgress(0.02);
+        fallbackTimerRef.current = setInterval(() => {
+          if (!sawBoundaryEvent) {
+            const ratio = Math.min(
+              0.98,
+              (Date.now() - startedAt) / estimatedDurationMs
+            );
+            setSpeechProgress((prev) => Math.max(prev, ratio));
+          }
+        }, 65);
+      };
+
+      utterance.onboundary = (ev) => {
+        if (typeof ev.charIndex === "number" && cleaned.length > 0) {
+          sawBoundaryEvent = true;
+          const nextRatio = Math.min(
+            0.99,
+            (ev.charIndex + (ev.charLength || 4)) / cleaned.length
+          );
+          setSpeechProgress((prev) => Math.max(prev, nextRatio));
+        }
+      };
+
+      utterance.onend = () => {
+        clearSpeechSyncLoop();
+        setSpeechProgress(1);
+        setVoiceState("idle");
+      };
+      utterance.onerror = () => {
+        clearSpeechSyncLoop();
+        setSpeechProgress(1);
+        setVoiceState("idle");
+      };
       window.speechSynthesis.speak(utterance);
     },
-    [speechSpeed]
+    [clearSpeechSyncLoop, speechSpeed]
   );
 
   const speak = useCallback(
@@ -117,10 +197,15 @@ export function useVoiceEngine({
       setLastSpokenText(cleaned);
 
       if (muted && !force) {
+        setActiveScript(cleaned);
+        setSpeechProgress(1);
         return;
       }
 
       stopSpeaking();
+      setActiveScript(cleaned);
+      setSpeechProgress(0);
+      setIsLoadingAudio(true);
       setVoiceState("speaking");
 
       try {
@@ -133,7 +218,7 @@ export function useVoiceEngine({
               ? speechSpeed
               : "1.0",
           }),
-          signal: AbortSignal.timeout(6000),
+          signal: AbortSignal.timeout(14_000),
         });
 
         if (!res.ok) {
@@ -141,14 +226,59 @@ export function useVoiceEngine({
           return;
         }
 
+        const voiceEngineHeader = res.headers.get("X-Voice-Engine") ?? "";
+        const isGeminiPodcast = voiceEngineHeader.startsWith("gemini-");
+
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         audioUrlRef.current = url;
         const audio = new Audio(url);
-        audio.playbackRate = Number.parseFloat(speechSpeed) || 1.0;
+        // Gemini Podcast TTS styles pace natively; only adjust playbackRate on raw fallback MP3s
+        audio.playbackRate = isGeminiPodcast
+          ? 1.0
+          : Number.parseFloat(speechSpeed) || 1.0;
         audioElRef.current = audio;
 
+        const numericSpeed = Number.parseFloat(speechSpeed) || 1.0;
+        const estimatedFallbackSec = Math.max(
+          1.4,
+          cleaned.length / (14.5 * numericSpeed)
+        );
+        let playbackStartMs = Date.now();
+
+        const syncFrame = () => {
+          const activeAudio = audioElRef.current;
+          if (!activeAudio || activeAudio.paused || activeAudio.ended) {
+            return;
+          }
+
+          const totalSec =
+            Number.isFinite(activeAudio.duration) && activeAudio.duration > 0.15
+              ? activeAudio.duration
+              : estimatedFallbackSec;
+
+          const currentSec =
+            activeAudio.currentTime > 0
+              ? activeAudio.currentTime
+              : (Date.now() - playbackStartMs) / 1000;
+
+          const ratio = Math.max(0.02, Math.min(0.995, currentSec / totalSec));
+          setSpeechProgress(ratio);
+          speechSyncRafRef.current = requestAnimationFrame(syncFrame);
+        };
+
+        audio.onplay = () => {
+          playbackStartMs = Date.now();
+          setIsLoadingAudio(false);
+          setSpeechProgress(0.02);
+          clearSpeechSyncLoop();
+          speechSyncRafRef.current = requestAnimationFrame(syncFrame);
+        };
+
         audio.onended = () => {
+          clearSpeechSyncLoop();
+          setIsLoadingAudio(false);
+          setSpeechProgress(1);
           setVoiceState("idle");
           if (audioUrlRef.current) {
             URL.revokeObjectURL(audioUrlRef.current);
@@ -156,15 +286,23 @@ export function useVoiceEngine({
           }
         };
         audio.onerror = () => {
+          clearSpeechSyncLoop();
           speakWithBrowserFallback(cleaned);
         };
 
         await audio.play();
       } catch {
+        clearSpeechSyncLoop();
         speakWithBrowserFallback(cleaned);
       }
     },
-    [muted, speechSpeed, speakWithBrowserFallback, stopSpeaking]
+    [
+      clearSpeechSyncLoop,
+      muted,
+      speechSpeed,
+      speakWithBrowserFallback,
+      stopSpeaking,
+    ]
   );
 
   const cleanupRecordingResources = useCallback(() => {
@@ -257,7 +395,6 @@ export function useVoiceEngine({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
 
-      // Real-time RMS meter + Auto-Pause Silence Detection (VAD)
       const audioCtx = new AudioContext();
       audioCtxRef.current = audioCtx;
       const source = audioCtx.createMediaStreamSource(stream);
@@ -352,7 +489,6 @@ export function useVoiceEngine({
           }
         }
 
-        // Max 28s safety cap
         if (now - startedAt > 28_000 && recorder.state !== "inactive") {
           recorder.stop();
           return;
@@ -389,6 +525,12 @@ export function useVoiceEngine({
     volumeLevel,
     voiceError,
     lastSpokenText,
+    activeScript,
+    printedWords: scriptFrame.printedWords,
+    printedScript: scriptFrame.printedText,
+    activeWordIndex: scriptFrame.activeWordIndex,
+    speechProgress,
+    isLoadingAudio,
     speak,
     stopSpeaking,
     startListening,

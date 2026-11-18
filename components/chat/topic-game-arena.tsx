@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LivePodcastScript } from "@/components/voice/live-podcast-script";
 import { useVoiceEngine } from "@/components/voice/use-voice-engine";
 import type { BestQuizScoreSummary } from "@/lib/db/queries/quizzes";
 import type { ExplanationLens } from "@/lib/db/schema";
@@ -508,6 +509,20 @@ export function TopicGameArena({
               Read Aloud
             </button>
           </div>
+
+          {voice.activeScript ? (
+            <LivePodcastScript
+              activeScript={voice.activeScript}
+              activeWordIndex={voice.activeWordIndex}
+              compact
+              isLoadingAudio={voice.isLoadingAudio}
+              onReplay={() => voice.speak(round.spokenPrompt, true)}
+              onStop={voice.stopSpeaking}
+              printedWords={voice.printedWords}
+              speechProgress={voice.speechProgress}
+              voiceState={voice.voiceState}
+            />
+          ) : null}
 
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
             <p className="font-semibold text-base text-white leading-relaxed">
